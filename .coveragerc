@@ -1,0 +1,7 @@
+[report]
+omit =
+    setup.py
+    conda_project/__main__.py
+    conda_project/_version.py
+    versioneer.py
+    tests/*
