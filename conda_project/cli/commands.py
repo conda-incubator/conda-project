@@ -2,26 +2,30 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 import sys
+from functools import wraps
 
 from ..project import CondaProject, CondaProjectError
 
 
-def _try(func, *args, **kwargs):
-    try:
-        func(*args, **kwargs)
-        return 0
-    except CondaProjectError as e:
-        print(str(e), file=sys.stderr)
-        return 1
+def handle_errors(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+            return 0
+        except CondaProjectError as e:
+            print(e, file=sys.stderr)
+            return 1
+    return wrapper
 
 
+@handle_errors
 def prepare(args):
-    project = CondaProject(args.directory)
-    retcode = _try(project.prepare, args.force)
-    return retcode
+    project = CondaProject(args.directory, capture_output=False)
+    project.prepare(args.force)
 
 
+@handle_errors
 def clean(args):
-    project = CondaProject(args.directory)
-    retcode = _try(project.clean)
-    return retcode
+    project = CondaProject(args.directory, capture_output=False)
+    project.clean()
