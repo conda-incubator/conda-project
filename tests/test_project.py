@@ -15,6 +15,19 @@ def test_conda_project_init_no_env_yml(tmpdir):
 
 
 @pytest.mark.parametrize('env_fn', ['environment.yml', 'environment.yaml'])
+def test_project_init_directory(monkeypatch, tmpdir, env_fn):
+    contents = """name: test
+dependencies: []
+"""
+    env_file = tmpdir.join(env_fn)
+    env_file.write(contents)
+
+    monkeypatch.chdir(tmpdir)
+    project = CondaProject()
+    assert project.directory == tmpdir
+
+
+@pytest.mark.parametrize('env_fn', ['environment.yml', 'environment.yaml'])
 def test_prepare_no_dependencies(monkeypatch, tmpdir, env_fn):
     contents = """name: test
 dependencies: []
