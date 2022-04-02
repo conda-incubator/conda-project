@@ -4,7 +4,7 @@
 from argparse import ArgumentParser
 from conda_project import __version__
 
-from . import prepare
+from . import commands
 
 
 def cli(args=None):
@@ -30,6 +30,7 @@ def cli(args=None):
     subparsers = p.add_subparsers(metavar='command', required=True)
 
     create_prepare_parser(subparsers, common)
+    create_clean_parser(subparsers, common)
 
     args, unknown = p.parse_known_args(args)
 
@@ -46,7 +47,20 @@ def create_prepare_parser(subparsers, parent_parser):
         parents=[parent_parser]
     )
 
-    p.set_defaults(func=prepare.execute)
+    p.set_defaults(func=commands.prepare)
+
+
+def create_clean_parser(subparsers, parent_parser):
+    desc = 'Clean the Conda environments'
+
+    p = subparsers.add_parser(
+        'clean',
+        description=desc,
+        help=desc,
+        parents=[parent_parser]
+    )
+
+    p.set_defaults(func=commands.clean)
 
 
 def main():
