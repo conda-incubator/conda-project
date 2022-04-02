@@ -46,6 +46,11 @@ def create_prepare_parser(subparsers, parent_parser):
         help=desc,
         parents=[parent_parser]
     )
+    p.add_argument(
+        '--force',
+        help='Remove and recreate an existing environment.',
+        action='store_true'
+    )
 
     p.set_defaults(func=commands.prepare)
 

@@ -7,7 +7,7 @@ import subprocess
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
-def call_conda(args, env):
+def call_conda(args):
     subprocess.run(
         [CONDA_EXE] + args
     )
@@ -25,10 +25,11 @@ class CondaProject:
     def default_env(self):
         return os.path.join(self.directory, 'envs', 'default')
 
-    def prepare(self):
+    def prepare(self, force=False):
         default_env = self.default_env()
+        force = '--force' if force else ''
         call_conda(
-            ['env', 'create', '-p', default_env]
+            ['env', 'create', force, '-p', default_env]
         )
         return default_env
 

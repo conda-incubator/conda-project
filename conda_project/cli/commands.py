@@ -7,7 +7,7 @@ from ..project import load_project
 
 def prepare(args):
     project = load_project(args.directory)
-    project.prepare()
+    project.prepare(args.force)
     return 0
 
 
