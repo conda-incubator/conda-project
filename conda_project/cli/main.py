@@ -7,7 +7,7 @@ from conda_project import __version__
 from . import commands
 
 
-def cli(args=None):
+def cli():
     common = ArgumentParser(add_help=False)
     common.add_argument(
         '--directory',
@@ -32,9 +32,13 @@ def cli(args=None):
     create_prepare_parser(subparsers, common)
     create_clean_parser(subparsers, common)
 
-    args, unknown = p.parse_known_args(args)
+    return p
 
-    args.func(args)
+
+def parse_and_run(args=None):
+    p = cli()
+    args, unknown = p.parse_known_args(args)
+    return args.func(args)
 
 
 def create_prepare_parser(subparsers, parent_parser):
@@ -72,6 +76,7 @@ def main():
     import sys
 
     if len(sys.argv) == 1:
-        cli(('-h',))
+        parse_and_run(('-h',))
 
-    cli(sys.argv[1:])
+    retcode = parse_and_run(sys.argv[1:])
+    return retcode

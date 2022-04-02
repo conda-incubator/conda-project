@@ -7,6 +7,10 @@ import subprocess
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
+class CondaProjectError(Exception):
+    pass
+
+
 def load_project(directory=None):
     project = CondaProject(directory)
     return project
@@ -23,10 +27,17 @@ class CondaProject:
         if os.path.exists(condarc):
             env['CONDARC'] = condarc
 
-        subprocess.run(
-            [CONDA_EXE] + args,
-            env=env
+        cmd = [CONDA_EXE] + args
+        proc = subprocess.run(
+            cmd,
+            env=env,
+            stderr=subprocess.PIPE,
+            encoding='utf-8'
         )
+
+        if proc.returncode != 0:
+            print_cmd = ' '.join(cmd)
+            raise CondaProjectError(f'Failed to run "{print_cmd}"\n{proc.stderr.strip()}')
 
     def default_env(self):
         return os.path.join(self.directory, 'envs', 'default')
