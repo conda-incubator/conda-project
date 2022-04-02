@@ -11,11 +11,6 @@ class CondaProjectError(Exception):
     pass
 
 
-def load_project(directory=None):
-    project = CondaProject(directory)
-    return project
-
-
 class CondaProject:
     def __init__(self, directory=None):
         self.directory = os.path.normcase(os.path.abspath(directory))

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import sys
 
-from ..project import load_project, CondaProjectError
+from ..project import CondaProject, CondaProjectError
 
 
 def _try(func, *args, **kwargs):
@@ -16,12 +16,12 @@ def _try(func, *args, **kwargs):
 
 
 def prepare(args):
-    project = load_project(args.directory)
+    project = CondaProject(args.directory)
     retcode = _try(project.prepare, args.force)
     return retcode
 
 
 def clean(args):
-    project = load_project(args.directory)
+    project = CondaProject(args.directory)
     retcode = _try(project.clean)
     return retcode
