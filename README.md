@@ -13,16 +13,17 @@ then
 
 1. Clone this repository.
 1. Create a development environment using the `environment.yml` file in this repository
-  ```
-  conda env create -p ./env
+    ```
+    conda env create -p ./env
+    ```
 1. To run tests you can either activate the env and run pytest
-  ```
-  conda activate ./env
-  pytest
-  ```
+    ```
+    conda activate ./env
+    pytest
+    ```
 
-  or use `conda run`
+    or use `conda run`
 
-  ```
-  conda run -p ./env pytest
-  ```
+    ```
+    conda run -p ./env pytest
+    ```
