@@ -15,7 +15,6 @@ then
 1. Create a development environment using the `environment.yml` file in this repository
   ```
   conda env create -p ./env
-  ```
 1. To run tests you can either activate the env and run pytest
   ```
   conda activate ./env
