@@ -15,6 +15,10 @@ then
 1. Create a development environment using the `environment.yml` file in this repository
     ```
     conda env create -p ./env
+1. Install `conda-project` as editable in the env by activating the environment first
+    ```
+    conda activate ./env
+    pip install -e .
     ```
 1. To run tests you can either activate the env and run pytest
     ```
