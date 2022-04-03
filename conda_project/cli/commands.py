@@ -12,7 +12,6 @@ def handle_errors(func):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
-            return 0
         except CondaProjectError as e:
             print(e, file=sys.stderr)
             return 1
@@ -21,11 +20,11 @@ def handle_errors(func):
 
 @handle_errors
 def prepare(args):
-    project = CondaProject(args.directory, capture_output=False)
-    project.prepare(args.force)
+    project = CondaProject(args.directory)
+    project.prepare(args.force, verbose=True)
 
 
 @handle_errors
 def clean(args):
-    project = CondaProject(args.directory, capture_output=False)
-    project.clean()
+    project = CondaProject(args.directory)
+    project.clean(verbose=True)
