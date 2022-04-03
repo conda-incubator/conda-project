@@ -36,17 +36,18 @@ class CondaProject:
         if os.path.exists(condarc):
             env['CONDARC'] = condarc
 
-        stdout = None
         stderr = subprocess.PIPE
         if self.capture_output:
             stdout = subprocess.PIPE
+        else:
+            stdout = None
 
         cmd = [CONDA_EXE] + args
         proc = subprocess.run(
             cmd,
             env=env,
-            stdout=stdout,
-            stderr=stderr,
+            # stdout=stdout,
+            # stderr=stderr,
             encoding='utf-8'
         )
 
@@ -61,11 +62,15 @@ class CondaProject:
 
     def prepare(self, force=False):
         default_env = self.default_env()
+        conda_meta = os.path.join(default_env, 'conda-meta', 'history')
         force = '--force' if force else ''
-        _ = self._call_conda(
-            ['env', 'create', '-f', self.environment_file, force, '-p', default_env]
-        )
-        return default_env
+        if os.path.exists(conda_meta) and not force:
+            return default_env
+        else:
+            _ = self._call_conda(
+                ['env', 'create', '-f', self.environment_file, '-p', default_env, force]
+            )
+            return default_env
 
     def clean(self):
         _ = self._call_conda(
