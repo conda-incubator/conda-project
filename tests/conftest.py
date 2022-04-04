@@ -16,7 +16,7 @@ def project_directory(tmpdir, request):
             for fn, contents in files.items():
                 path = Path(tmpdir) / fn
                 path.parent.mkdir(parents=True, exist_ok=True)
-                with open(path, 'wt') as f:
+                with path.open('wt') as f:
                     f.write(contents)
 
         return tmpdir
