@@ -73,10 +73,13 @@ def create_clean_parser(subparsers, parent_parser):
 
 
 def main():
+    """Main entry-point into the `conda-project` command-line interface."""
     import sys
 
     if len(sys.argv) == 1:
-        parse_and_run(('-h',))
+        args = ['-h']
+    else:
+        args = sys.argv[1:]
 
-    retcode = parse_and_run(sys.argv[1:])
+    retcode = parse_and_run(args)
     return retcode
