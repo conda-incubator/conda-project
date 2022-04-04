@@ -79,3 +79,30 @@ jobs:
           else
             source $HOME/miniconda/bin/activate root && conda --version && py.test -xv
           fi
+  upload:
+    needs: tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - name: Retrieve the source code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Download the build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: package-${{ github.sha }}
+        path: conda-bld
+    - name: Upload to anaconda.org
+      env:
+        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        GITHUB_REF: ${{ github.ref }}
+      run: |
+        source $CONDA/bin/activate
+        conda install -y anaconda-client
+        [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user defusco $LABEL conda-bld/*/*.tar.bz2 --force
+    - name: Clean up older artifacts
+      uses: glassechidna/artifact-cleaner@master
+      with:
+        minimumAge: 86400
