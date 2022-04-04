@@ -41,6 +41,12 @@ jobs:
             python-version: "3.10"
           - conda-version: 4.9
             python-version: "3.10"
+          - conda-version: "4.11"
+            python-version: "3.10"
+
+          # Python 3.9
+          - conda-version: 4.8
+            python-version: 3.9
     steps:
       - uses: actions/checkout@v2
       - name: Download conda standalone

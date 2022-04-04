@@ -10,7 +10,7 @@ CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
 def call_conda(args, condarc_path=None, verbose=False):
-    env = {}
+    env = os.environ.copy()
     if condarc_path is not None:
         env['CONDARC'] = condarc_path
 
