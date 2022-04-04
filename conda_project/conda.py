@@ -4,11 +4,9 @@
 import os
 import subprocess
 
+from .exceptions import CondaProjectError
+
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
-
-
-class CondaError(Exception):
-    pass
 
 
 def call_conda(args, condarc_path=None, verbose=False):
@@ -33,6 +31,6 @@ def call_conda(args, condarc_path=None, verbose=False):
 
     if proc.returncode != 0:
         print_cmd = ' '.join(cmd)
-        raise CondaError(f'Failed to run "{print_cmd}"\n{proc.stderr.strip()}')
+        raise CondaProjectError(f'Failed to run:\n  {print_cmd}\n{proc.stderr.strip()}')
 
     return proc

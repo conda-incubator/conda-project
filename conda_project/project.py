@@ -4,12 +4,9 @@
 import os
 
 from .conda import call_conda
+from .exceptions import CondaProjectError
 
 ENVIRONMENT_YAML_FILENAMES = ('environment.yml', 'environment.yaml')
-
-
-class CondaProjectError(Exception):
-    pass
 
 
 class CondaProject:
