@@ -1,0 +1,8 @@
+name: test-conda-project
+channels:
+  - defaults
+dependencies:
+  - flake8
+  - pytest
+  - pylint
+  - pytest-cov

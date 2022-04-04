@@ -1,0 +1,67 @@
+name: Build and test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  package:
+    name: Build package
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          activate-environment: build-conda-token
+          environment-file: etc/build-environment.yml
+          python-version: 3.8
+          auto-activate-base: false
+      - name: Conda Build
+        shell: bash -l {0}
+        run: |
+          conda build conda.recipe --no-test
+          mv $CONDA_PREFIX/conda-bld .
+  test:
+    name: Test (Conda ${{ matrix.conda-version }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: [3.7, 3.8, 3.9, 3.10]
+        conda-version: [4.8, 4.9, "4.10", "4.11", "4.12"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download conda standalone
+        shell: bash
+        run: |
+          if [ $RUNNER_OS == 'Linux' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-latest-linux-64.exe -o conda.exe
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-latest-win-64.exe -o conda.exe
+          elif [ $RUNNER_OS == 'macOS' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-latest-osx-64.exe -o conda.exe
+          fi
+          chmod +x conda.exe
+          ./conda.exe config --set auto_update_conda false
+          ./conda.exe info
+      - name: Setup miniconda 
+        shell: bash
+        run: |
+          ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
+          source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml
+      - name: py.test
+        env:
+          CE_TOKEN: ${{ secrets.CE_TOKEN }}
+        shell: bash
+        run: |
+          if [ $RUNNER_OS == 'Windows' ]; then
+            source $HOME/miniconda/Scripts/activate root && conda --version && py.test -xv
+          else
+            source $HOME/miniconda/bin/activate root && conda --version && py.test -xv
+          fi

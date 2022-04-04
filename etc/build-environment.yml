@@ -1,0 +1,5 @@
+name: build-conda-project
+dependencies:
+  - conda
+  - conda-build
+  - conda-verify
