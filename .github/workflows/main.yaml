@@ -80,7 +80,7 @@ jobs:
             source $HOME/miniconda/bin/activate root && conda --version && py.test -xv
           fi
   upload:
-    needs: tests
+    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
