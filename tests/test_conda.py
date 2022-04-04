@@ -13,7 +13,7 @@ def test_local_condarc(tmpdir):
     condarc_file.write(condarc)
 
     proc = call_conda(['config', '--show', 'channels'],
-                      condarc_path=condarc_file, verbose=False)
+                      condarc_path=condarc_file.strpath, verbose=False)
     channels = proc.stdout.splitlines()
     assert channels[1] == '  - __conda-project-test'
 
