@@ -13,6 +13,7 @@ def handle_errors(func):
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
+            return 0
         except CondaProjectError as e:
             print(e, file=sys.stderr)
             return 1
