@@ -2,13 +2,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import pytest
-from functools import partial
 from pathlib import Path
 
 
 @pytest.fixture(params=['environment.yml', 'environment.yaml'])
 def project_directory(tmpdir, request):
-    def __project_directory(env_fn, env_yaml='', files=None):
+    """A fixture returning a function used to create a temporary project directory."""
+    def __project_directory(env_yaml='', files=None):
+        """Create a temporary project directory, optionally containing some files.
+
+        Args:
+            env_yaml: The environment file to be included in the project directory.
+            files: Additional files to be included in the project directory.
+
+        Returns:
+            A path to the temporary project directory.
+
+        """
+        env_fn = request.param
         env_file = tmpdir.join(env_fn)
         env_file.write(env_yaml)
 
@@ -21,4 +32,4 @@ def project_directory(tmpdir, request):
 
         return tmpdir
 
-    return partial(__project_directory, env_fn=request.param)
+    return __project_directory
