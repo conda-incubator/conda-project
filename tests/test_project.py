@@ -36,10 +36,10 @@ dependencies: []
 """
     tmpdir = project_directory(env_yaml=env_yaml)
     project = CondaProject(tmpdir)
-    assert project.directory == tmpdir
+    assert os.path.samefile(project.directory, tmpdir)
 
     env_dir = project.prepare()
-    assert env_dir == os.path.join(tmpdir, 'envs', 'default')
+    assert os.path.samefile(env_dir, os.path.join(tmpdir, 'envs', 'default'))
 
     conda_history = os.path.join(env_dir, 'conda-meta', 'history')
     assert os.path.exists(conda_history)
@@ -55,7 +55,7 @@ dependencies:
 
     project = CondaProject(tmpdir)
     env_dir = project.prepare()
-    assert env_dir == os.path.join(tmpdir, 'envs', 'default')
+    assert os.path.samefile(env_dir, os.path.join(tmpdir, 'envs', 'default'))
 
     conda_history = os.path.join(env_dir, 'conda-meta', 'history')
     assert os.path.exists(conda_history)
