@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-from argparse import ArgumentParser
-from conda_project import __version__
+from __future__ import annotations
 
+from argparse import ArgumentParser
+
+from conda_project import __version__
 from . import commands
 
 
-def cli():
+def cli() -> ArgumentParser:
+    """Construct the command-line argument parser."""
     common = ArgumentParser(add_help=False)
     common.add_argument(
         '--directory',
@@ -29,19 +32,13 @@ def cli():
 
     subparsers = p.add_subparsers(metavar='command', required=True)
 
-    create_prepare_parser(subparsers, common)
-    create_clean_parser(subparsers, common)
+    _create_prepare_parser(subparsers, common)
+    _create_clean_parser(subparsers, common)
 
     return p
 
 
-def parse_and_run(args=None):
-    p = cli()
-    args, _ = p.parse_known_args(args)
-    return args.func(args)
-
-
-def create_prepare_parser(subparsers, parent_parser):
+def _create_prepare_parser(subparsers, parent_parser):
     desc = 'Prepare the Conda environments'
 
     p = subparsers.add_parser(
@@ -59,7 +56,7 @@ def create_prepare_parser(subparsers, parent_parser):
     p.set_defaults(func=commands.prepare)
 
 
-def create_clean_parser(subparsers, parent_parser):
+def _create_clean_parser(subparsers, parent_parser):
     desc = 'Clean the Conda environments'
 
     p = subparsers.add_parser(
@@ -72,7 +69,22 @@ def create_clean_parser(subparsers, parent_parser):
     p.set_defaults(func=commands.clean)
 
 
-def main():
+def parse_and_run(args: list[str] | None = None) -> int:
+    """Parse the command-line arguments and run the appropriate sub-command.
+
+    Args:
+        args: Command-line arguments. Defaults to system arguments.
+
+    Returns:
+        The return code to pass to the operating system.
+
+    """
+    p = cli()
+    args, _ = p.parse_known_args(args)
+    return args.func(args)
+
+
+def main() -> int:
     """Main entry-point into the `conda-project` command-line interface."""
     import sys
 
