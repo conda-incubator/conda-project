@@ -4,9 +4,14 @@
 import pytest
 from functools import partial
 
-from conda_project.cli.main import main, parse_and_run
+from conda_project.cli.main import cli, main, parse_and_run
 
 COMMANDS = ['prepare', 'clean']
+
+
+def test_known_commands():
+    parser = cli()
+    assert parser._positionals._actions[2].choices.keys() == set(COMMANDS)
 
 
 def test_no_command(capsys, monkeypatch):
