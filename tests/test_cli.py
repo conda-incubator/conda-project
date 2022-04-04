@@ -50,17 +50,3 @@ def test_command_with_directory(command, monkeypatch, capsys):
     out, err = capsys.readouterr()
     assert f"I am {command}\n" == out
     assert "" == err
-
-
-@pytest.mark.parametrize('command', ['prepare', 'clean'])
-@pytest.mark.parametrize('env_fn', ['environment.yml', 'environment.yaml'])
-def test_command_returns_0(command, env_fn, monkeypatch, tmpdir):
-    def mock_call_conda(*args, **kwargs):
-        return 'proc'
-    monkeypatch.setattr('conda_project.CondaProject._call_conda', mock_call_conda)
-
-    env_yaml = tmpdir.join(env_fn)
-    env_yaml.write('')
-
-    ret = parse_and_run([command, '--directory', tmpdir.strpath])
-    assert ret == 0

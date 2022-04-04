@@ -37,7 +37,7 @@ def cli():
 
 def parse_and_run(args=None):
     p = cli()
-    args, unknown = p.parse_known_args(args)
+    args, _ = p.parse_known_args(args)
     return args.func(args)
 
 
