@@ -68,20 +68,22 @@ class CondaProject:
         """
         default_env = self.default_env
         conda_meta = os.path.join(default_env, "conda-meta", "history")
-        force = "--force" if force else ""
         if os.path.exists(conda_meta) and not force:
             return default_env
         else:
+            args = [
+                "env",
+                "create",
+                "-f",
+                str(self.environment_file),
+                "-p",
+                str(default_env),
+            ]
+            if force:
+                args.append("--force")
+
             _ = call_conda(
-                [
-                    "env",
-                    "create",
-                    "-f",
-                    str(self.environment_file),
-                    "-p",
-                    str(default_env),
-                    force,
-                ],
+                args,
                 condarc_path=self.condarc,
                 verbose=verbose,
             )
