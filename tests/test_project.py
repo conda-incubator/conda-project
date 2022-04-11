@@ -42,7 +42,7 @@ dependencies: []
     assert project.directory.samefile(project_path)
 
     env_dir = project.prepare()
-    assert env_dir.samefile(project_path / 'envs' / 'default')
+    assert env_dir.samefile(project_path / "envs" / "default")
 
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
@@ -58,7 +58,7 @@ dependencies:
 
     project = CondaProject(project_path)
     env_dir = project.prepare()
-    assert env_dir.samefile(project_path / 'envs' / 'default')
+    assert env_dir.samefile(project_path / "envs" / "default")
 
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
