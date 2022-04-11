@@ -25,8 +25,8 @@ def project_directory_factory(tmp_path, request):
         """
         env_filename = request.param
         env_file = tmp_path / env_filename
-        with env_file.open("w") as fp:
-            fp.write(env_yaml)
+        with env_file.open("w") as f:
+            f.write(env_yaml)
 
         files = files or {}
         for fn, contents in files.items():
