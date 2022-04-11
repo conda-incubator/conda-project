@@ -93,6 +93,6 @@ class CondaProject:
         """Remove the default conda environment."""
         _ = call_conda(
             ["env", "remove", "-p", str(self.default_env)],
-            condarc_path=str(self.condarc),
+            condarc_path=self.condarc,
             verbose=verbose,
         )
