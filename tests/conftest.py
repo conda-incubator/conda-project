@@ -16,7 +16,8 @@ def project_directory_factory(tmp_path, request):
 
         Args:
             env_yaml: The contents of the environment file to be included in the project directory.
-            files: Additional files to be included in the project directory.
+            files: Additional files to be included in the project directory. The key is the filename,
+                and the value is a string of contents to write to the file.
 
         Returns:
             A path to the temporary project directory.
