@@ -45,6 +45,18 @@ class CondaProject:
         return self.directory / 'envs' / 'default'
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
+        """Prepare the default conda environment.
+
+        Creates a new conda environment and installs the packages from the environment.yaml file.
+
+        Args:
+            force: If True, will force creation of a new conda environment.
+            verbose: A verbose flag passed into the `conda create` command.
+
+        Returns:
+            A path to the created environment.
+
+        """
         default_env = self.default_env
         conda_meta = os.path.join(default_env, 'conda-meta', 'history')
         force = '--force' if force else ''
@@ -58,7 +70,8 @@ class CondaProject:
             )
             return default_env
 
-    def clean(self, verbose=False):
+    def clean(self, verbose: bool = False) -> None:
+        """Remove the default conda environment."""
         _ = call_conda(
             ['env', 'remove', '-p', self.default_env],
             condarc_path=str(self.condarc),
