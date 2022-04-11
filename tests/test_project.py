@@ -14,29 +14,29 @@ def test_conda_project_init_no_env_yml(tmpdir):
     assert 'No Conda environment.yml or environment.yaml file was found' in str(excinfo.value)
 
 
-def test_project_init_expands_cwd(monkeypatch, project_directory):
-    tmpdir = project_directory()
+def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
+    tmpdir = project_directory_factory()
     monkeypatch.chdir(tmpdir)
 
     project = CondaProject()
-    assert project.directory == tmpdir
+    assert project.directory == str(tmpdir)
     assert project.environment_file
 
 
-def test_project_init_path(project_directory):
-    tmpdir = project_directory()
+def test_project_init_path(project_directory_factory):
+    tmpdir = project_directory_factory()
 
     project = CondaProject(tmpdir)
     assert project.environment_file
 
 
-def test_prepare_no_dependencies(project_directory):
+def test_prepare_no_dependencies(project_directory_factory):
     env_yaml = """name: test
 dependencies: []
 """
-    tmpdir = project_directory(env_yaml=env_yaml)
+    tmpdir = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(tmpdir)
-    assert os.path.samefile(project.directory, tmpdir)
+    assert os.path.samefile(project.directory, str(tmpdir))
 
     env_dir = project.prepare()
     assert os.path.samefile(env_dir, os.path.join(tmpdir, 'envs', 'default'))
@@ -46,12 +46,12 @@ dependencies: []
 
 
 @pytest.mark.slow
-def test_prepare_and_clean(project_directory):
+def test_prepare_and_clean(project_directory_factory):
     env_yaml = """name: test
 dependencies:
   - python=3.8
 """
-    tmpdir = project_directory(env_yaml=env_yaml)
+    tmpdir = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(tmpdir)
     env_dir = project.prepare()
