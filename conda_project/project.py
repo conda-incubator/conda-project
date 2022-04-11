@@ -9,7 +9,7 @@ from pathlib import Path
 from .conda import call_conda
 from .exceptions import CondaProjectError
 
-ENVIRONMENT_YAML_FILENAMES = ('environment.yml', 'environment.yaml')
+ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
 
 
 class CondaProject:
@@ -27,9 +27,10 @@ class CondaProject:
         CondaProjectError: If no suitable environment file is found.
 
     """
-    def __init__(self, directory: Path | str = '.'):
+
+    def __init__(self, directory: Path | str = "."):
         self.directory = Path(directory).resolve()
-        self.condarc = self.directory / '.condarc'
+        self.condarc = self.directory / ".condarc"
         self.environment_file = self._find_environment_file()
 
     def _find_environment_file(self) -> Path:
@@ -43,12 +44,14 @@ class CondaProject:
             path = self.directory / filename
             if path.exists():
                 return path
-        raise CondaProjectError(f'No Conda environment.yml or environment.yaml file was found in {self.directory}.')
+        raise CondaProjectError(
+            f"No Conda environment.yml or environment.yaml file was found in {self.directory}."
+        )
 
     @property
     def default_env(self) -> Path:
         """A path to the default conda environment."""
-        return self.directory / 'envs' / 'default'
+        return self.directory / "envs" / "default"
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.
@@ -64,22 +67,30 @@ class CondaProject:
 
         """
         default_env = self.default_env
-        conda_meta = os.path.join(default_env, 'conda-meta', 'history')
-        force = '--force' if force else ''
+        conda_meta = os.path.join(default_env, "conda-meta", "history")
+        force = "--force" if force else ""
         if os.path.exists(conda_meta) and not force:
             return default_env
         else:
             _ = call_conda(
-                ['env', 'create', '-f', str(self.environment_file), '-p', str(default_env), force],
+                [
+                    "env",
+                    "create",
+                    "-f",
+                    str(self.environment_file),
+                    "-p",
+                    str(default_env),
+                    force,
+                ],
                 condarc_path=self.condarc,
-                verbose=verbose
+                verbose=verbose,
             )
             return default_env
 
     def clean(self, verbose: bool = False) -> None:
         """Remove the default conda environment."""
         _ = call_conda(
-            ['env', 'remove', '-p', str(self.default_env)],
+            ["env", "remove", "-p", str(self.default_env)],
             condarc_path=str(self.condarc),
-            verbose=verbose
+            verbose=verbose,
         )

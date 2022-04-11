@@ -17,6 +17,7 @@ def handle_errors(func):
         except CondaProjectError as e:
             print(e, file=sys.stderr)
             return 1
+
     return wrapper
 
 

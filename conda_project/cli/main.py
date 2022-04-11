@@ -14,24 +14,25 @@ def cli() -> ArgumentParser:
     """Construct the command-line argument parser."""
     common = ArgumentParser(add_help=False)
     common.add_argument(
-        '--directory',
-        metavar='PROJECT_DIR',
-        default='.',
-        help="Project directory (defaults to current directory)"
+        "--directory",
+        metavar="PROJECT_DIR",
+        default=".",
+        help="Project directory (defaults to current directory)",
     )
 
     p = ArgumentParser(
         description="Tool for encapsulating, running, and reproducing projects with Conda environments",
-        conflict_handler='resolve',
+        conflict_handler="resolve",
     )
     p.add_argument(
-        '-V', '--version',
-        action='version',
-        help='Show the conda-prefix-replacement version number and exit.',
+        "-V",
+        "--version",
+        action="version",
+        help="Show the conda-prefix-replacement version number and exit.",
         version="conda_project %s" % __version__,
     )
 
-    subparsers = p.add_subparsers(metavar='command', required=True)
+    subparsers = p.add_subparsers(metavar="command", required=True)
 
     _create_prepare_parser(subparsers, common)
     _create_clean_parser(subparsers, common)
@@ -40,31 +41,25 @@ def cli() -> ArgumentParser:
 
 
 def _create_prepare_parser(subparsers, parent_parser):
-    desc = 'Prepare the Conda environments'
+    desc = "Prepare the Conda environments"
 
     p = subparsers.add_parser(
-        'prepare',
-        description=desc,
-        help=desc,
-        parents=[parent_parser]
+        "prepare", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
-        '--force',
-        help='Remove and recreate an existing environment.',
-        action='store_true'
+        "--force",
+        help="Remove and recreate an existing environment.",
+        action="store_true",
     )
 
     p.set_defaults(func=commands.prepare)
 
 
 def _create_clean_parser(subparsers, parent_parser):
-    desc = 'Clean the Conda environments'
+    desc = "Clean the Conda environments"
 
     p = subparsers.add_parser(
-        'clean',
-        description=desc,
-        help=desc,
-        parents=[parent_parser]
+        "clean", description=desc, help=desc, parents=[parent_parser]
     )
 
     p.set_defaults(func=commands.clean)
@@ -90,7 +85,7 @@ def main() -> int:
     import sys
 
     if len(sys.argv) == 1:
-        args = ['-h']
+        args = ["-h"]
     else:
         args = sys.argv[1:]
 

@@ -7,7 +7,7 @@ import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-COMMANDS = ['prepare', 'clean']
+COMMANDS = ["prepare", "clean"]
 
 
 def test_known_commands():
@@ -21,7 +21,7 @@ def test_no_command(capsys, monkeypatch):
         assert main() is None
 
     out = capsys.readouterr().out
-    assert 'conda-project [-h] [-V] command' in out
+    assert "conda-project [-h] [-V] command" in out
 
 
 def test_no_env_yaml(tmpdir, monkeypatch, capsys):
@@ -31,28 +31,29 @@ def test_no_env_yaml(tmpdir, monkeypatch, capsys):
     assert main() == 1
 
     err = capsys.readouterr().err
-    assert 'No Conda environment.yml or environment.yaml file was found' in err
+    assert "No Conda environment.yml or environment.yaml file was found" in err
 
 
 def test_unknown_command(capsys):
     with pytest.raises(SystemExit):
-        assert parse_and_run(['nope']) is None
+        assert parse_and_run(["nope"]) is None
 
     err = capsys.readouterr().err
     assert "invalid choice: 'nope'" in err
 
 
-@pytest.mark.parametrize('command', COMMANDS)
+@pytest.mark.parametrize("command", COMMANDS)
 def test_command_args(command, monkeypatch, capsys):
     def mocked_command(command, args):
-        print(f'I am {command}')
-        assert args.directory == 'project-dir'
+        print(f"I am {command}")
+        assert args.directory == "project-dir"
         return 42
 
-    monkeypatch.setattr(f'conda_project.cli.commands.{command}',
-                        partial(mocked_command, command))
+    monkeypatch.setattr(
+        f"conda_project.cli.commands.{command}", partial(mocked_command, command)
+    )
 
-    ret = parse_and_run([command, '--directory', 'project-dir'])
+    ret = parse_and_run([command, "--directory", "project-dir"])
     assert ret == 42
 
     out, err = capsys.readouterr()
@@ -60,12 +61,12 @@ def test_command_args(command, monkeypatch, capsys):
     assert "" == err
 
 
-@pytest.mark.parametrize('command', COMMANDS)
+@pytest.mark.parametrize("command", COMMANDS)
 def test_cli_verbose(command, monkeypatch):
     def mocked_action(*args, **kwargs):
-        assert kwargs.get('verbose', False)
+        assert kwargs.get("verbose", False)
 
-    monkeypatch.setattr(f'conda_project.project.CondaProject.{command}', mocked_action)
+    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
 
     ret = parse_and_run([command])
     assert ret == 0

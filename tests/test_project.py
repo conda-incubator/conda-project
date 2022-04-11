@@ -12,7 +12,9 @@ from conda_project.project import CondaProject
 def test_conda_project_init_no_env_yml(tmpdir):
     with pytest.raises(CondaProjectError) as excinfo:
         CondaProject(tmpdir)
-    assert 'No Conda environment.yml or environment.yaml file was found' in str(excinfo.value)
+    assert "No Conda environment.yml or environment.yaml file was found" in str(
+        excinfo.value
+    )
 
 
 def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
@@ -42,7 +44,7 @@ dependencies: []
     env_dir = project.prepare()
     assert env_dir.samefile(project_path / 'envs' / 'default')
 
-    conda_history = env_dir / 'conda-meta' / 'history'
+    conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
 
 
@@ -58,7 +60,7 @@ dependencies:
     env_dir = project.prepare()
     assert env_dir.samefile(project_path / 'envs' / 'default')
 
-    conda_history = env_dir / 'conda-meta' / 'history'
+    conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
 
     with conda_history.open() as f:
