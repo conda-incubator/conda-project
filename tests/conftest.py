@@ -1,13 +1,17 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
+from __future__ import annotations
+from pathlib import Path
+from typing import Any
+
 import pytest
 
 
 @pytest.fixture(params=['environment.yml', 'environment.yaml'])
 def project_directory_factory(tmp_path, request):
     """A fixture returning a factory function used to create a temporary project directory."""
-    def _create_project_directory(env_yaml: str = '', files=None):
+    def _create_project_directory(env_yaml: str = '', files: dict[str, str] | None = None) -> Path:
         """Create a temporary project directory, optionally containing some files.
 
         Args:
@@ -23,12 +27,11 @@ def project_directory_factory(tmp_path, request):
         with env_file.open("w") as fp:
             fp.write(env_yaml)
 
-        if files is not None:
-            for fn, contents in files.items():
-                path = tmp_path / fn
-                path.parent.mkdir(parents=True, exist_ok=True)
-                with path.open('wt') as f:
-                    f.write(contents)
+        files = files or {}
+        for fn, contents in files.items():
+            path = tmp_path / fn
+            with path.open('wt') as f:
+                f.write(contents)
 
         return tmp_path
 
