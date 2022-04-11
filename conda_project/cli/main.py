@@ -49,7 +49,13 @@ def cli() -> ArgumentParser:
 def _create_prepare_parser(
     subparsers: "_SubParsersAction", parent_parser: ArgumentParser
 ) -> None:
-    """Add a subparser for the "prepare" subcommand."""
+    """Add a subparser for the "prepare" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
     desc = "Prepare the Conda environments"
 
     p = subparsers.add_parser(
@@ -67,7 +73,13 @@ def _create_prepare_parser(
 def _create_clean_parser(
     subparsers: "_SubParsersAction", parent_parser: ArgumentParser
 ) -> None:
-    """Add a subparser for the "clean" subcommand."""
+    """Add a subparser for the "clean" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
     desc = "Clean the Conda environments"
 
     p = subparsers.add_parser(
