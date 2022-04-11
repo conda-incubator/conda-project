@@ -1,3 +1,6 @@
+# Copyright (C) 2022 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
 import pytest
 from functools import partial
 from pathlib import Path
