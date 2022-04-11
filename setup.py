@@ -20,7 +20,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'conda_project=conda_project.cli:cli'
+            'conda-project=conda_project.cli.main:main'
         ]
     },
     python_requires=">=3.7",

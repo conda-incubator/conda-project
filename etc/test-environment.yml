@@ -1,0 +1,6 @@
+name: test-conda-project
+channels:
+  - defaults
+dependencies:
+  - pytest
+  - pytest-cov
