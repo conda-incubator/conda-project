@@ -24,7 +24,7 @@ def handle_errors(func):
 @handle_errors
 def prepare(args):
     project = CondaProject(args.directory)
-    project.prepare(args.force, verbose=True)
+    project.prepare(force=args.force, verbose=True)
 
 
 @handle_errors
