@@ -4,8 +4,8 @@
 import sys
 from functools import wraps
 
-from ..project import CondaProject
 from ..exceptions import CondaProjectError
+from ..project import CondaProject
 
 
 def handle_errors(func):

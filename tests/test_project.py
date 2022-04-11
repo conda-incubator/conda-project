@@ -2,10 +2,11 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 import os
+
 import pytest
 
-from conda_project.project import CondaProject
 from conda_project.exceptions import CondaProjectError
+from conda_project.project import CondaProject
 
 
 def test_conda_project_init_no_env_yml(tmpdir):

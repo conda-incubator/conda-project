@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-import pytest
 from functools import partial
+
+import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 

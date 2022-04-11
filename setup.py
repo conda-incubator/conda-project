@@ -1,8 +1,9 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
+from setuptools import find_packages, setup
+
 import versioneer
-from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

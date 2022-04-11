@@ -6,6 +6,7 @@ from __future__ import annotations
 from argparse import ArgumentParser
 
 from conda_project import __version__
+
 from . import commands
 
 
