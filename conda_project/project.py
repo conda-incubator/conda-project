@@ -39,11 +39,13 @@ class CondaProject:
         else:
             raise CondaProjectError(f'No Conda environment.yml or environment.yaml file was found in {self.directory}.')
 
-    def default_env(self):
-        return os.path.join(self.directory, 'envs', 'default')
+    @property
+    def default_env(self) -> Path:
+        """A path to the default conda environment."""
+        return self.directory / 'envs' / 'default'
 
-    def prepare(self, force=False, verbose=False):
-        default_env = self.default_env()
+    def prepare(self, force: bool = False, verbose: bool = False) -> Path:
+        default_env = self.default_env
         conda_meta = os.path.join(default_env, 'conda-meta', 'history')
         force = '--force' if force else ''
         if os.path.exists(conda_meta) and not force:
@@ -58,7 +60,7 @@ class CondaProject:
 
     def clean(self, verbose=False):
         _ = call_conda(
-            ['env', 'remove', '-p', self.default_env()],
+            ['env', 'remove', '-p', self.default_env],
             condarc_path=str(self.condarc),
             verbose=verbose
         )

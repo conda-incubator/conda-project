@@ -39,10 +39,10 @@ dependencies: []
     assert project.directory.samefile(project_path)
 
     env_dir = project.prepare()
-    assert env_dir.samefile(os.path.join(project_path, 'envs', 'default'))
+    assert env_dir.samefile(project_path / 'envs' / 'default')
 
-    conda_history = os.path.join(env_dir, 'conda-meta', 'history')
-    assert os.path.exists(conda_history)
+    conda_history = env_dir / 'conda-meta' / 'history'
+    assert conda_history.exists()
 
 
 @pytest.mark.slow
@@ -51,15 +51,16 @@ def test_prepare_and_clean(project_directory_factory):
 dependencies:
   - python=3.8
 """
-    tmpdir = project_directory_factory(env_yaml=env_yaml)
+    project_path = project_directory_factory(env_yaml=env_yaml)
 
-    project = CondaProject(tmpdir)
+    project = CondaProject(project_path)
     env_dir = project.prepare()
-    assert env_dir.samefile(os.path.join(tmpdir, 'envs', 'default'))
+    assert env_dir.samefile(project_path / 'envs' / 'default')
 
-    conda_history = os.path.join(env_dir, 'conda-meta', 'history')
-    assert os.path.exists(conda_history)
-    with open(conda_history) as f:
+    conda_history = env_dir / 'conda-meta' / 'history'
+    assert conda_history.exists()
+
+    with conda_history.open() as f:
         assert "# update specs: ['python=3.8']" in f.read()
     conda_history_mtime = os.path.getmtime(conda_history)
 
@@ -70,4 +71,4 @@ dependencies:
     assert conda_history_mtime < os.path.getmtime(conda_history)
 
     project.clean()
-    assert not os.path.exists(conda_history)
+    assert not conda_history.exists()
