@@ -28,16 +28,21 @@ class CondaProject:
     """
     def __init__(self, directory: Path | str = '.'):
         self.directory = Path(directory).resolve()
-
         self.condarc = self.directory / '.condarc'
+        self.environment_file = self._find_environment_file()
 
-        for fn in ENVIRONMENT_YAML_FILENAMES:
-            fn = os.path.join(self.directory, fn)
-            if os.path.exists(fn):
-                self.environment_file = fn
-                break
-        else:
-            raise CondaProjectError(f'No Conda environment.yml or environment.yaml file was found in {self.directory}.')
+    def _find_environment_file(self) -> Path:
+        """Find an environment file in the project directory.
+
+        Raises:
+            CondaProjectError: If no suitable environment file can be found.
+
+        """
+        for filename in ENVIRONMENT_YAML_FILENAMES:
+            path = self.directory / filename
+            if path.exists():
+                return path
+        raise CondaProjectError(f'No Conda environment.yml or environment.yaml file was found in {self.directory}.')
 
     @property
     def default_env(self) -> Path:
@@ -64,7 +69,7 @@ class CondaProject:
             return default_env
         else:
             _ = call_conda(
-                ['env', 'create', '-f', self.environment_file, '-p', default_env, force],
+                ['env', 'create', '-f', str(self.environment_file), '-p', str(default_env), force],
                 condarc_path=self.condarc,
                 verbose=verbose
             )
@@ -73,7 +78,7 @@ class CondaProject:
     def clean(self, verbose: bool = False) -> None:
         """Remove the default conda environment."""
         _ = call_conda(
-            ['env', 'remove', '-p', self.default_env],
+            ['env', 'remove', '-p', str(self.default_env)],
             condarc_path=str(self.condarc),
             verbose=verbose
         )
