@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 import os
+from pathlib import Path
 
 from .conda import call_conda
 from .exceptions import CondaProjectError
@@ -10,8 +12,22 @@ ENVIRONMENT_YAML_FILENAMES = ('environment.yml', 'environment.yaml')
 
 
 class CondaProject:
-    def __init__(self, directory='.'):
-        self.directory = os.path.normcase(os.path.abspath(directory))
+    """A project managed by `conda-project`.
+
+    Attributes:
+        directory: The project base directory
+        condarc: A path to the local `.condarc` file. Defaults to `<directory>/.condarc`.
+        environment_file: A path to the environment file.
+
+    Args:
+        directory: The project base directory.
+
+    Raises:
+        CondaProjectError: If no suitable environment file is found.
+
+    """
+    def __init__(self, directory: Path | str = '.'):
+        self.directory = Path(directory).resolve()
 
         self.condarc = os.path.join(self.directory, '.condarc')
 

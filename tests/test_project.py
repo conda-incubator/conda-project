@@ -15,18 +15,18 @@ def test_conda_project_init_no_env_yml(tmpdir):
 
 
 def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
-    tmpdir = project_directory_factory()
-    monkeypatch.chdir(tmpdir)
+    project_path = project_directory_factory()
+    monkeypatch.chdir(project_path)
 
     project = CondaProject()
-    assert project.directory == str(tmpdir)
+    assert project.directory == project_path
     assert project.environment_file
 
 
 def test_project_init_path(project_directory_factory):
-    tmpdir = project_directory_factory()
+    project_path = project_directory_factory()
 
-    project = CondaProject(tmpdir)
+    project = CondaProject(project_path)
     assert project.environment_file
 
 
@@ -34,12 +34,12 @@ def test_prepare_no_dependencies(project_directory_factory):
     env_yaml = """name: test
 dependencies: []
 """
-    tmpdir = project_directory_factory(env_yaml=env_yaml)
-    project = CondaProject(tmpdir)
-    assert os.path.samefile(project.directory, str(tmpdir))
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+    assert project.directory.samefile(project_path)
 
     env_dir = project.prepare()
-    assert os.path.samefile(env_dir, os.path.join(tmpdir, 'envs', 'default'))
+    assert env_dir.samefile(os.path.join(project_path, 'envs', 'default'))
 
     conda_history = os.path.join(env_dir, 'conda-meta', 'history')
     assert os.path.exists(conda_history)
@@ -55,7 +55,7 @@ dependencies:
 
     project = CondaProject(tmpdir)
     env_dir = project.prepare()
-    assert os.path.samefile(env_dir, os.path.join(tmpdir, 'envs', 'default'))
+    assert env_dir.samefile(os.path.join(tmpdir, 'envs', 'default'))
 
     conda_history = os.path.join(env_dir, 'conda-meta', 'history')
     assert os.path.exists(conda_history)
