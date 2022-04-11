@@ -1,5 +1,7 @@
 # Conda Project
 
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
+
 Tool for encapsulating, running, and reproducing projects with Conda environments
 
 This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
