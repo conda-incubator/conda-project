@@ -3,11 +3,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import typing
 from argparse import ArgumentParser
 
 from conda_project import __version__
 
 from . import commands
+
+if typing.TYPE_CHECKING:
+    # This is here to prevent potential future breaking API changes
+    # in argparse from affecting at runtime
+    from argparse import _SubParsersAction
 
 
 def cli() -> ArgumentParser:
@@ -40,7 +46,10 @@ def cli() -> ArgumentParser:
     return p
 
 
-def _create_prepare_parser(subparsers, parent_parser):
+def _create_prepare_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "prepare" subcommand."""
     desc = "Prepare the Conda environments"
 
     p = subparsers.add_parser(
@@ -55,7 +64,10 @@ def _create_prepare_parser(subparsers, parent_parser):
     p.set_defaults(func=commands.prepare)
 
 
-def _create_clean_parser(subparsers, parent_parser):
+def _create_clean_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "clean" subcommand."""
     desc = "Clean the Conda environments"
 
     p = subparsers.add_parser(
@@ -76,8 +88,8 @@ def parse_and_run(args: list[str] | None = None) -> int:
 
     """
     p = cli()
-    args, _ = p.parse_known_args(args)
-    return args.func(args)
+    parsed_args, _ = p.parse_known_args(args)
+    return parsed_args.func(parsed_args)
 
 
 def main() -> int:
