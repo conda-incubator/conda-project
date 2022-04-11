@@ -14,7 +14,7 @@ CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 def call_conda(
     args: list[str], condarc_path: Path = None, verbose: bool = False
-) -> subprocess.Popen:
+) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     if condarc_path is not None:
         env["CONDARC"] = str(condarc_path)
