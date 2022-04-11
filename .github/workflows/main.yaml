@@ -62,7 +62,7 @@ jobs:
           chmod +x conda.exe
           ./conda.exe config --set auto_update_conda false
           ./conda.exe info
-      - name: Setup miniconda 
+      - name: Setup miniconda
         shell: bash
         run: |
           ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
