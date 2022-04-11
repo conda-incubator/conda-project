@@ -15,7 +15,7 @@ class CondaProject:
     """A project managed by `conda-project`.
 
     Attributes:
-        directory: The project base directory
+        directory: The project base directory. Defaults to the current working directory.
         condarc: A path to the local `.condarc` file. Defaults to `<directory>/.condarc`.
         environment_file: A path to the environment file.
 
