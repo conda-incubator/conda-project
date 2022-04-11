@@ -29,7 +29,7 @@ class CondaProject:
     def __init__(self, directory: Path | str = '.'):
         self.directory = Path(directory).resolve()
 
-        self.condarc = os.path.join(self.directory, '.condarc')
+        self.condarc = self.directory / '.condarc'
 
         for fn in ENVIRONMENT_YAML_FILENAMES:
             fn = os.path.join(self.directory, fn)
@@ -59,6 +59,6 @@ class CondaProject:
     def clean(self, verbose=False):
         _ = call_conda(
             ['env', 'remove', '-p', self.default_env()],
-            condarc_path=self.condarc,
+            condarc_path=str(self.condarc),
             verbose=verbose
         )
