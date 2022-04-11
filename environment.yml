@@ -3,6 +3,7 @@ channels:
 dependencies:
   - python=3.8
   - flake8
+  - mypy
   - pytest
   - pylint
   - pytest-cov
