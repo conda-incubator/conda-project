@@ -52,6 +52,9 @@ jobs:
           # Python 3.9
           - conda-version: 4.8
             python-version: 3.9
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Download conda standalone
@@ -100,8 +103,8 @@ jobs:
           fi
       - uses: codecov/codecov-action@v2
         with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./test-reports/coverage.xml
+          env_vars: OS,PYTHON
   upload:
     needs: test
     runs-on: ubuntu-latest
