@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from .conda import call_conda
@@ -67,27 +66,25 @@ class CondaProject:
 
         """
         default_env = self.default_env
-        conda_meta = os.path.join(default_env, "conda-meta", "history")
-        if os.path.exists(conda_meta) and not force:
+        conda_meta = default_env / "conda-meta" / "history"
+        if conda_meta.exists() and not force:
             return default_env
-        else:
-            args = [
-                "env",
-                "create",
-                "-f",
-                str(self.environment_file),
-                "-p",
-                str(default_env),
-            ]
-            if force:
-                args.append("--force")
 
-            _ = call_conda(
-                args,
-                condarc_path=self.condarc,
-                verbose=verbose,
-            )
-            return default_env
+        args = [
+            "env",
+            "create",
+            *("-f", str(self.environment_file)),
+            *("-p", str(default_env)),
+        ]
+        if force:
+            args.append("--force")
+
+        _ = call_conda(
+            args,
+            condarc_path=self.condarc,
+            verbose=verbose,
+        )
+        return default_env
 
     def clean(self, verbose: bool = False) -> None:
         """Remove the default conda environment."""
