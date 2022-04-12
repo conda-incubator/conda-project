@@ -83,7 +83,7 @@ jobs:
             source $HOME/miniconda/Scripts/activate root && \
             conda --version && \
             py.test \
-              -xv 
+              -xv \
               --junitxml=./test-reports/junit.xml \
               --cov-report xml:./test-reports/coverage.xml \
               --cov conda_project \
@@ -92,7 +92,7 @@ jobs:
             source $HOME/miniconda/bin/activate root && \
             conda --version && \
             py.test \
-              -xv 
+              -xv \
               --junitxml=./test-reports/junit.xml \
               --cov-report xml:./test-reports/coverage.xml \
               --cov conda_project \
