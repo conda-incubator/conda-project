@@ -87,8 +87,7 @@ jobs:
             conda --version && \
             py.test \
               -xv \
-              --junitxml=./test-reports/junit.xml \
-              --cov-report xml:./test-reports/coverage.xml \
+              --cov-report xml:./coverage.xml \
               --cov conda_project \
               tests
           else
@@ -96,14 +95,13 @@ jobs:
             conda --version && \
             py.test \
               -xv \
-              --junitxml=./test-reports/junit.xml \
-              --cov-report xml:./test-reports/coverage.xml \
+              --cov-report xml:./coverage.xml \
               --cov conda_project \
               tests
           fi
       - uses: codecov/codecov-action@v2
         with:
-          files: ./test-reports/coverage.xml
+          files: ./coverage.xml
           env_vars: OS,PYTHON
   upload:
     needs: test
