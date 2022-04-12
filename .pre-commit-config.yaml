@@ -1,0 +1,14 @@
+# This is the configuration for pre-commit, a local framework for managing pre-commit hooks
+#   Check out the docs at: https://pre-commit.com/
+
+exclude: (.*/env/.*)  # Exclude conda environments
+
+repos:
+-   repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.13
+    hooks:
+    -   id: insert-license
+        files: \.py$
+        args: [ --license-filepath, .github/disclaimer.txt ]
+        # We exclude the versioneer files, since those are open domain
+        exclude: ^(versioneer.py|conda_project/_version.py)
