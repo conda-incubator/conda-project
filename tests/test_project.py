@@ -22,14 +22,15 @@ def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
     monkeypatch.chdir(project_path)
 
     project = CondaProject()
-    assert project.directory == project_path
-    assert project.environment_file
+    assert project.directory.samefile(project_path)
+    assert project.environment_file.exists()
 
 
 def test_project_init_path(project_directory_factory):
     project_path = project_directory_factory()
 
     project = CondaProject(project_path)
+    assert project.directory.samefile(project_path)
     assert project.environment_file
 
 
