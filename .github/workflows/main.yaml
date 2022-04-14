@@ -26,6 +26,11 @@ jobs:
         run: |
           conda build conda.recipe --no-test
           mv $CONDA_PREFIX/conda-bld .
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: package-${{ github.sha }}
+          path: conda-bld
   test:
     name: Test (Conda ${{ matrix.conda-version }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -101,7 +106,7 @@ jobs:
         source $CONDA/bin/activate
         conda install -y anaconda-client
         [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user defusco $LABEL conda-bld/*/*.tar.bz2 --force
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user defusco $LABEL conda-bld/noarch/conda-project*.tar.bz2 --force
     - name: Clean up older artifacts
       uses: glassechidna/artifact-cleaner@master
       with:
