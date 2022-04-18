@@ -52,6 +52,9 @@ jobs:
           # Python 3.9
           - conda-version: 4.8
             python-version: 3.9
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Download conda standalone
@@ -80,10 +83,26 @@ jobs:
         shell: bash
         run: |
           if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda --version && py.test -xv
+            source $HOME/miniconda/Scripts/activate root && \
+            conda --version && \
+            py.test \
+              -xv \
+              --cov-report xml:./coverage.xml \
+              --cov conda_project \
+              tests
           else
-            source $HOME/miniconda/bin/activate root && conda --version && py.test -xv
+            source $HOME/miniconda/bin/activate root && \
+            conda --version && \
+            py.test \
+              -xv \
+              --cov-report xml:./coverage.xml \
+              --cov conda_project \
+              tests
           fi
+      - uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.xml
+          env_vars: OS,PYTHON
   upload:
     needs: test
     runs-on: ubuntu-latest
