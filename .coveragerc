@@ -7,5 +7,5 @@ omit =
     tests/*
 exclude_lines =
     pragma: no cover
-    if TYPE_CHECKING:
-    if typing.TYPE_CHECKING:
+    # This covers both typing.TYPE_CHECKING and plain TYPE_CHECKING, with any amount of whitespace
+    if\s+(typing\.)?TYPE_CHECKING:
