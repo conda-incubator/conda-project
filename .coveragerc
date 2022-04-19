@@ -5,3 +5,7 @@ omit =
     conda_project/_version.py
     versioneer.py
     tests/*
+exclude_lines =
+    pragma: no cover
+    # This covers both typing.TYPE_CHECKING and plain TYPE_CHECKING, with any amount of whitespace
+    if\s+(typing\.)?TYPE_CHECKING:
