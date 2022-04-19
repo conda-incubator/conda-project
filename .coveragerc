@@ -5,3 +5,6 @@ omit =
     conda_project/_version.py
     versioneer.py
     tests/*
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
