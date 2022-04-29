@@ -47,6 +47,9 @@ Pre-Commit is configured to run
 * [black](https://black.readthedocs.io/en/stable/)
 * [flake8](https://flake8.pycqa.org/en/latest/)
 
+This repository is configured with [Pre-Commit.ci](https://pre-commit.ci/), which
+will automatically fix Pull Requests to comply with the above linters.
+
 The pre-commit Conda package is included in the development environment.yml file.
 To install the hooks in your local clone run
 
