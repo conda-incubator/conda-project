@@ -1,5 +1,6 @@
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - python=3.8
   - flake8
@@ -7,3 +8,4 @@ dependencies:
   - pytest
   - pylint
   - pytest-cov
+  - pre-commit
