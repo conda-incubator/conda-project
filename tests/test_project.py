@@ -65,7 +65,7 @@ dependencies:
     assert conda_history.exists()
 
     with conda_history.open() as f:
-        assert "# update specs: ['python=3.8']" in f.read()
+        assert "conda create -y --file" in f.read()
     conda_history_mtime = os.path.getmtime(conda_history)
 
     project.prepare()
@@ -79,7 +79,7 @@ dependencies:
 
 
 @pytest.mark.slow
-def test_lock(project_directory_factory):
+def test_lock(project_directory_factory, capsys):
     env_yaml = """name: test
 dependencies:
   - python=3.8
@@ -87,14 +87,18 @@ dependencies:
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
-    project.lock()
+    project.lock(verbose=True)
+
+    out, _ = capsys.readouterr()
+    assert "no 'channels:' key" in out
+    assert "Writing lock file" in out
 
     lockfile = project_path / 'conda-lock.yml'
     assert lockfile == project.lock_file
     assert lockfile.exists()
 
     lockfile_mtime = os.path.getmtime(lockfile)
-    project.lock()
+    project.lock(verbose=True)
     assert lockfile_mtime == os.path.getmtime(lockfile)
 
     project.lock(force=True)
