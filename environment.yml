@@ -9,3 +9,4 @@ dependencies:
   - pylint
   - pytest-cov
   - pre-commit
+  - conda-lock
