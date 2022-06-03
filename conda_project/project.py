@@ -3,10 +3,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import os
+from contextlib import redirect_stderr
 from pathlib import Path
 
+from conda_lock.conda_lock import make_lock_files
 
-from .conda import call_conda, conda_lock, current_platform
+from .conda import call_conda, current_platform, CONDA_EXE
 from .exceptions import CondaProjectError
 
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
@@ -56,7 +59,14 @@ class CondaProject:
         return self.directory / "envs" / "default"
 
     def lock(self, force: bool = False) -> None:
+        """Generate locked package lists for supplied or default platforms
 
+        Utilizes conda-lock to build the conda-lock.yml file.
+
+        Args:
+            force: Rebuild the conda-lock.yml file even if no changes were made
+
+        """
         with open(self.environment_file) as f:
             env = f.read()
 
@@ -64,13 +74,21 @@ class CondaProject:
         if 'channels' not in env:
             channel_overrides = ['defaults']
 
-        platforms = None
+        platform_overrides = None
         if 'platforms' not in env:
-            platforms = list(DEFAULT_PLATFORMS)
+            platform_overrides = list(DEFAULT_PLATFORMS)
 
-        conda_lock(self.environment_file, self.lock_file, force=force,
-                   platforms=platforms,
-                   channel_overrides=channel_overrides)
+        devnull = open(os.devnull, 'w')
+        with redirect_stderr(devnull):
+            make_lock_files(
+                conda=CONDA_EXE,
+                src_files=[self.environment_file],
+                lockfile_path=self.lock_file,
+                check_input_hash=not force,
+                kinds=['lock'],
+                platform_overrides=platform_overrides,
+                channel_overrides=channel_overrides
+            )
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.
