@@ -81,6 +81,7 @@ class CondaProject:
 
         devnull = open(os.devnull, 'w')
         with redirect_stderr(devnull):
+            os.environ['CONDARC'] = str(self.directory / '.condarc')
             make_lock_files(
                 conda=CONDA_EXE,
                 src_files=[self.environment_file],
@@ -90,6 +91,7 @@ class CondaProject:
                 platform_overrides=platform_overrides,
                 channel_overrides=channel_overrides
             )
+            del os.environ['CONDARC']
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.
