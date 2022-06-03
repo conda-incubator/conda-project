@@ -76,3 +76,59 @@ dependencies:
 
     project.clean()
     assert not conda_history.exists()
+
+
+@pytest.mark.slow
+def test_lock(project_directory_factory):
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock()
+
+    lockfile = project_path / 'conda-lock.yml'
+    assert lockfile == project.lock_file
+    assert lockfile.exists()
+
+    lockfile_mtime = os.path.getmtime(lockfile)
+    project.lock()
+    assert lockfile_mtime == os.path.getmtime(lockfile)
+
+    project.lock(force=True)
+    assert lockfile_mtime < os.path.getmtime(lockfile)
+
+
+@pytest.mark.slow
+def test_relock_add_packages(project_directory_factory):
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock()
+
+    assert project.lock_file.exists()
+    lockfile_mtime = os.path.getmtime(project.lock_file)
+    with open(project.lock_file) as f:
+        lock = f.read()
+    assert 'requests' not in lock
+
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+  - requests
+"""
+    with open(project.environment_file, 'w') as f:
+        f.write(env_yaml)
+
+    project.lock()
+    with open(project.lock_file) as f:
+        lock = f.read()
+    assert 'requests' in lock
+
+    assert lockfile_mtime < os.path.getmtime(project.lock_file)
