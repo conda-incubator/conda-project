@@ -53,20 +53,3 @@ def current_platform():
     return info.get('platform')
 
 
-def conda_lock(environment_file: Path, lock_file: Path,
-               force: bool = False, channel_overrides: Optional[List[str]] = None,
-               platforms: Optional[List[str]] = None) -> None:
-
-    if force:
-        if lock_file.exists():
-            lock_file.unlink()
-
-    devnull = open(os.devnull, 'w')
-    with redirect_stderr(devnull):
-        run_lock(
-            environment_files=[environment_file],
-            lockfile_path=lock_file,
-            conda_exe=CONDA_EXE,
-            kinds=['lock'], platforms=platforms,
-            channel_overrides=channel_overrides
-        )
