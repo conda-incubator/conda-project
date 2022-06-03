@@ -51,5 +51,3 @@ def conda_info():
 def current_platform():
     info = conda_info()
     return info.get('platform')
-
-

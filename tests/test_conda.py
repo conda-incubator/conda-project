@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import pytest
 
-from conda_project.conda import call_conda
+from conda_project.conda import call_conda, conda_info, current_platform
 from conda_project.exceptions import CondaProjectError
 
 
@@ -34,3 +34,15 @@ def test_conda_output():
 
     proc = call_conda(["info"], verbose=True)
     assert not proc.stdout
+
+
+def test_conda_info():
+    info = conda_info()
+    assert 'platform' in info
+    assert 'conda_version' in info
+
+
+def test_current_platform(monkeypatch):
+    monkeypatch.setenv('CONDA_SUBDIR', 'monkey-64')
+    platform = current_platform()
+    assert platform == 'monkey-64'
