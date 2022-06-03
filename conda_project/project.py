@@ -58,13 +58,14 @@ class CondaProject:
         """A path to the default conda environment."""
         return self.directory / "envs" / "default"
 
-    def lock(self, force: bool = False) -> None:
+    def lock(self, force: bool = False, verbose: bool = False) -> None:
         """Generate locked package lists for supplied or default platforms
 
         Utilizes conda-lock to build the conda-lock.yml file.
 
         Args:
             force: Rebuild the conda-lock.yml file even if no changes were made
+            verbose: A verbose flag passed into the `conda lock` command.
 
         """
         with open(self.environment_file) as f:

@@ -7,7 +7,7 @@ import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-COMMANDS = ["prepare", "clean"]
+COMMANDS = ["prepare", "clean", "lock"]
 
 
 def test_known_commands():
