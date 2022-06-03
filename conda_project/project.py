@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from contextlib import redirect_stderr
 from pathlib import Path
+from sys import platform
 
-from conda_lock.conda_lock import make_lock_files
+from conda_lock.conda_lock import (make_lock_files, parse_conda_lock_file,
+                                   render_lockfile_for_platform)
 
-from .conda import call_conda, current_platform, CONDA_EXE
+from .conda import CONDA_EXE, call_conda, current_platform
 from .exceptions import CondaProjectError
+from .utils import env_variable
 
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
 DEFAULT_PLATFORMS = set(['osx-64', 'win-64', 'linux-64', current_platform()])
@@ -59,7 +63,7 @@ class CondaProject:
         return self.directory / "envs" / "default"
 
     def lock(self, force: bool = False, verbose: bool = False) -> None:
-        """Generate locked package lists for supplied or default platforms
+        """Generate locked package lists for the supplied or default platforms
 
         Utilizes conda-lock to build the conda-lock.yml file.
 
@@ -73,30 +77,35 @@ class CondaProject:
 
         channel_overrides = None
         if 'channels' not in env:
-            channel_overrides = ['defaults']
+            if verbose:
+                print(f"There is no 'channels:' key in {self.environment_file} assuming 'defaults'.")
+            channel_overrides = ["defaults"]
 
         platform_overrides = None
         if 'platforms' not in env:
             platform_overrides = list(DEFAULT_PLATFORMS)
+            if verbose:
+                print(f'Writing lock file for {platform_overrides}')
 
         devnull = open(os.devnull, 'w')
         with redirect_stderr(devnull):
-            os.environ['CONDARC'] = str(self.directory / '.condarc')
-            make_lock_files(
-                conda=CONDA_EXE,
-                src_files=[self.environment_file],
-                lockfile_path=self.lock_file,
-                check_input_hash=not force,
-                kinds=['lock'],
-                platform_overrides=platform_overrides,
-                channel_overrides=channel_overrides
-            )
-            del os.environ['CONDARC']
+            with env_variable('CONDARC', str(self.directory / '.condarc')):
+                make_lock_files(
+                    conda=CONDA_EXE,
+                    src_files=[self.environment_file],
+                    lockfile_path=self.lock_file,
+                    check_input_hash=not force,
+                    kinds=['lock'],
+                    platform_overrides=platform_overrides,
+                    channel_overrides=channel_overrides
+                )
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
+        Environments are always created from the conda-lock.yml file. The conda-lock.yml
+        will be created by prepare if it does not already exist.
 
         Args:
             force: If True, will force creation of a new conda environment.
@@ -111,20 +120,38 @@ class CondaProject:
         if conda_meta.exists() and not force:
             return default_env
 
-        args = [
-            "env",
-            "create",
-            *("-f", str(self.environment_file)),
-            *("-p", str(default_env)),
-        ]
-        if force:
-            args.append("--force")
+        if not self.lock_file.exists():
+            self.lock()
 
-        _ = call_conda(
-            args,
-            condarc_path=self.condarc,
-            verbose=verbose,
+        lock = parse_conda_lock_file(self.lock_file)
+
+        rendered = render_lockfile_for_platform(
+            lockfile=lock,
+            platform=current_platform(),
+            kind='explicit',
+            include_dev_dependencies=False, extras=None
         )
+
+        delete = False if platform.startswith('win') else True
+        with tempfile.NamedTemporaryFile(mode='w', delete=delete) as f:
+            f.write('\n'.join(rendered))
+            f.flush()
+
+            args = [
+                "create",
+                "-y",
+                *("--file", f.name),
+                *("-p", str(default_env)),
+            ]
+            if force:
+                args.append("--force")
+
+            _ = call_conda(
+                args,
+                condarc_path=self.condarc,
+                verbose=verbose,
+            )
+
         return default_env
 
     def clean(self, verbose: bool = False) -> None:
