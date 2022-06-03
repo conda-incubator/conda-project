@@ -5,10 +5,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .conda import call_conda
+
+from .conda import call_conda, conda_lock, current_platform
 from .exceptions import CondaProjectError
 
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
+DEFAULT_PLATFORMS = set(['osx-64', 'win-64', 'linux-64', current_platform()])
 
 
 class CondaProject:
@@ -31,6 +33,7 @@ class CondaProject:
         self.directory = Path(directory).resolve()
         self.condarc = self.directory / ".condarc"
         self.environment_file = self._find_environment_file()
+        self.lock_file = self.environment_file.parent / 'conda-lock.yml'
 
     def _find_environment_file(self) -> Path:
         """Find an environment file in the project directory.
@@ -51,6 +54,23 @@ class CondaProject:
     def default_env(self) -> Path:
         """A path to the default conda environment."""
         return self.directory / "envs" / "default"
+
+    def lock(self, force: bool = False) -> None:
+
+        with open(self.environment_file) as f:
+            env = f.read()
+
+        channel_overrides = None
+        if 'channels' not in env:
+            channel_overrides = ['defaults']
+
+        platforms = None
+        if 'platforms' not in env:
+            platforms = list(DEFAULT_PLATFORMS)
+
+        conda_lock(self.environment_file, self.lock_file, force=force,
+                   platforms=platforms,
+                   channel_overrides=channel_overrides)
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.

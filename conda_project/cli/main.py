@@ -41,6 +41,7 @@ def cli() -> ArgumentParser:
     subparsers = p.add_subparsers(metavar="command", required=True)
 
     _create_prepare_parser(subparsers, common)
+    _create_lock_parser(subparsers, common)
     _create_clean_parser(subparsers, common)
 
     return p
@@ -68,6 +69,30 @@ def _create_prepare_parser(
     )
 
     p.set_defaults(func=commands.prepare)
+
+
+def _create_lock_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "lock" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
+    desc = "Lock the Conda environments"
+
+    p = subparsers.add_parser(
+        "lock", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "--force",
+        help="Remove and recreate an existing lock file.",
+        action="store_true",
+    )
+
+    p.set_defaults(func=commands.lock)
 
 
 def _create_clean_parser(

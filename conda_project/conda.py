@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
+from typing import List, Optional
+from contextlib import redirect_stderr
+
+from conda_lock.conda_lock import run_lock
 
 from .exceptions import CondaProjectError
 
@@ -13,7 +18,7 @@ CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
 def call_conda(
-    args: list[str], condarc_path: Path = None, verbose: bool = False
+    args: list[str], condarc_path: Optional[Path] = None, verbose: bool = False
 ) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     if condarc_path is not None:
@@ -35,3 +40,33 @@ def call_conda(
         raise CondaProjectError(f"Failed to run:\n  {print_cmd}\n{proc.stderr.strip()}")
 
     return proc
+
+
+def conda_info():
+    proc = call_conda(['info', '--json'])
+    parsed = json.loads(proc.stdout)
+    return parsed
+
+
+def current_platform():
+    info = conda_info()
+    return info.get('platform')
+
+
+def conda_lock(environment_file: Path, lock_file: Path,
+               force: bool = False, channel_overrides: Optional[List[str]] = None,
+               platforms: Optional[List[str]] = None) -> None:
+
+    if force:
+        if lock_file.exists():
+            lock_file.unlink()
+
+    devnull = open(os.devnull, 'w')
+    with redirect_stderr(devnull):
+        run_lock(
+            environment_files=[environment_file],
+            lockfile_path=lock_file,
+            conda_exe=CONDA_EXE,
+            kinds=['lock'], platforms=platforms,
+            channel_overrides=channel_overrides
+        )

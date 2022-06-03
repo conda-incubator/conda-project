@@ -26,6 +26,12 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 
 @handle_errors
+def lock(args: Namespace) -> None:
+    project = CondaProject(args.directory)
+    project.lock(force=args.force)
+
+
+@handle_errors
 def prepare(args: Namespace) -> None:
     project = CondaProject(args.directory)
     project.prepare(force=args.force, verbose=True)
