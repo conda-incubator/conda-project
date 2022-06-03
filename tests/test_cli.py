@@ -62,11 +62,13 @@ def test_command_args(command, monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("command", COMMANDS)
-def test_cli_verbose(command, monkeypatch):
+def test_cli_verbose(command, monkeypatch, project_directory_factory):
+    project_path = project_directory_factory()
+
     def mocked_action(*args, **kwargs):
         assert kwargs.get("verbose", False)
 
     monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
 
-    ret = parse_and_run([command])
+    ret = parse_and_run([command, '--directory', str(project_path)])
     assert ret == 0
