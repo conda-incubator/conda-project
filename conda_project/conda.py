@@ -6,11 +6,9 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from logging import Logger
 from pathlib import Path
 from typing import List, Optional
-from contextlib import redirect_stderr
-
-from conda_lock.conda_lock import run_lock
 
 from .exceptions import CondaProjectError
 
@@ -18,10 +16,13 @@ CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
 def call_conda(
-    args: list[str], condarc_path: Optional[Path] = None, verbose: bool = False
+    args: List[str], condarc_path: Optional[Path] = None, verbose: bool = False,
+    logger: Optional[Logger] = None
 ) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     if condarc_path is not None:
+        if logger is not None:
+            logger.info(f'setting CONDARC env variable to {condarc_path}')
         env["CONDARC"] = str(condarc_path)
 
     cmd = [CONDA_EXE] + args
@@ -31,6 +32,8 @@ def call_conda(
     else:
         stdout = subprocess.PIPE
 
+    if logger is not None:
+        logger.info(f'running conda command: {" ".join(cmd)}')
     proc = subprocess.run(
         cmd, env=env, stdout=stdout, stderr=subprocess.PIPE, encoding="utf-8"
     )

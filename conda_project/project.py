@@ -3,18 +3,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
-from contextlib import redirect_stderr
+from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
 from sys import platform
 
+import yaml
 from conda_lock.conda_lock import (make_lock_files, parse_conda_lock_file,
                                    render_lockfile_for_platform)
 
 from .conda import CONDA_EXE, call_conda, current_platform
 from .exceptions import CondaProjectError
-from .utils import env_variable
+from .utils import Spinner, env_variable
 
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
 DEFAULT_PLATFORMS = set(['osx-64', 'win-64', 'linux-64', current_platform()])
@@ -27,6 +29,8 @@ class CondaProject:
         directory: The project base directory. Defaults to the current working directory.
         condarc: A path to the local `.condarc` file. Defaults to `<directory>/.condarc`.
         environment_file: A path to the environment file.
+        lock_file: A path to the conda-lock file.
+        logger: The logger for project
 
     Args:
         directory: The project base directory.
@@ -37,7 +41,17 @@ class CondaProject:
     """
 
     def __init__(self, directory: Path | str = "."):
+        self.logger = logging.getLogger('conda_project.CondaProject')
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+        self.logger.handlers.clear()
+        self.logger.addHandler(handler)
+        self.logger.setLevel(os.environ.get('CONDA_PROJECT_LOGLEVEL', 'WARNING'))
+        self.logger.propagate = False
+
         self.directory = Path(directory).resolve()
+        self.logger.info(f'created Project instance at {self.directory}')
+
         self.condarc = self.directory / ".condarc"
         self.environment_file = self._find_environment_file()
         self.lock_file = self.environment_file.parent / 'conda-lock.yml'
@@ -52,6 +66,7 @@ class CondaProject:
         for filename in ENVIRONMENT_YAML_FILENAMES:
             path = self.directory / filename
             if path.exists():
+                self.logger.info(f'found environment file {path}')
                 return path
         raise CondaProjectError(
             f"No Conda environment.yml or environment.yaml file was found in {self.directory}."
@@ -73,39 +88,46 @@ class CondaProject:
 
         """
         with open(self.environment_file) as f:
-            env = f.read()
+            env = yaml.safe_load(f)
 
         channel_overrides = None
         if 'channels' not in env:
-            if verbose:
-                print(f"There is no 'channels:' key in {self.environment_file} assuming 'defaults'.")
+            self.logger.warning(f"there is no 'channels:' key in {self.environment_file.name} assuming 'defaults'.")
             channel_overrides = ["defaults"]
 
         platform_overrides = None
         if 'platforms' not in env:
             platform_overrides = list(DEFAULT_PLATFORMS)
-            if verbose:
-                print(f'Writing lock file for {platform_overrides}')
+
+        platforms = env.get('platforms', []) or platform_overrides
+        self.logger.info(f'locking dependencies for {",".join(platforms)}')
+        self.logger.info(f'requested dependencies {env.get("dependencies", [])}')
 
         devnull = open(os.devnull, 'w')
         with redirect_stderr(devnull):
             with env_variable('CONDARC', str(self.directory / '.condarc')):
-                make_lock_files(
-                    conda=CONDA_EXE,
-                    src_files=[self.environment_file],
-                    lockfile_path=self.lock_file,
-                    check_input_hash=not force,
-                    kinds=['lock'],
-                    platform_overrides=platform_overrides,
-                    channel_overrides=channel_overrides
-                )
+                if verbose:
+                    context = Spinner(prefix='Locking dependencies')
+                else:
+                    context = nullcontext()
+
+                with context:
+                    make_lock_files(
+                        conda=CONDA_EXE,
+                        src_files=[self.environment_file],
+                        lockfile_path=self.lock_file,
+                        check_input_hash=not force,
+                        kinds=['lock'],
+                        platform_overrides=platform_overrides,
+                        channel_overrides=channel_overrides
+                    )
 
     def prepare(self, force: bool = False, verbose: bool = False) -> Path:
         """Prepare the default conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
         Environments are always created from the conda-lock.yml file. The conda-lock.yml
-        will be created by prepare if it does not already exist.
+        will be created if it does not already exist.
 
         Args:
             force: If True, will force creation of a new conda environment.
@@ -118,6 +140,7 @@ class CondaProject:
         default_env = self.default_env
         conda_meta = default_env / "conda-meta" / "history"
         if conda_meta.exists() and not force:
+            self.logger.info(f'environment already exists at {default_env}')
             return default_env
 
         if not self.lock_file.exists():
@@ -150,7 +173,10 @@ class CondaProject:
                 args,
                 condarc_path=self.condarc,
                 verbose=verbose,
+                logger=self.logger
             )
+
+        self.logger.info(f'environment created at {default_env}')
 
         return default_env
 
@@ -160,4 +186,5 @@ class CondaProject:
             ["env", "remove", "-p", str(self.default_env)],
             condarc_path=self.condarc,
             verbose=verbose,
+            logger=self.logger
         )
