@@ -144,7 +144,7 @@ class CondaProject:
             return default_env
 
         if not self.lock_file.exists():
-            self.lock()
+            self.lock(verbose=verbose)
 
         lock = parse_conda_lock_file(self.lock_file)
 
