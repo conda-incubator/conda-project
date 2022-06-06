@@ -88,7 +88,7 @@ dependencies:
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
-    project.lock(verbose=True)
+    project.lock()
 
     lockfile = project_path / 'conda-lock.yml'
     assert lockfile == project.lock_file
@@ -121,7 +121,7 @@ dependencies: []
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
-    project.lock(verbose=True)
+    project.lock()
 
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
@@ -136,7 +136,7 @@ dependencies: []
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
-    project.lock(verbose=True)
+    project.lock()
 
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
@@ -160,6 +160,22 @@ platforms: [linux-64, osx-64]
     assert lock['metadata']['platforms'] == ['linux-64', 'osx-64']
 
 
+def test_lock_wrong_platform(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+platforms: [dummy-platform]
+"""
+
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock()
+
+    with pytest.raises(CondaProjectError) as e:
+        project.prepare()
+    assert "not in the supported locked platforms" in str(e.value)
+
+
 def test_force_relock(project_directory_factory, capsys):
     env_yaml = """name: test
 dependencies: []
@@ -170,7 +186,7 @@ dependencies: []
     project.lock(verbose=True)
 
     lockfile_mtime = os.path.getmtime(project.lock_file)
-    project.lock(verbose=True)
+    project.lock()
     assert lockfile_mtime == os.path.getmtime(project.lock_file)
 
     project.lock(force=True)
