@@ -141,12 +141,18 @@ class CondaProject:
         conda_meta = default_env / "conda-meta" / "history"
         if conda_meta.exists() and not force:
             self.logger.info(f'environment already exists at {default_env}')
+            if verbose:
+                print('The environment already exists, use --force to recreate it.')
             return default_env
 
         if not self.lock_file.exists():
             self.lock(verbose=verbose)
 
         lock = parse_conda_lock_file(self.lock_file)
+        if current_platform() not in lock.metadata.platforms:
+            msg = (f'Your current platform, {current_platform()}, is not in the supported locked platforms.\n'
+                   f'You may need to edit your {self.environment_file.name} file and run conda project lock again.')
+            raise CondaProjectError(msg)
 
         rendered = render_lockfile_for_platform(
             lockfile=lock,

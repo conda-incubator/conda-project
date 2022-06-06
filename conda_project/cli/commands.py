@@ -19,7 +19,7 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
             func(args)
             return 0
         except CondaProjectError as e:
-            print(e, file=sys.stderr)
+            print(f'{e.__class__.__name__}: {e}', file=sys.stderr)
             return 1
 
     return wrapper
