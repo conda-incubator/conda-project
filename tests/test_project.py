@@ -4,9 +4,10 @@
 import os
 
 import pytest
+import yaml
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.project import CondaProject
+from conda_project.project import CondaProject, DEFAULT_PLATFORMS
 
 
 def test_conda_project_init_no_env_yml(tmpdir):
@@ -79,7 +80,7 @@ dependencies:
 
 
 @pytest.mark.slow
-def test_lock(project_directory_factory, capsys):
+def test_lock(project_directory_factory):
     env_yaml = """name: test
 dependencies:
   - python=3.8
@@ -89,20 +90,91 @@ dependencies:
     project = CondaProject(project_path)
     project.lock(verbose=True)
 
-    out, _ = capsys.readouterr()
-    assert "no 'channels:' key" in out
-    assert "Writing lock file" in out
-
     lockfile = project_path / 'conda-lock.yml'
     assert lockfile == project.lock_file
     assert lockfile.exists()
 
-    lockfile_mtime = os.path.getmtime(lockfile)
+
+def test_lock_no_channels(project_directory_factory, capsys):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
     project.lock(verbose=True)
-    assert lockfile_mtime == os.path.getmtime(lockfile)
+
+    _, err = capsys.readouterr()
+    assert "no 'channels:' key" in err
+
+    with open(project.lock_file) as f:
+        lock = yaml.safe_load(f)
+
+    assert [c['url'] for c in lock['metadata']['channels']] == ['defaults']
+
+
+def test_lock_with_channels(project_directory_factory):
+    env_yaml = """name: test
+channels: [defusco, conda-forge, defaults]
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock(verbose=True)
+
+    with open(project.lock_file) as f:
+        lock = yaml.safe_load(f)
+
+    assert [c['url'] for c in lock['metadata']['channels']] == ['defusco', 'conda-forge', 'defaults']
+
+
+def test_lock_no_platforms(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock(verbose=True)
+
+    with open(project.lock_file) as f:
+        lock = yaml.safe_load(f)
+
+    assert lock['metadata']['platforms'] == list(DEFAULT_PLATFORMS)
+
+
+def test_lock_with_platforms(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+platforms: [linux-64, osx-64]
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock(verbose=True)
+
+    with open(project.lock_file) as f:
+        lock = yaml.safe_load(f)
+
+    assert lock['metadata']['platforms'] == ['linux-64', 'osx-64']
+
+
+def test_force_relock(project_directory_factory, capsys):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.lock(verbose=True)
+
+    lockfile_mtime = os.path.getmtime(project.lock_file)
+    project.lock(verbose=True)
+    assert lockfile_mtime == os.path.getmtime(project.lock_file)
 
     project.lock(force=True)
-    assert lockfile_mtime < os.path.getmtime(lockfile)
+    assert lockfile_mtime < os.path.getmtime(project.lock_file)
 
 
 @pytest.mark.slow
