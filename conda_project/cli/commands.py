@@ -26,6 +26,24 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 
 @handle_errors
+def create(args: Namespace) -> None:
+    project = CondaProject.create(
+        args.directory,
+        args.name,
+        args.dependencies,
+        args.channel,
+        args.platforms.split(','),
+        [] if args.conda_configs is None else args.conda_configs.split(',')
+    )
+
+    if not args.no_lock:
+        project.lock(verbose=True)
+
+    if args.prepare:
+        project.prepare(verbose=True)
+
+
+@handle_errors
 def lock(args: Namespace) -> None:
     project = CondaProject(args.directory)
     project.lock(force=args.force, verbose=True)
