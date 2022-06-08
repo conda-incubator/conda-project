@@ -85,7 +85,9 @@ class CondaProject:
                dependencies: Optional[List[str]] = None,
                channels: Optional[List[str]] = None,
                platforms: Optional[List[str]] = None,
-               conda_configs: Optional[List[str]] = None) -> CondaProject:
+               conda_configs: Optional[List[str]] = None,
+               lock_dependencies: bool = True,
+               verbose: bool = False) -> CondaProject:
         """Create a new project
 
         Creates the environment.yml file from the specified dependencies,
@@ -93,19 +95,21 @@ class CondaProject:
         created in the directory.
 
         Args:
-            directory:     The path to use as the project directory. The directory
-                           will be created if it doesn't exist.
-            name:          Name of the project. The default is the basename of the project
-                           directory.
-            dependencies:  List of package dependencies to include in the environment.yml in
-                           MatchSpec format.
-            channels:      List of channels to search for dependencies. The default value is
-                           ['defaults']
-            platforms:     List of platforms over which to lock the dependencies. The default is
-                           osx-64, linux-64, win-64 and your current platform if it is not already
-                           included.
-            conda_configs: List of Conda configuration parameters to include in the .condarc file
-                           written to the project directory.
+            directory:         The path to use as the project directory. The directory
+                               will be created if it doesn't exist.
+            name:              Name of the project. The default is the basename of the project
+                               directory.
+            dependencies:      List of package dependencies to include in the environment.yml in
+                               MatchSpec format.
+            channels:          List of channels to search for dependencies. The default value is
+                               ['defaults']
+            platforms:         List of platforms over which to lock the dependencies. The default is
+                               osx-64, linux-64, win-64 and your current platform if it is not already
+                               included.
+            conda_configs:     List of Conda configuration parameters to include in the .condarc file
+                               written to the project directory.
+            lock_dependencies: Create the conda-lock.yml file for the requested dependencies.
+                               Default is True.
 
         Returns:
             CondaProject instance for the project directory.
@@ -140,6 +144,13 @@ class CondaProject:
                                      default_flow_style=False, block_seq_indent=2, indent=2)
 
         project = CondaProject(directory)
+
+        if lock_dependencies:
+            project.lock(verbose=verbose)
+
+        if verbose:
+            print(f'Project created at {directory}')
+
         return project
 
     def lock(self, force: bool = False, verbose: bool = False) -> None:

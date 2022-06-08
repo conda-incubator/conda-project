@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from functools import partial
 
+import os
 import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-COMMANDS = ["prepare", "clean", "lock"]
+
+COMMANDS = ["create", "clean", "prepare", "lock"]
 
 
 def test_known_commands():
@@ -72,3 +74,15 @@ def test_cli_verbose(command, monkeypatch, project_directory_factory):
 
     ret = parse_and_run([command, '--directory', str(project_path)])
     assert ret == 0
+
+
+def test_create_with_prepare(tmpdir):
+    ret = parse_and_run([
+        'create',
+        '--directory', str(tmpdir),
+        '--prepare'
+    ])
+
+    assert ret == 0
+
+    assert os.path.exists(os.path.join(tmpdir, 'envs', 'default', 'conda-meta', 'history'))

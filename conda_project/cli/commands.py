@@ -33,11 +33,10 @@ def create(args: Namespace) -> None:
         args.dependencies,
         args.channel,
         args.platforms.split(','),
-        [] if args.conda_configs is None else args.conda_configs.split(',')
+        [] if args.conda_configs is None else args.conda_configs.split(','),
+        not args.no_lock,
+        verbose=True
     )
-
-    if not args.no_lock:
-        project.lock(verbose=True)
 
     if args.prepare:
         project.prepare(verbose=True)

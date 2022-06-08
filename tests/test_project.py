@@ -10,6 +10,98 @@ from conda_project.exceptions import CondaProjectError
 from conda_project.project import CondaProject, DEFAULT_PLATFORMS
 
 
+def test_project_create_new_directory(tmpdir, capsys):
+    project_directory = os.path.join(tmpdir, 'new-project')
+    assert not os.path.exists(project_directory)
+
+    p = CondaProject.create(project_directory, lock_dependencies=False, verbose=True)
+
+    assert os.path.exists(project_directory)
+    assert p.environment_file.exists()
+
+    out, _ = capsys.readouterr()
+    assert f'Project created at {project_directory}\n' == out
+
+
+def test_project_create_default_platforms(tmpdir):
+    p = CondaProject.create(tmpdir, lock_dependencies=False)
+
+    with open(p.environment_file) as f:
+        env = yaml.safe_load(f)
+
+    assert env['platforms'] == list(DEFAULT_PLATFORMS)
+
+
+def test_project_create_specific_platforms(tmpdir):
+    p = CondaProject.create(tmpdir,
+                            platforms=['linux-64'],
+                            lock_dependencies=False)
+
+    with open(p.environment_file) as f:
+        env = yaml.safe_load(f)
+
+    assert env['platforms'] == ['linux-64']
+
+
+def test_project_create_specific_channels(tmpdir):
+    p = CondaProject.create(
+        tmpdir,
+        dependencies=['python=3.8', 'numpy'],
+        channels=['conda-forge', 'defaults'],
+        lock_dependencies=False
+    )
+
+    with open(p.environment_file) as f:
+        env = yaml.safe_load(f)
+
+    assert env['dependencies'] == ['python=3.8', 'numpy']
+    assert env['channels'] == ['conda-forge', 'defaults']
+
+
+def test_project_create_default_channel(tmpdir):
+    p = CondaProject.create(
+        tmpdir,
+        dependencies=['python=3.8', 'numpy'],
+        lock_dependencies=False
+    )
+
+    with open(p.environment_file) as f:
+        env = yaml.safe_load(f)
+
+    assert env['dependencies'] == ['python=3.8', 'numpy']
+    assert env['channels'] == ['defaults']
+
+
+def test_project_create_conda_configs(tmpdir):
+    p = CondaProject.create(
+        tmpdir,
+        dependencies=['python=3.8', 'numpy'],
+        conda_configs=['experimental_solver=libmamba'],
+        lock_dependencies=False
+    )
+
+    with open(p.condarc) as f:
+        condarc = yaml.safe_load(f)
+
+    assert condarc['experimental_solver'] == 'libmamba'
+
+
+@pytest.mark.slow
+def test_project_create_and_lock(tmpdir):
+    p = CondaProject.create(
+        tmpdir,
+        dependencies=['python=3.8'],
+        lock_dependencies=True
+    )
+
+    with open(p.environment_file) as f:
+        env = yaml.safe_load(f)
+
+    assert env['dependencies'] == ['python=3.8']
+
+    assert p.lock_file.exists()
+
+
 def test_conda_project_init_no_env_yml(tmpdir):
     with pytest.raises(CondaProjectError) as excinfo:
         CondaProject(tmpdir)
@@ -48,6 +140,24 @@ dependencies: []
 
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
+
+
+def test_prepare_env_exists(project_directory_factory, capsys):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    env = project.prepare(verbose=True)
+
+    out, _ = capsys.readouterr()
+    assert f'environment created at {env}' == out.splitlines()[-1]
+
+    _ = project.prepare(verbose=True)
+
+    out, _ = capsys.readouterr()
+    assert 'The environment already exists' in out.splitlines()[-1]
 
 
 @pytest.mark.slow
