@@ -16,13 +16,15 @@ CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
 
 def call_conda(
-    args: List[str], condarc_path: Optional[Path] = None, verbose: bool = False,
-    logger: Optional[Logger] = None
+    args: List[str],
+    condarc_path: Optional[Path] = None,
+    verbose: bool = False,
+    logger: Optional[Logger] = None,
 ) -> subprocess.CompletedProcess:
     env = os.environ.copy()
     if condarc_path is not None:
         if logger is not None:
-            logger.info(f'setting CONDARC env variable to {condarc_path}')
+            logger.info(f"setting CONDARC env variable to {condarc_path}")
         env["CONDARC"] = str(condarc_path)
 
     cmd = [CONDA_EXE] + args
@@ -46,11 +48,11 @@ def call_conda(
 
 
 def conda_info():
-    proc = call_conda(['info', '--json'])
+    proc = call_conda(["info", "--json"])
     parsed = json.loads(proc.stdout)
     return parsed
 
 
 def current_platform():
     info = conda_info()
-    return info.get('platform')
+    return info.get("platform")

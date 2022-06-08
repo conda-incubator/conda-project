@@ -38,11 +38,11 @@ def test_conda_output():
 
 def test_conda_info():
     info = conda_info()
-    assert 'platform' in info
-    assert 'conda_version' in info
+    assert "platform" in info
+    assert "conda_version" in info
 
 
 def test_current_platform(monkeypatch):
-    monkeypatch.setenv('CONDA_SUBDIR', 'monkey-64')
+    monkeypatch.setenv("CONDA_SUBDIR", "monkey-64")
     platform = current_platform()
-    assert platform == 'monkey-64'
+    assert platform == "monkey-64"
