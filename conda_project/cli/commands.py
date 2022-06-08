@@ -19,7 +19,7 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
             func(args)
             return 0
         except CondaProjectError as e:
-            print(f'{e.__class__.__name__}: {e}', file=sys.stderr)
+            print(f"{e.__class__.__name__}: {e}", file=sys.stderr)
             return 1
 
     return wrapper
@@ -32,10 +32,10 @@ def create(args: Namespace) -> None:
         args.name,
         args.dependencies,
         args.channel,
-        args.platforms.split(','),
-        [] if args.conda_configs is None else args.conda_configs.split(','),
+        args.platforms.split(","),
+        [] if args.conda_configs is None else args.conda_configs.split(","),
         not args.no_lock,
-        verbose=True
+        verbose=True,
     )
 
     if args.prepare:

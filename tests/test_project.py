@@ -7,11 +7,11 @@ import pytest
 import yaml
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.project import CondaProject, DEFAULT_PLATFORMS
+from conda_project.project import DEFAULT_PLATFORMS, CondaProject
 
 
 def test_project_create_new_directory(tmpdir, capsys):
-    project_directory = os.path.join(tmpdir, 'new-project')
+    project_directory = os.path.join(tmpdir, "new-project")
     assert not os.path.exists(project_directory)
 
     p = CondaProject.create(project_directory, lock_dependencies=False, verbose=True)
@@ -20,7 +20,7 @@ def test_project_create_new_directory(tmpdir, capsys):
     assert p.environment_file.exists()
 
     out, _ = capsys.readouterr()
-    assert f'Project created at {project_directory}\n' == out
+    assert f"Project created at {project_directory}\n" == out
 
 
 def test_project_create_default_platforms(tmpdir):
@@ -29,75 +29,67 @@ def test_project_create_default_platforms(tmpdir):
     with open(p.environment_file) as f:
         env = yaml.safe_load(f)
 
-    assert env['platforms'] == list(DEFAULT_PLATFORMS)
+    assert env["platforms"] == list(DEFAULT_PLATFORMS)
 
 
 def test_project_create_specific_platforms(tmpdir):
-    p = CondaProject.create(tmpdir,
-                            platforms=['linux-64'],
-                            lock_dependencies=False)
+    p = CondaProject.create(tmpdir, platforms=["linux-64"], lock_dependencies=False)
 
     with open(p.environment_file) as f:
         env = yaml.safe_load(f)
 
-    assert env['platforms'] == ['linux-64']
+    assert env["platforms"] == ["linux-64"]
 
 
 def test_project_create_specific_channels(tmpdir):
     p = CondaProject.create(
         tmpdir,
-        dependencies=['python=3.8', 'numpy'],
-        channels=['conda-forge', 'defaults'],
-        lock_dependencies=False
+        dependencies=["python=3.8", "numpy"],
+        channels=["conda-forge", "defaults"],
+        lock_dependencies=False,
     )
 
     with open(p.environment_file) as f:
         env = yaml.safe_load(f)
 
-    assert env['dependencies'] == ['python=3.8', 'numpy']
-    assert env['channels'] == ['conda-forge', 'defaults']
+    assert env["dependencies"] == ["python=3.8", "numpy"]
+    assert env["channels"] == ["conda-forge", "defaults"]
 
 
 def test_project_create_default_channel(tmpdir):
     p = CondaProject.create(
-        tmpdir,
-        dependencies=['python=3.8', 'numpy'],
-        lock_dependencies=False
+        tmpdir, dependencies=["python=3.8", "numpy"], lock_dependencies=False
     )
 
     with open(p.environment_file) as f:
         env = yaml.safe_load(f)
 
-    assert env['dependencies'] == ['python=3.8', 'numpy']
-    assert env['channels'] == ['defaults']
+    assert env["dependencies"] == ["python=3.8", "numpy"]
+    assert env["channels"] == ["defaults"]
 
 
 def test_project_create_conda_configs(tmpdir):
     p = CondaProject.create(
         tmpdir,
-        dependencies=['python=3.8', 'numpy'],
-        conda_configs=['experimental_solver=libmamba'],
-        lock_dependencies=False
+        dependencies=["python=3.8", "numpy"],
+        conda_configs=["experimental_solver=libmamba"],
+        lock_dependencies=False,
     )
 
     with open(p.condarc) as f:
         condarc = yaml.safe_load(f)
 
-    assert condarc['experimental_solver'] == 'libmamba'
+    assert condarc["experimental_solver"] == "libmamba"
 
 
 @pytest.mark.slow
 def test_project_create_and_lock(tmpdir):
-    p = CondaProject.create(
-        tmpdir,
-        dependencies=['python=3.8'],
-        lock_dependencies=True
-    )
+    p = CondaProject.create(tmpdir, dependencies=["python=3.8"], lock_dependencies=True)
 
     with open(p.environment_file) as f:
         env = yaml.safe_load(f)
 
-    assert env['dependencies'] == ['python=3.8']
+    assert env["dependencies"] == ["python=3.8"]
 
     assert p.lock_file.exists()
 
@@ -152,12 +144,12 @@ dependencies: []
     env = project.prepare(verbose=True)
 
     out, _ = capsys.readouterr()
-    assert f'environment created at {env}' == out.splitlines()[-1]
+    assert f"environment created at {env}" == out.splitlines()[-1]
 
     _ = project.prepare(verbose=True)
 
     out, _ = capsys.readouterr()
-    assert 'The environment already exists' in out.splitlines()[-1]
+    assert "The environment already exists" in out.splitlines()[-1]
 
 
 @pytest.mark.slow
@@ -200,7 +192,7 @@ dependencies:
     project = CondaProject(project_path)
     project.lock()
 
-    lockfile = project_path / 'conda-lock.yml'
+    lockfile = project_path / "conda-lock.yml"
     assert lockfile == project.lock_file
     assert lockfile.exists()
 
@@ -220,7 +212,7 @@ dependencies: []
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
 
-    assert [c['url'] for c in lock['metadata']['channels']] == ['defaults']
+    assert [c["url"] for c in lock["metadata"]["channels"]] == ["defaults"]
 
 
 def test_lock_with_channels(project_directory_factory):
@@ -236,7 +228,11 @@ dependencies: []
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
 
-    assert [c['url'] for c in lock['metadata']['channels']] == ['defusco', 'conda-forge', 'defaults']
+    assert [c["url"] for c in lock["metadata"]["channels"]] == [
+        "defusco",
+        "conda-forge",
+        "defaults",
+    ]
 
 
 def test_lock_no_platforms(project_directory_factory):
@@ -251,7 +247,7 @@ dependencies: []
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
 
-    assert lock['metadata']['platforms'] == list(DEFAULT_PLATFORMS)
+    assert lock["metadata"]["platforms"] == list(DEFAULT_PLATFORMS)
 
 
 def test_lock_with_platforms(project_directory_factory):
@@ -267,7 +263,7 @@ platforms: [linux-64, osx-64]
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
 
-    assert lock['metadata']['platforms'] == ['linux-64', 'osx-64']
+    assert lock["metadata"]["platforms"] == ["linux-64", "osx-64"]
 
 
 def test_lock_wrong_platform(project_directory_factory):
@@ -318,19 +314,19 @@ dependencies:
     lockfile_mtime = os.path.getmtime(project.lock_file)
     with open(project.lock_file) as f:
         lock = f.read()
-    assert 'requests' not in lock
+    assert "requests" not in lock
 
     env_yaml = """name: test
 dependencies:
   - python=3.8
   - requests
 """
-    with open(project.environment_file, 'w') as f:
+    with open(project.environment_file, "w") as f:
         f.write(env_yaml)
 
     project.lock()
     with open(project.lock_file) as f:
         lock = f.read()
-    assert 'requests' in lock
+    assert "requests" in lock
 
     assert lockfile_mtime < os.path.getmtime(project.lock_file)

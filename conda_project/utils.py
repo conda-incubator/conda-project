@@ -1,3 +1,6 @@
+# Copyright (C) 2022 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
 import itertools
 import os
 import sys
@@ -33,7 +36,8 @@ class Spinner:
         prefix: Text to display at the start of the line
 
     """
-    elements = itertools.cycle(['-', '/', '|', '\\'])
+
+    elements = itertools.cycle(["-", "/", "|", "\\"])
 
     def __init__(self, prefix: str):
         self.prefix = prefix
@@ -44,7 +48,7 @@ class Spinner:
         while not self._event.is_set():
             sys.stdout.write("\r")
             sys.stdout.write("\033[K")
-            sys.stdout.write(f'{self.prefix}: {next(self.elements)}')
+            sys.stdout.write(f"{self.prefix}: {next(self.elements)}")
             sys.stdout.flush()
             time.sleep(0.25)
 
@@ -54,15 +58,17 @@ class Spinner:
     def stop(self) -> None:
         self._event.set()
         self._thread.join()
-        sys.stdout.write('\b')
-        sys.stdout.write('done\n')
+        sys.stdout.write("\b")
+        sys.stdout.write("done\n")
         sys.stdout.flush()
 
     def __enter__(self) -> None:
         self.start()
 
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[Traceback]) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_tb: Optional[Traceback],
+    ) -> None:
         self.stop()

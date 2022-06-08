@@ -8,9 +8,7 @@ import versioneer
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-requirements = [
-    'conda-lock>=1'
-]
+requirements = ["conda-lock>=1"]
 
 setup(
     name="conda-project",

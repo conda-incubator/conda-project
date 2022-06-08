@@ -8,8 +8,8 @@ from argparse import ArgumentParser
 
 from conda_project import __version__
 
-from . import commands
 from ..project import DEFAULT_PLATFORMS
+from . import commands
 
 if typing.TYPE_CHECKING:
     # This is here to prevent potential future breaking API changes
@@ -65,41 +65,43 @@ def _create_create_parser(
         "create", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
-        "-n", "--name",
-        help="Name for the project.",
-        action="store",
-        default=None
+        "-n", "--name", help="Name for the project.", action="store", default=None
     )
     p.add_argument(
-        "-c", "--channel",
-        help=("Additional channel to search for packages. The default channel is 'defaults'. "
-              "Multiple channels are added with repeated use of this argument."),
+        "-c",
+        "--channel",
+        help=(
+            "Additional channel to search for packages. The default channel is 'defaults'. "
+            "Multiple channels are added with repeated use of this argument."
+        ),
         action="append",
     )
     p.add_argument(
         "--platforms",
-        help=(f"Comma separated list of platforms for which to lock dependencies. "
-              f"The default is {','.join(DEFAULT_PLATFORMS)}"),
-        action='store',
-        default=','.join(DEFAULT_PLATFORMS)
+        help=(
+            f"Comma separated list of platforms for which to lock dependencies. "
+            f"The default is {','.join(DEFAULT_PLATFORMS)}"
+        ),
+        action="store",
+        default=",".join(DEFAULT_PLATFORMS),
     )
     p.add_argument(
         "--conda-configs",
-        help=("Comma separated list of Conda configuration parameters to write into the "
-              ".condarc file in the project directory. The format for each config is key=value. "
-              "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"),
+        help=(
+            "Comma separated list of Conda configuration parameters to write into the "
+            ".condarc file in the project directory. The format for each config is key=value. "
+            "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"
+        ),
         action="store",
-        default=None
+        default=None,
     )
     p.add_argument(
-        "--no-lock",
-        help="Do no create the conda-lock.yml file",
-        action='store_true'
+        "--no-lock", help="Do no create the conda-lock.yml file", action="store_true"
     )
     p.add_argument(
         "--prepare",
         help="Create the local Conda environment for the current platform.",
-        action="store_true"
+        action="store_true",
     )
     p.add_argument(
         "dependencies",
