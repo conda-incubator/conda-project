@@ -2,5 +2,6 @@ name: test-conda-project
 channels:
   - defaults
 dependencies:
+  - conda-lock>=1
   - pytest
   - pytest-cov

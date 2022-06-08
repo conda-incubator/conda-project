@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 requirements = [
-    # package requirements go here
+    'conda-lock>=1'
 ]
 
 setup(
