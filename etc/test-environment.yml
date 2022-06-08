@@ -1,6 +1,7 @@
 name: test-conda-project
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - conda-lock>=1
   - pytest
