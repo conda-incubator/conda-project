@@ -231,8 +231,11 @@ class CondaProject:
             force: If True, will force creation of a new conda environment.
             verbose: A verbose flag passed into the `conda create` command.
 
+        Raises:
+            CondaProjectError: If no suitable environment file can be found.
+
         Returns:
-            A path to the created environment.
+            The path to the created environment.
 
         """
         default_env = self.default_env
