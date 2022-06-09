@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 
 from conda_project import __version__
 
+from ..project import DEFAULT_PLATFORMS
 from . import commands
 
 if typing.TYPE_CHECKING:
@@ -40,10 +41,100 @@ def cli() -> ArgumentParser:
 
     subparsers = p.add_subparsers(metavar="command", required=True)
 
+    _create_create_parser(subparsers, common)
+    _create_lock_parser(subparsers, common)
     _create_prepare_parser(subparsers, common)
     _create_clean_parser(subparsers, common)
 
     return p
+
+
+def _create_create_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "create" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
+    desc = "Create a new project"
+
+    p = subparsers.add_parser(
+        "create", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "-n", "--name", help="Name for the project.", action="store", default=None
+    )
+    p.add_argument(
+        "-c",
+        "--channel",
+        help=(
+            "Additional channel to search for packages. The default channel is 'defaults'. "
+            "Multiple channels are added with repeated use of this argument."
+        ),
+        action="append",
+    )
+    p.add_argument(
+        "--platforms",
+        help=(
+            f"Comma separated list of platforms for which to lock dependencies. "
+            f"The default is {','.join(DEFAULT_PLATFORMS)}"
+        ),
+        action="store",
+        default=",".join(DEFAULT_PLATFORMS),
+    )
+    p.add_argument(
+        "--conda-configs",
+        help=(
+            "Comma separated list of Conda configuration parameters to write into the "
+            ".condarc file in the project directory. The format for each config is key=value. "
+            "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"
+        ),
+        action="store",
+        default=None,
+    )
+    p.add_argument(
+        "--no-lock", help="Do no create the conda-lock.yml file", action="store_true"
+    )
+    p.add_argument(
+        "--prepare",
+        help="Create the local Conda environment for the current platform.",
+        action="store_true",
+    )
+    p.add_argument(
+        "dependencies",
+        help="Packages to add to the environment.yml in MatchSpec format.",
+        action="store",
+        nargs="*",
+    )
+
+    p.set_defaults(func=commands.create)
+
+
+def _create_lock_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "lock" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
+    desc = "Lock the Conda environments"
+
+    p = subparsers.add_parser(
+        "lock", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "--force",
+        help="Remove and recreate an existing lock file.",
+        action="store_true",
+    )
+
+    p.set_defaults(func=commands.lock)
 
 
 def _create_prepare_parser(

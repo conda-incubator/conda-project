@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+import os
 from functools import partial
 
 import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-COMMANDS = ["prepare", "clean"]
+COMMANDS = ["create", "clean", "prepare", "lock"]
 
 
 def test_known_commands():
@@ -62,11 +63,23 @@ def test_command_args(command, monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("command", COMMANDS)
-def test_cli_verbose(command, monkeypatch):
+def test_cli_verbose(command, monkeypatch, project_directory_factory):
+    project_path = project_directory_factory()
+
     def mocked_action(*args, **kwargs):
         assert kwargs.get("verbose", False)
 
     monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
 
-    ret = parse_and_run([command])
+    ret = parse_and_run([command, "--directory", str(project_path)])
     assert ret == 0
+
+
+def test_create_with_prepare(tmpdir):
+    ret = parse_and_run(["create", "--directory", str(tmpdir), "--prepare"])
+
+    assert ret == 0
+
+    assert os.path.exists(
+        os.path.join(tmpdir, "envs", "default", "conda-meta", "history")
+    )
