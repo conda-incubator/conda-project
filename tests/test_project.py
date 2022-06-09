@@ -204,10 +204,9 @@ dependencies: []
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
-    project.lock(verbose=True)
 
-    _, err = capsys.readouterr()
-    assert "no 'channels:' key" in err
+    with pytest.warns(UserWarning, match=r"there is no 'channels:' key.*"):
+        project.lock(verbose=True)
 
     with open(project.lock_file) as f:
         lock = yaml.safe_load(f)
