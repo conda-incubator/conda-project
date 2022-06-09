@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import warnings
 from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
 from sys import platform
@@ -179,9 +180,8 @@ class CondaProject:
 
         channel_overrides = None
         if "channels" not in env:
-            self.logger.warning(
-                f"there is no 'channels:' key in {self.environment_file.name} assuming 'defaults'."
-            )
+            msg = f"there is no 'channels:' key in {self.environment_file.name} assuming 'defaults'."
+            warnings.warn(msg)
             channel_overrides = ["defaults"]
 
         platform_overrides = None
