@@ -168,7 +168,7 @@ dependencies:
     assert conda_history.exists()
 
     with conda_history.open() as f:
-        assert "conda create -y --file" in f.read()
+        assert "create -y --file" in f.read()
     conda_history_mtime = os.path.getmtime(conda_history)
 
     project.prepare()
