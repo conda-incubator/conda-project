@@ -9,6 +9,7 @@ import json
 
 
 PROJECT_YAML_FILENAMES = ("conda-project.yml", "conda-project.yaml")
+ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
 
 yaml = YAML(typ="rt")
 yaml.default_flow_style = False
@@ -37,13 +38,6 @@ class BaseYaml(BaseModel):
 class CondaProjectYaml(BaseYaml):
     name: str
     environments: OrderedDict[str, List[Path]]
-
-    class Config:
-        json_encoders = {
-            OrderedDict[str, List[Path]]: lambda envs: {
-                name: [s.name for s in sources] for name, sources in envs.items()
-            }
-        }
 
 
 class EnvironmentYaml(BaseYaml):

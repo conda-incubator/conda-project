@@ -12,7 +12,7 @@ import pytest
 def project_directory_factory(tmp_path, request):
     """A fixture returning a factory function used to create a temporary project directory."""
 
-    def _create_project_directory(
+    def create_project_directory(
         env_yaml: str = "", files: dict[str, str] | None = None
     ) -> Path:
         """Create a temporary project directory, optionally containing some files.
@@ -39,4 +39,6 @@ def project_directory_factory(tmp_path, request):
 
         return tmp_path
 
-    return _create_project_directory
+    create_project_directory.fn = request.param
+
+    return create_project_directory

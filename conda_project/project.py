@@ -7,12 +7,13 @@ import logging
 import os
 import tempfile
 import warnings
+from collections import OrderedDict
 from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
+from pydantic import BaseModel
 from sys import platform
-from typing import List, Optional
+from typing import List, Optional, Union
 
-import ruamel.yaml as yaml
 from conda_lock.conda_lock import (
     make_lock_files,
     parse_conda_lock_file,
@@ -21,10 +22,36 @@ from conda_lock.conda_lock import (
 
 from .conda import CONDA_EXE, call_conda, current_platform
 from .exceptions import CondaProjectError
+from .project_file import (
+    PROJECT_YAML_FILENAMES,
+    ENVIRONMENT_YAML_FILENAMES,
+    CondaProjectYaml,
+    EnvironmentYaml,
+    yaml,
+)
 from .utils import Spinner, env_variable
 
-ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
 DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
+
+
+def _find_file(directory: Path, options: tuple) -> Optional[Path]:
+    """Search for a file in directory or its parents from a tuple of filenames.
+
+    Returns:
+        The path to the file if found else None
+
+    """
+    for filename in options:
+        path = directory / filename
+        if path.exists():
+            return path.resolve()
+    return None
+
+
+class Environment(BaseModel):
+    sources: List[Path]
+    prefix: Path
+    lockfile: Path
 
 
 class CondaProject:
@@ -45,7 +72,7 @@ class CondaProject:
 
     """
 
-    def __init__(self, directory: Path | str = "."):
+    def __init__(self, directory: Union[Path, str] = "."):
         self.logger = logging.getLogger("conda_project.CondaProject")
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
@@ -57,35 +84,35 @@ class CondaProject:
         self.directory = Path(directory).resolve()
         self.logger.info(f"created Project instance at {self.directory}")
 
+        self.project_yaml_path = _find_file(self.directory, PROJECT_YAML_FILENAMES)
+        if self.project_yaml_path is not None:
+            self._project_file = CondaProjectYaml.parse_yaml(self.project_yaml_path)
+        else:
+            options = " or ".join(PROJECT_YAML_FILENAMES)
+            self.logger.info(
+                f"No {options} file was found.\nChecking for environment YAML files."
+            )
+
+            environment_yaml_path = _find_file(
+                self.directory, ENVIRONMENT_YAML_FILENAMES
+            )
+            if environment_yaml_path is None:
+                options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
+                raise CondaProjectError(f"No Conda {options} file was found.")
+
+            self._project_file = CondaProjectYaml(
+                name=self.directory.name,
+                environments=OrderedDict(
+                    [("default", [environment_yaml_path.relative_to(self.directory)])]
+                ),
+            )
+
         self.condarc = self.directory / ".condarc"
-        self.environment_file = self._find_environment_file()
-        self.lock_file = self.environment_file.parent / "conda-lock.yml"
-
-    def _find_environment_file(self) -> Path:
-        """Find an environment file in the project directory.
-
-        Raises:
-            CondaProjectError: If no suitable environment file can be found.
-
-        """
-        for filename in ENVIRONMENT_YAML_FILENAMES:
-            path = self.directory / filename
-            if path.exists():
-                self.logger.info(f"found environment file {path}")
-                return path
-        raise CondaProjectError(
-            f"No Conda environment.yml or environment.yaml file was found in {self.directory}."
-        )
-
-    @property
-    def default_env(self) -> Path:
-        """A path to the default conda environment."""
-        return self.directory / "envs" / "default"
 
     @classmethod
     def create(
         cls,
-        directory: Path | str = ".",
+        directory: Union[Path, str] = ".",
         name: Optional[str] = None,
         dependencies: Optional[List[str]] = None,
         channels: Optional[List[str]] = None,
@@ -116,6 +143,9 @@ class CondaProject:
                                written to the project directory.
             lock_dependencies: Create the conda-lock.yml file for the requested dependencies.
                                Default is True.
+            force:             Force creation of project and environment files if they already
+                               exist. The default value is False.
+            verbose:           Print information to stdout. The default value is False.
 
         Returns:
             CondaProject instance for the project directory.
@@ -126,36 +156,41 @@ class CondaProject:
         if not directory.exists():
             directory.mkdir(parents=True)
 
+        existing_project_file = _find_file(directory, PROJECT_YAML_FILENAMES)
+        if existing_project_file is not None:
+            if verbose:
+                print(f"Existing project file found at {existing_project_file}.")
+            return cls(directory)
+
         if name is None:
             name = directory.name
 
-        environment_yaml = {}
-        environment_yaml["name"] = name
-        environment_yaml["channels"] = channels or ["defaults"]
-        environment_yaml["dependencies"] = dependencies or []
-        environment_yaml["platforms"] = platforms or list(DEFAULT_PLATFORMS)
+        environment_yaml = EnvironmentYaml(
+            channels=channels or ["defaults"],
+            dependencies=dependencies or [],
+            platforms=platforms or list(DEFAULT_PLATFORMS),
+        )
 
-        with open(directory / "environment.yml", "wt") as f:
-            yaml.round_trip_dump(
-                environment_yaml,
-                f,
-                default_flow_style=False,
-                block_seq_indent=2,
-                indent=2,
-            )
+        environment_yaml_path = directory / "environment.yml"
+        environment_yaml.yaml(directory / "environment.yml")
+
+        project_yaml = CondaProjectYaml(
+            name=name,
+            environments=OrderedDict(
+                [("default", [environment_yaml_path.relative_to(directory)])]
+            ),
+        )
+
+        project_yaml.yaml(directory / "conda-project.yml")
 
         if conda_configs is not None:
             condarc = {}
             for config in conda_configs:
                 k, v = config.split("=")
                 condarc[k] = v
+            yaml.dump(condarc, directory / ".condarc")
 
-            with open(directory / ".condarc", "wt") as f:
-                yaml.round_trip_dump(
-                    condarc, f, default_flow_style=False, block_seq_indent=2, indent=2
-                )
-
-        project = CondaProject(directory)
+        project = cls(directory)
 
         if lock_dependencies:
             project.lock(verbose=verbose)
@@ -165,32 +200,75 @@ class CondaProject:
 
         return project
 
-    def lock(self, force: bool = False, verbose: bool = False) -> None:
+    @property
+    def environments(self) -> OrderedDict:
+        envs = OrderedDict()
+        for env_name, sources in self._project_file.environments.items():
+            envs[env_name] = Environment(
+                sources=[self.directory / str(s) for s in sources],
+                prefix=self.directory / "envs" / env_name,
+                lockfile=self.directory / f"{env_name}.conda-lock.yml",
+            )
+        return envs
+
+    @property
+    def default_environment(self) -> Environment:
+        return next(iter(self.environments.values()))
+
+    def lock(
+        self,
+        environment: Optional[Union[Environment, str]] = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> None:
         """Generate locked package lists for the supplied or default platforms
 
         Utilizes conda-lock to build the conda-lock.yml file.
 
         Args:
-            force: Rebuild the conda-lock.yml file even if no changes were made
-            verbose: A verbose flag passed into the `conda lock` command.
+            environment: Optional. The string name or Environment model to lock
+                         The default is to lock the default_environment.
+            force:       Rebuild the .conda-lock.yml file even if no changes were made
+                         to the dependencies.
+            verbose:     A verbose flag passed into the `conda lock` command.
 
         """
-        with open(self.environment_file) as f:
-            env = yaml.safe_load(f)
+        if environment is None:
+            environment = self.default_environment
+        elif isinstance(environment, str):
+            environment = self.environments[environment]
+        elif isinstance(environment, Environment):
+            pass
+        else:
+            raise TypeError(
+                f"Environment {environment} is not of type str or Environment."
+            )
+
+        specified_channels = []
+        specified_platforms = set()
+        for fn in environment.sources:
+            env = EnvironmentYaml.parse_yaml(fn)
+            # env.channels = [] if env.channels is None else env.channels
+            for channel in env.channels or []:
+                if channel not in specified_channels:
+                    specified_channels.append(channel)
+            if env.platforms is not None:
+                specified_platforms.update(env.platforms)
 
         channel_overrides = None
-        if "channels" not in env:
-            msg = f"there is no 'channels:' key in {self.environment_file.name} assuming 'defaults'."
+        if not specified_channels:
+            env_files = ",".join([source.name for source in environment.sources])
+            msg = f"there are no 'channels:' key in {env_files} assuming 'defaults'."
             warnings.warn(msg)
             channel_overrides = ["defaults"]
 
         platform_overrides = None
-        if "platforms" not in env:
+        if not specified_platforms:
             platform_overrides = list(DEFAULT_PLATFORMS)
 
-        platforms = env.get("platforms", []) or platform_overrides
-        self.logger.info(f'locking dependencies for {",".join(platforms)}')
-        self.logger.info(f'requested dependencies {env.get("dependencies", [])}')
+        # platforms = specified_platforms or platform_overrides
+        # self.logger.info(f'locking dependencies for {",".join(platforms)}')
+        # self.logger.info(f'requested dependencies {env.get("dependencies", [])}')
 
         devnull = open(os.devnull, "w")
         with redirect_stderr(devnull):
@@ -203,24 +281,26 @@ class CondaProject:
                 with context:
                     make_lock_files(
                         conda=CONDA_EXE,
-                        src_files=[self.environment_file],
-                        lockfile_path=self.lock_file,
+                        src_files=environment.sources,
+                        lockfile_path=environment.lockfile,
                         check_input_hash=not force,
                         kinds=["lock"],
                         platform_overrides=platform_overrides,
                         channel_overrides=channel_overrides,
                     )
 
-        lock = parse_conda_lock_file(self.lock_file)
-        msg = (
-            f"Locked requested dependencies {' '.join(env['dependencies'])}\n"
-            f"for {', '.join(lock.metadata.platforms)} platforms"
-        )
+        lock = parse_conda_lock_file(environment.lockfile)
+        msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         self.logger.info(msg)
         if verbose:
             print(msg)
 
-    def prepare(self, force: bool = False, verbose: bool = False) -> Path:
+    def prepare(
+        self,
+        environment: Optional[Union[Environment, str]] = None,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> Path:
         """Prepare the default conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
@@ -238,24 +318,34 @@ class CondaProject:
             The path to the created environment.
 
         """
-        default_env = self.default_env
-        conda_meta = default_env / "conda-meta" / "history"
+        if environment is None:
+            environment = self.default_environment
+        elif isinstance(environment, str):
+            environment = self.environments[environment]
+        elif isinstance(environment, Environment):
+            pass
+        else:
+            raise TypeError(
+                f"Environment {environment} is not of type str or Environment."
+            )
+
+        conda_meta = environment.prefix / "conda-meta" / "history"
         if conda_meta.exists() and not force:
-            self.logger.info(f"environment already exists at {default_env}")
+            self.logger.info(f"environment already exists at {environment.prefix}")
             if verbose:
                 print(
                     "The environment already exists, use --force to recreate it from the locked dependencies."
                 )
-            return default_env
+            return environment.prefix
 
-        if not self.lock_file.exists():
+        if not environment.lockfile.exists():
             self.lock(verbose=verbose)
 
-        lock = parse_conda_lock_file(self.lock_file)
+        lock = parse_conda_lock_file(environment.lockfile)
         if current_platform() not in lock.metadata.platforms:
             msg = (
                 f"Your current platform, {current_platform()}, is not in the supported locked platforms.\n"
-                f"You may need to edit your {self.environment_file.name} file and run conda project lock again."
+                f"You may need to edit your environment files and run conda project lock again."
             )
             raise CondaProjectError(msg)
 
@@ -276,7 +366,7 @@ class CondaProject:
                 "create",
                 "-y",
                 *("--file", f.name),
-                *("-p", str(default_env)),
+                *("-p", str(environment.prefix)),
             ]
             if force:
                 args.append("--force")
@@ -285,17 +375,32 @@ class CondaProject:
                 args, condarc_path=self.condarc, verbose=verbose, logger=self.logger
             )
 
-        msg = f"environment created at {default_env}"
+        msg = f"environment created at {environment.prefix}"
         self.logger.info(msg)
         if verbose:
             print(msg)
 
-        return default_env
+        return environment.prefix
 
-    def clean(self, verbose: bool = False) -> None:
+    def clean(
+        self,
+        environment: Optional[Union[Environment, str]] = None,
+        verbose: bool = False,
+    ) -> None:
         """Remove the default conda environment."""
+        if environment is None:
+            environment = self.default_environment
+        elif isinstance(environment, str):
+            environment = self.environments[environment]
+        elif isinstance(environment, Environment):
+            pass
+        else:
+            raise TypeError(
+                f"Environment {environment} is not of type str or Environment."
+            )
+
         _ = call_conda(
-            ["env", "remove", "-p", str(self.default_env)],
+            ["env", "remove", "-p", str(environment.prefix)],
             condarc_path=self.condarc,
             verbose=verbose,
             logger=self.logger,
