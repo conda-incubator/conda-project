@@ -44,6 +44,7 @@ def project_directory_factory(tmp_path, request):
         files = files or {}
         for fn, contents in files.items():
             path = tmp_path / fn
+            path.parent.mkdir(parents=True, exist_ok=True)
             with path.open("wt") as f:
                 f.write(contents)
 

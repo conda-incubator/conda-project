@@ -50,7 +50,7 @@ def _find_file(directory: Path, options: tuple) -> Optional[Path]:
 
 class Environment(BaseModel):
     name: str
-    sources: Tuple[Path]
+    sources: Tuple[Path, ...]
     prefix: Path
     lockfile: Path
 
@@ -59,7 +59,7 @@ class Environment(BaseModel):
 
 
 class BaseEnvironments(BaseModel):
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Environment:
         return getattr(self, key)
 
     def keys(self):

@@ -378,6 +378,33 @@ environments:
     assert project.default_environment == project.environments["standard"]
 
 
+def test_project_hyphen_renamed_environment(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  my-env: [environment{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    assert project.environments.keys() == {"my-env"}
+    assert (
+        project.environments["my-env"]
+        .sources[0]
+        .samefile(
+            (project_path / "environment").with_suffix(
+                project_directory_factory._suffix
+            )
+        )
+    )
+    assert project.default_environment == project.environments["my-env"]
+
+
 def test_prepare_renamed_environment(project_directory_factory):
     env_yaml = """dependencies: []
 """
@@ -407,7 +434,7 @@ environments:
     assert conda_history.exists()
 
 
-def test_lock_and_prepare_env_by_name(project_directory_factory):
+def test_lock_prepare_clean_env_by_name(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -435,8 +462,11 @@ environments:
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
 
+    project.clean(environment="standard")
+    assert not project.environments["standard"].prefix.exists()
 
-def test_lock_and_prepare_env_by_object(project_directory_factory):
+
+def test_lock_prepare_clean_env_by_object(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -464,6 +494,9 @@ environments:
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
 
+    project.clean(environment=project.environments["standard"])
+    assert not project.environments["standard"].prefix.exists()
+
 
 def test_project_non_environment_yaml_name(project_directory_factory):
     env_yaml = """dependencies: []
@@ -485,7 +518,7 @@ environments:
     )
 
 
-def test_lock_and_prepare_non_environment_yaml_name(project_directory_factory):
+def test_lock_prepare_clean_non_environment_yaml_name(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -510,6 +543,9 @@ environments:
     assert lock["metadata"]["sources"][0] == str(project.default_environment.sources[0])
 
     assert (project.default_environment.prefix / "conda-meta" / "history").exists()
+
+    project.clean()
+    assert not project.default_environment.prefix.exists()
 
 
 def test_project_environments_immutable(project_directory_factory):
@@ -538,3 +574,230 @@ environments:
 
     with pytest.raises(TypeError):
         project.environments.default = project.default_environment
+
+
+def test_project_multiple_envs(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  bbb: [env1{project_directory_factory._suffix}]
+  default: [env2{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+    project = CondaProject(project_path)
+
+    assert project.environments.keys() == {"bbb", "default"}
+    assert project.default_environment.name == "bbb"
+
+
+def test_lock_prepare_clean_default_with_multiple_envs(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  bbb: [env1{project_directory_factory._suffix}]
+  default: [env2{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+    project = CondaProject(project_path)
+    project.lock()
+    project.prepare()
+
+    assert project.default_environment.lockfile.samefile(
+        project_path / "bbb.conda-lock.yml"
+    )
+    assert project.default_environment.lockfile.exists()
+
+    assert project.default_environment.prefix.samefile(project_path / "envs" / "bbb")
+    assert (project.default_environment.prefix / "conda-meta" / "history").exists()
+
+    project.clean()
+    assert not project.default_environment.prefix.exists()
+
+
+def test_lock_prepare_clean_named_with_multiple_envs(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  bbb: [env1{project_directory_factory._suffix}]
+  default: [env2{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+    project = CondaProject(project_path)
+    project.lock("default")
+    project.prepare("default")
+
+    assert project.environments["default"].lockfile.samefile(
+        project_path / "default.conda-lock.yml"
+    )
+    assert project.environments["default"].lockfile.exists()
+
+    assert project.environments["default"].prefix.samefile(
+        project_path / "envs" / "default"
+    )
+    assert (project.environments["default"].prefix / "conda-meta" / "history").exists()
+
+    project.clean("default")
+    assert not project.environments["default"].prefix.exists()
+
+
+def test_lock_prepare_clean_multiple_envs(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  bbb: [env1{project_directory_factory._suffix}]
+  default: [env2{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+    project = CondaProject(project_path)
+
+    project.lock("bbb")
+    project.prepare("bbb")
+
+    assert project.environments["bbb"].lockfile.samefile(
+        project_path / "bbb.conda-lock.yml"
+    )
+    assert project.environments["bbb"].lockfile.exists()
+
+    assert project.environments["bbb"].prefix.samefile(project_path / "envs" / "bbb")
+    assert (project.environments["bbb"].prefix / "conda-meta" / "history").exists()
+
+    project.lock("default")
+    project.prepare("default")
+
+    assert project.environments["default"].lockfile.samefile(
+        project_path / "default.conda-lock.yml"
+    )
+    assert project.environments["default"].lockfile.exists()
+
+    assert project.environments["default"].prefix.samefile(
+        project_path / "envs" / "default"
+    )
+    assert (project.environments["default"].prefix / "conda-meta" / "history").exists()
+
+    project.clean("bbb")
+    assert not project.environments["bbb"].prefix.exists()
+
+    project.clean("default")
+    assert not project.environments["default"].prefix.exists()
+
+
+@pytest.mark.slow
+def test_project_lock_env_multiple_sources(project_directory_factory):
+    environment_yml = """dependencies: [python]
+"""
+
+    extras_yml = """dependencies: [requests]
+"""
+
+    project_yaml = f"""name: test
+environments:
+  default:
+    - environment{project_directory_factory._suffix}
+    - extras{project_directory_factory._suffix}
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"environment{project_directory_factory._suffix}": environment_yml,
+            f"extras{project_directory_factory._suffix}": extras_yml,
+        },
+    )
+    project = CondaProject(project_path)
+    project.lock()
+
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+
+    assert lock["metadata"]["sources"] == [
+        str(project_path / f"environment{project_directory_factory._suffix}"),
+        str(project_path / f"extras{project_directory_factory._suffix}"),
+    ]
+
+    assert "requests" in [p["name"] for p in lock["package"]]
+    assert "python" in [p["name"] for p in lock["package"]]
+
+
+@pytest.mark.slow
+def test_project_lock_env_multiple_sources_different_directories(
+    project_directory_factory,
+):
+    environment_yml = """dependencies: [python]
+"""
+
+    extras_yml = """dependencies: [requests]
+"""
+
+    project_yaml = f"""name: test
+environments:
+  default:
+    - ./environment{project_directory_factory._suffix}
+    - ../extras{project_directory_factory._suffix}
+"""
+
+    project_path = project_directory_factory(
+        files={
+            f"project/conda-project{project_directory_factory._suffix}": project_yaml,
+            f"project/environment{project_directory_factory._suffix}": environment_yml,
+            f"extras{project_directory_factory._suffix}": extras_yml,
+        },
+    )
+    project = CondaProject(project_path / "project")
+
+    assert project.default_environment.sources[0].samefile(
+        project_path / "project" / f"environment{project_directory_factory._suffix}"
+    )
+    assert project.default_environment.sources[1].samefile(
+        project_path / f"extras{project_directory_factory._suffix}"
+    )
+
+    project.lock()
+
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+
+    assert Path(lock["metadata"]["sources"][0]).samefile(
+        project_path / "project" / f"environment{project_directory_factory._suffix}"
+    )
+    assert Path(lock["metadata"]["sources"][1]).samefile(
+        project_path / f"extras{project_directory_factory._suffix}"
+    )
+
+    assert "requests" in [p["name"] for p in lock["package"]]
+    assert "python" in [p["name"] for p in lock["package"]]
