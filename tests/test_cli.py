@@ -64,7 +64,11 @@ def test_command_args(command, monkeypatch, capsys):
 
 @pytest.mark.parametrize("command", COMMANDS)
 def test_cli_verbose(command, monkeypatch, project_directory_factory):
-    project_path = project_directory_factory()
+    if command == "create":
+        project_path = project_directory_factory()
+    else:
+        env_yaml = "dependencies: []\n"
+        project_path = project_directory_factory(env_yaml=env_yaml)
 
     def mocked_action(*args, **kwargs):
         assert kwargs.get("verbose", False)
@@ -83,3 +87,53 @@ def test_create_with_prepare(tmpdir):
     assert os.path.exists(
         os.path.join(tmpdir, "envs", "default", "conda-meta", "history")
     )
+
+
+@pytest.mark.parametrize("command", ["lock", "prepare", "clean"])
+def test_command_with_environment_name(command, monkeypatch, project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = f"""name: multi-envs
+environments:
+  env1: [env1{project_directory_factory._suffix}]
+  env2: [env2{project_directory_factory._suffix}]
+"""
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    def mocked_action(*args, **kwargs):
+        assert kwargs.get("environment", False) == "env1"
+
+    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
+
+    ret = parse_and_run([command, "--directory", str(project_path), "env1"])
+    assert ret == 0
+
+
+@pytest.mark.parametrize("command", ["lock", "prepare", "clean"])
+def test_command_all_environments(command, monkeypatch, project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = f"""name: multi-envs
+environments:
+  env1: [env1{project_directory_factory._suffix}]
+  env2: [env2{project_directory_factory._suffix}]
+"""
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    def mocked_action(*args, **kwargs):
+        assert kwargs.get("environment", False).name in ["env1", "env2"]
+
+    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
+
+    ret = parse_and_run([command, "--directory", str(project_path), "--all"])
+    assert ret == 0

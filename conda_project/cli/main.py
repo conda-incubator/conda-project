@@ -129,6 +129,15 @@ def _create_lock_parser(
         "lock", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
+        "environment",
+        help="Lock the selected environment. If no environment name is selected "
+        "the first environment defined in the conda-project.yml file is locked.",
+        nargs="?",
+    )
+    p.add_argument(
+        "--all", help="Prepare all defined environments.", action="store_true"
+    )
+    p.add_argument(
         "--force",
         help="Remove and recreate an existing lock file.",
         action="store_true",
@@ -153,6 +162,15 @@ def _create_prepare_parser(
         "prepare", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
+        "environment",
+        help="Prepare the selected environment. If no environment name is selected "
+        "the first environment defined in the conda-project.yml file is prepared.",
+        nargs="?",
+    )
+    p.add_argument(
+        "--all", help="Prepare all defined environments.", action="store_true"
+    )
+    p.add_argument(
         "--force",
         help="Remove and recreate an existing environment.",
         action="store_true",
@@ -175,6 +193,15 @@ def _create_clean_parser(
 
     p = subparsers.add_parser(
         "clean", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "environment",
+        help="Remove environment prefix for selected environment. If no environment name is selected "
+        "the first environment defined in the conda-project.yml file is removed.",
+        nargs="?",
+    )
+    p.add_argument(
+        "--all", help="Prepare all defined environments.", action="store_true"
     )
 
     p.set_defaults(func=commands.clean)

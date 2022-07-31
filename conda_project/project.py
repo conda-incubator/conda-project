@@ -296,7 +296,9 @@ class CondaProject:
         with redirect_stderr(devnull):
             with env_variable("CONDARC", str(self.condarc)):
                 if verbose:
-                    context = Spinner(prefix="Locking dependencies")
+                    context = Spinner(
+                        prefix=f"Locking dependencies for {environment.name}"
+                    )
                 else:
                     context = nullcontext()
 

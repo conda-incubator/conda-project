@@ -45,16 +45,30 @@ def create(args: Namespace) -> None:
 @handle_errors
 def lock(args: Namespace) -> None:
     project = CondaProject(args.directory)
-    project.lock(force=args.force, verbose=True)
+    if args.all:
+        for _, env in project.environments:
+            project.lock(environment=env, force=args.force, verbose=True)
+    else:
+        project.lock(force=args.force, environment=args.environment, verbose=True)
 
 
 @handle_errors
 def prepare(args: Namespace) -> None:
     project = CondaProject(args.directory)
-    project.prepare(force=args.force, verbose=True)
+
+    if args.all:
+        for _, env in project.environments:
+            project.prepare(environment=env, force=args.force, verbose=True)
+    else:
+        project.prepare(force=args.force, environment=args.environment, verbose=True)
 
 
 @handle_errors
 def clean(args: Namespace) -> None:
     project = CondaProject(args.directory)
-    project.clean(verbose=True)
+
+    if args.all:
+        for _, env in project.environments:
+            project.clean(environment=env, verbose=True)
+    else:
+        project.clean(environment=args.environment, verbose=True)
