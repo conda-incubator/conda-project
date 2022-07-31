@@ -117,11 +117,11 @@ dependencies: []
         project.default_environment.lockfile
         == project.directory / "default.conda-lock.yml"
     )
-    assert project.default_environment.sources == [
+    assert project.default_environment.sources == (
         (project.directory / "environment").with_suffix(
             project_directory_factory._suffix
-        )
-    ]
+        ),
+    )
     assert project.default_environment.prefix == project.directory / "envs" / "default"
 
 
@@ -510,3 +510,31 @@ environments:
     assert lock["metadata"]["sources"][0] == str(project.default_environment.sources[0])
 
     assert (project.default_environment.prefix / "conda-meta" / "history").exists()
+
+
+def test_project_environments_immutable(project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  default: [env{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={f"env{project_directory_factory._suffix}": env_yaml},
+    )
+    project = CondaProject(project_path)
+
+    with pytest.raises(TypeError):
+        project.default_environment.sources[0] = ("empty",)
+
+    with pytest.raises(TypeError):
+        project.environments["new"] = project.default_environment
+
+    with pytest.raises(TypeError):
+        project.environments["default"] = project.default_environment
+
+    with pytest.raises(TypeError):
+        project.environments.default = project.default_environment

@@ -10,9 +10,9 @@ import warnings
 from collections import OrderedDict
 from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 from sys import platform
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 from conda_lock.conda_lock import (
     make_lock_files,
@@ -49,9 +49,24 @@ def _find_file(directory: Path, options: tuple) -> Optional[Path]:
 
 
 class Environment(BaseModel):
-    sources: List[Path]
+    name: str
+    sources: Tuple[Path]
     prefix: Path
     lockfile: Path
+
+    class Config:
+        allow_mutation = False
+
+
+class BaseEnvironments(BaseModel):
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def keys(self):
+        return self.__fields__.keys()
+
+    class Config:
+        allow_mutation = False
 
 
 class CondaProject:
@@ -201,19 +216,26 @@ class CondaProject:
         return project
 
     @property
-    def environments(self) -> OrderedDict:
+    def environments(self) -> BaseEnvironments:
         envs = OrderedDict()
         for env_name, sources in self._project_file.environments.items():
             envs[env_name] = Environment(
+                name=env_name,
                 sources=[self.directory / str(s) for s in sources],
                 prefix=self.directory / "envs" / env_name,
                 lockfile=self.directory / f"{env_name}.conda-lock.yml",
             )
-        return envs
+        Environments = create_model(
+            "Environments",
+            **{k: (Environment, ...) for k in envs},
+            __base__=BaseEnvironments,
+        )
+        return Environments(**envs)
 
     @property
     def default_environment(self) -> Environment:
-        return next(iter(self.environments.values()))
+        name = next(iter(self._project_file.environments))
+        return self.environments[name]
 
     def lock(
         self,
