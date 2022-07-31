@@ -56,8 +56,4 @@ class EnvironmentYaml(BaseYaml):
                     raise ValueError(
                         f'The dependencies key contains an invalid map {item}. Only "pip:" is allowed.'
                     )
-            elif not isinstance(item, str):
-                raise TypeError(
-                    f"Type {type(item)} is not allow in the dependencies key."
-                )
         return v

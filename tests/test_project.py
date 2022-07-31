@@ -25,6 +25,14 @@ def test_project_create_new_directory(tmpdir, capsys):
     assert f"Project created at {project_directory}\n" == out
 
 
+def test_project_create_twice(tmpdir, capsys):
+    _ = CondaProject.create(tmpdir, lock_dependencies=False)
+    p = CondaProject.create(tmpdir, lock_dependencies=False, verbose=True)
+
+    out, _ = capsys.readouterr()
+    assert f"Existing project file found at {p.project_yaml_path}.\n" == out
+
+
 def test_project_create_default_platforms(tmpdir):
     p = CondaProject.create(tmpdir, lock_dependencies=False)
 
@@ -574,6 +582,28 @@ environments:
 
     with pytest.raises(TypeError):
         project.environments.default = project.default_environment
+
+
+@pytest.mark.parametrize("action", ["lock", "prepare", "clean"])
+def test_wrong_type_for_environment(action, project_directory_factory):
+    env_yaml = """dependencies: []
+"""
+
+    project_yaml = f"""name: test
+environments:
+  default: [env{project_directory_factory._suffix}]
+"""
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={f"env{project_directory_factory._suffix}": env_yaml},
+    )
+    project = CondaProject(project_path)
+
+    with pytest.raises(TypeError) as excinfo:
+        getattr(project, action)(environment=0)
+
+    assert str(excinfo.value) == "Environment 0 is not of type str or Environment."
 
 
 def test_project_multiple_envs(project_directory_factory):
