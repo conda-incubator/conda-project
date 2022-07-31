@@ -34,6 +34,9 @@ class BaseYaml(BaseModel):
         d = yaml.load(fn)
         return cls(**d)
 
+    class Config:
+        json_encoders = {Path: lambda v: v.as_posix()}
+
 
 class CondaProjectYaml(BaseYaml):
     name: str
