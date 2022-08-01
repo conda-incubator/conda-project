@@ -106,10 +106,6 @@ class Environment(BaseModel):
         if not specified_platforms:
             platform_overrides = list(DEFAULT_PLATFORMS)
 
-        # platforms = specified_platforms or platform_overrides
-        # self.logger.info(f'locking dependencies for {",".join(platforms)}')
-        # self.logger.info(f'requested dependencies {env.get("dependencies", [])}')
-
         devnull = open(os.devnull, "w")
         with redirect_stderr(devnull):
             with env_variable("CONDARC", str(self.condarc)):
@@ -355,12 +351,11 @@ class CondaProject:
 
         project_yaml.yaml(directory / "conda-project.yml")
 
-        if conda_configs is not None:
-            condarc = {}
-            for config in conda_configs:
-                k, v = config.split("=")
-                condarc[k] = v
-            yaml.dump(condarc, directory / ".condarc")
+        condarc = {}
+        for config in conda_configs or []:
+            k, v = config.split("=")
+            condarc[k] = v
+        yaml.dump(condarc, directory / ".condarc")
 
         project = cls(directory)
 
