@@ -39,7 +39,7 @@ def create(args: Namespace) -> None:
     )
 
     if args.prepare:
-        project.prepare(verbose=True)
+        project.default_environment.prepare(verbose=True)
 
 
 @handle_errors
@@ -47,9 +47,14 @@ def lock(args: Namespace) -> None:
     project = CondaProject(args.directory)
     if args.all:
         for _, env in project.environments:
-            project.lock(environment=env, force=args.force, verbose=True)
+            env.lock(force=args.force, verbose=True)
     else:
-        project.lock(force=args.force, environment=args.environment, verbose=True)
+        env = (
+            project.environments[args.environment]
+            if args.environment
+            else project.default_environment
+        )
+        env.lock(force=args.force, verbose=True)
 
 
 @handle_errors
@@ -58,9 +63,14 @@ def prepare(args: Namespace) -> None:
 
     if args.all:
         for _, env in project.environments:
-            project.prepare(environment=env, force=args.force, verbose=True)
+            env.prepare(force=args.force, verbose=True)
     else:
-        project.prepare(force=args.force, environment=args.environment, verbose=True)
+        env = (
+            project.environments[args.environment]
+            if args.environment
+            else project.default_environment
+        )
+        env.prepare(force=args.force, verbose=True)
 
 
 @handle_errors
@@ -69,6 +79,11 @@ def clean(args: Namespace) -> None:
 
     if args.all:
         for _, env in project.environments:
-            project.clean(environment=env, verbose=True)
+            env.clean(verbose=True)
     else:
-        project.clean(environment=args.environment, verbose=True)
+        env = (
+            project.environments[args.environment]
+            if args.environment
+            else project.default_environment
+        )
+        env.clean(verbose=True)

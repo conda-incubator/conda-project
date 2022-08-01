@@ -8,12 +8,14 @@ import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-COMMANDS = ["create", "clean", "prepare", "lock"]
+PROJECT_COMMANDS = ("create",)
+ENVIRONMENT_COMMANDS = ("clean", "prepare", "lock")
+ALL_COMMANDS = PROJECT_COMMANDS + ENVIRONMENT_COMMANDS
 
 
 def test_known_commands():
     parser = cli()
-    assert parser._positionals._actions[2].choices.keys() == set(COMMANDS)
+    assert parser._positionals._actions[2].choices.keys() == set(ALL_COMMANDS)
 
 
 def test_no_command(capsys, monkeypatch):
@@ -43,7 +45,7 @@ def test_unknown_command(capsys):
     assert "invalid choice: 'nope'" in err
 
 
-@pytest.mark.parametrize("command", COMMANDS)
+@pytest.mark.parametrize("command", ALL_COMMANDS)
 def test_command_args(command, monkeypatch, capsys):
     def mocked_command(command, args):
         print(f"I am {command}")
@@ -62,15 +64,32 @@ def test_command_args(command, monkeypatch, capsys):
     assert "" == err
 
 
-@pytest.mark.parametrize("command", COMMANDS)
-def test_cli_verbose(command, monkeypatch, project_directory_factory):
+@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
+def test_cli_verbose_env(command, monkeypatch, project_directory_factory):
     if command == "create":
         project_path = project_directory_factory()
     else:
         env_yaml = "dependencies: []\n"
         project_path = project_directory_factory(env_yaml=env_yaml)
 
-    def mocked_action(*args, **kwargs):
+    def mocked_action(*_, **kwargs):
+        assert kwargs.get("verbose", False)
+
+    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
+
+    ret = parse_and_run([command, "--directory", str(project_path)])
+    assert ret == 0
+
+
+@pytest.mark.parametrize("command", PROJECT_COMMANDS)
+def test_cli_verbose_project(command, monkeypatch, project_directory_factory):
+    if command == "create":
+        project_path = project_directory_factory()
+    else:
+        env_yaml = "dependencies: []\n"
+        project_path = project_directory_factory(env_yaml=env_yaml)
+
+    def mocked_action(*_, **kwargs):
         assert kwargs.get("verbose", False)
 
     monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
@@ -89,7 +108,7 @@ def test_create_with_prepare(tmpdir):
     )
 
 
-@pytest.mark.parametrize("command", ["lock", "prepare", "clean"])
+@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
 def test_command_with_environment_name(command, monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
     project_yaml = f"""name: multi-envs
@@ -105,16 +124,16 @@ environments:
         },
     )
 
-    def mocked_action(*args, **kwargs):
-        assert kwargs.get("environment", False) == "env1"
+    def mocked_action(self, *args, **kwargs):
+        assert self.name == "env1"
 
-    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
+    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
 
     ret = parse_and_run([command, "--directory", str(project_path), "env1"])
     assert ret == 0
 
 
-@pytest.mark.parametrize("command", ["lock", "prepare", "clean"])
+@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
 def test_command_all_environments(command, monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
     project_yaml = f"""name: multi-envs
@@ -130,10 +149,10 @@ environments:
         },
     )
 
-    def mocked_action(*args, **kwargs):
-        assert kwargs.get("environment", False).name in ["env1", "env2"]
+    def mocked_action(self, *args, **kwargs):
+        assert self.name in ["env1", "env2"]
 
-    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
+    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
 
     ret = parse_and_run([command, "--directory", str(project_path), "--all"])
     assert ret == 0
