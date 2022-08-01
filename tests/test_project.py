@@ -22,6 +22,11 @@ def test_project_create_new_directory(tmpdir, capsys):
     assert p.project_yaml_path.exists()
     assert p.default_environment.sources[0].exists()
 
+    assert p.condarc.exists()
+    with p.condarc.open() as f:
+        condarc = YAML().load(f)
+    assert condarc == {}
+
     out, _ = capsys.readouterr()
     assert f"Project created at {project_directory}\n" == out
 
