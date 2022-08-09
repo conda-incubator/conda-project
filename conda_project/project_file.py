@@ -1,12 +1,13 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, ValidationError
 from pathlib import Path
 from typing import List, Dict, Optional, Union, OrderedDict, TextIO
 from ruamel.yaml import YAML
 import json
 
+from .exceptions import CondaProjectError
 
 PROJECT_YAML_FILENAMES = ("conda-project.yml", "conda-project.yaml")
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
@@ -32,10 +33,20 @@ class BaseYaml(BaseModel):
     @classmethod
     def parse_yaml(cls, fn: Union[str, Path]):
         d = yaml.load(fn)
-        return cls(**d)
+        if d is None:
+            msg = (
+                f"Failed to read {fn} as {cls.__name__}. The file appears to be empty."
+            )
+            raise CondaProjectError(msg)
+        try:
+            return cls(**d)
+        except ValidationError as e:
+            msg = f"Failed to read {fn} as {cls.__name__}\n{str(e)}"
+            raise CondaProjectError(msg)
 
     class Config:
         json_encoders = {Path: lambda v: v.as_posix()}
+        extra = "forbid"
 
 
 class CondaProjectYaml(BaseYaml):

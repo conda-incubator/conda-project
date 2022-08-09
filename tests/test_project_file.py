@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Union
 from io import StringIO
 
+from conda_project.exceptions import CondaProjectError
 from conda_project.project_file import EnvironmentYaml, BaseYaml, CondaProjectYaml
 
 
@@ -48,6 +49,40 @@ def test_yaml_dump_skip_empty_keys():
     stream = StringIO()
     yml.yaml(stream)
     assert stream.getvalue() == "filled: foo\nnested:\n  a:\n    - b\n  d: []\n"
+
+
+def test_bad_yaml_file():
+    class YamlFile(BaseYaml):
+        attribute: str
+
+    yml = "attribute: correct\nmore_attributes: wrong"
+
+    with pytest.raises(CondaProjectError) as exinfo:
+        _ = YamlFile.parse_yaml(yml)
+
+    assert "validation error for YamlFile" in str(exinfo.value)
+
+
+def test_miss_spelled_env_yaml_file():
+    environment_yaml = """name: misspelled
+channel:
+  - defaults
+
+dependencies: []"""
+
+    with pytest.raises(CondaProjectError) as exinfo:
+        _ = EnvironmentYaml.parse_yaml(environment_yaml)
+
+    assert "validation error for EnvironmentYaml" in str(exinfo.value)
+
+
+def test_empty_project_yaml_file():
+    environment_yaml = ""
+
+    with pytest.raises(CondaProjectError) as exinfo:
+        _ = CondaProjectYaml.parse_yaml(environment_yaml)
+
+    assert "The file appears to be empty." in str(exinfo.value)
 
 
 def test_project_file_with_one_env():
