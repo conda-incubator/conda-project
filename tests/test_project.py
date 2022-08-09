@@ -319,7 +319,7 @@ platforms: [dummy-platform]
     assert "not in the supported locked platforms" in str(e.value)
 
 
-def test_force_relock(project_directory_factory):
+def test_force_relock(project_directory_factory, capsys):
     env_yaml = """name: test
 dependencies: []
 """
@@ -329,7 +329,8 @@ dependencies: []
     project.default_environment.lock(verbose=True)
 
     lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
-    project.default_environment.lock()
+    project.default_environment.lock(verbose=True)
+    assert "Skipping" in capsys.readouterr().out.splitlines()[-2]
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
 
     project.default_environment.lock(force=True)

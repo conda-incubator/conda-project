@@ -5,15 +5,16 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from subprocess import SubprocessError
 import json
 import tempfile
 import warnings
 from collections import OrderedDict
 from contextlib import nullcontext, redirect_stderr
+from io import StringIO
 from pathlib import Path
 from pydantic import BaseModel, create_model
-from sys import platform
 from typing import List, Optional, Union, Tuple
 
 from conda_lock.conda_lock import (
@@ -108,8 +109,7 @@ class Environment(BaseModel):
         if not specified_platforms:
             platform_overrides = list(DEFAULT_PLATFORMS)
 
-        devnull = open(os.devnull, "w")
-        with redirect_stderr(devnull):
+        with redirect_stderr(StringIO()) as stderr_buffer:
             with env_variable("CONDARC", str(self.condarc)):
                 if verbose:
                     context = Spinner(prefix=f"Locking dependencies for {self.name}")
@@ -140,6 +140,13 @@ class Environment(BaseModel):
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         logger.info(msg)
         if verbose:
+            lines = [
+                line
+                for line in stderr_buffer.getvalue().splitlines()
+                if "Skipping" in line
+            ]
+            if lines:
+                print("\n".join(lines))
             print(msg)
 
     def prepare(
@@ -173,7 +180,7 @@ class Environment(BaseModel):
                 )
             return self.prefix
 
-        if not self.lockfile.exists():
+        if not self.is_locked:
             self.lock(verbose=verbose)
 
         lock = parse_conda_lock_file(self.lockfile)
@@ -192,7 +199,7 @@ class Environment(BaseModel):
             extras=None,
         )
 
-        delete = False if platform.startswith("win") else True
+        delete = False if sys.platform.startswith("win") else True
         with tempfile.NamedTemporaryFile(mode="w", delete=delete) as f:
             f.write("\n".join(rendered))
             f.flush()
