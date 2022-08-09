@@ -705,3 +705,52 @@ environments:
 
     assert "requests" in [p["name"] for p in lock["package"]]
     assert "python" in [p["name"] for p in lock["package"]]
+
+
+def test_failed_to_solve_libmamba(project_directory_factory):
+    env_yaml = """name: fail
+channels:
+  - conda-forge
+
+dependencies:
+  - ensureconda
+  - conda-token
+"""
+
+    condarc = "experimental_solver: libmamba"
+
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, files={".condarc": condarc}
+    )
+    project = CondaProject(project_path)
+
+    with pytest.raises(CondaProjectError) as exinfo:
+        project.default_environment.lock()
+
+    assert "The following packages are missing from the supplied channels" in str(
+        exinfo.value
+    )
+
+
+def test_failed_to_solve_classic(project_directory_factory):
+    env_yaml = """name: fail
+channels:
+  - conda-forge
+
+dependencies:
+  - ensureconda
+  - conda-token
+"""
+    condarc = "experimental_solver: classic"
+
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, files={".condarc": condarc}
+    )
+    project = CondaProject(project_path)
+
+    with pytest.raises(CondaProjectError) as exinfo:
+        project.default_environment.lock()
+
+    assert "The following packages are not available from current channels:" in str(
+        exinfo.value
+    )

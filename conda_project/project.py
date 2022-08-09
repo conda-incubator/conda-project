@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import logging
 import os
+from subprocess import SubprocessError
+import json
 import tempfile
 import warnings
 from collections import OrderedDict
@@ -115,15 +117,24 @@ class Environment(BaseModel):
                     context = nullcontext()
 
                 with context:
-                    make_lock_files(
-                        conda=CONDA_EXE,
-                        src_files=self.sources,
-                        lockfile_path=self.lockfile,
-                        check_input_hash=not force,
-                        kinds=["lock"],
-                        platform_overrides=platform_overrides,
-                        channel_overrides=channel_overrides,
-                    )
+                    try:
+                        make_lock_files(
+                            conda=CONDA_EXE,
+                            src_files=self.sources,
+                            lockfile_path=self.lockfile,
+                            check_input_hash=not force,
+                            kinds=["lock"],
+                            platform_overrides=platform_overrides,
+                            channel_overrides=channel_overrides,
+                        )
+                    except SubprocessError as e:
+                        output = json.loads(e.output)
+                        msg = output["message"].replace(
+                            "target environment",
+                            f"supplied channels: {channel_overrides or specified_channels}",
+                        )
+                        msg = "Project failed to lock\n" + msg
+                        raise CondaProjectError(msg)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
