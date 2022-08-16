@@ -21,6 +21,7 @@ def test_project_create_new_directory(tmpdir, capsys):
     assert os.path.exists(project_directory)
     assert p.project_yaml_path.exists()
     assert p.default_environment.sources[0].exists()
+    assert not p.default_environment.is_locked
 
     assert p.condarc.exists()
     with p.condarc.open() as f:
@@ -152,6 +153,17 @@ def test_project_init_path(project_directory_factory):
 
     project = CondaProject(project_path)
     assert project.directory.samefile(project_path)
+
+
+def test_prepare_with_gitignore(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    env_dir = project.default_environment.prepare()
+    assert (env_dir / ".gitignore").exists()
 
 
 def test_prepare_no_dependencies(project_directory_factory):
@@ -327,6 +339,7 @@ dependencies: []
 
     project = CondaProject(project_path)
     project.default_environment.lock(verbose=True)
+    assert project.default_environment.is_locked
 
     lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
     project.default_environment.lock(verbose=True)

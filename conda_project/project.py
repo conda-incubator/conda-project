@@ -63,6 +63,7 @@ class Environment(BaseModel):
 
     class Config:
         allow_mutation = False
+        extra = "forbid"
 
     @property
     def is_prepared(self) -> bool:
@@ -120,7 +121,7 @@ class Environment(BaseModel):
                     try:
                         make_lock_files(
                             conda=CONDA_EXE,
-                            src_files=self.sources,
+                            src_files=list(self.sources),
                             lockfile_path=self.lockfile,
                             check_input_hash=not force,
                             kinds=["lock"],
@@ -216,6 +217,8 @@ class Environment(BaseModel):
             _ = call_conda(
                 args, condarc_path=self.condarc, verbose=verbose, logger=logger
             )
+
+        (self.prefix / ".gitignore").touch()
 
         msg = f"environment created at {self.prefix}"
         logger.info(msg)
