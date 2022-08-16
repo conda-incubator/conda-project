@@ -350,6 +350,53 @@ dependencies: []
     assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
 
 
+def test_lock_outdated(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+    assert project.default_environment.is_locked
+
+    updated_env_yaml = """name: test
+dependencies:
+  - python=3.8
+"""
+    with (project.default_environment.sources[0]).open("wt") as f:
+        f.write(updated_env_yaml)
+
+    assert not project.default_environment.is_locked
+
+
+@pytest.mark.slow
+def test_update_lock(project_directory_factory):
+    env_yaml = """name: test
+dependencies: []
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+    assert project.default_environment.is_locked
+
+    updated_env_yaml = """name: test
+dependencies:
+  - python=3.8
+"""
+    with (project.default_environment.sources[0]).open("wt") as f:
+        f.write(updated_env_yaml)
+
+    assert not project.default_environment.is_locked
+
+    project.default_environment.lock()
+    with project.default_environment.lockfile.open() as f:
+        y = YAML().load(f)
+
+    assert "python" in [p["name"] for p in y["package"]]
+
+
 @pytest.mark.slow
 def test_relock_add_packages(project_directory_factory):
     env_yaml = """name: test

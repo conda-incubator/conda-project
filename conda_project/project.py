@@ -18,7 +18,9 @@ from pydantic import BaseModel, create_model
 from typing import List, Optional, Union, Tuple
 
 from conda_lock.conda_lock import (
+    default_virtual_package_repodata,
     make_lock_files,
+    make_lock_spec,
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
@@ -70,29 +72,11 @@ class Environment(BaseModel):
         return (self.prefix / "conda-meta" / "history").exists()
 
     @property
-    def is_locked(self) -> bool:
-        return self.lockfile.exists()
-
-    def lock(
-        self,
-        force: bool = False,
-        verbose: bool = False,
-    ) -> None:
-        """Generate locked package lists for the supplied or default platforms
-
-        Utilizes conda-lock to build the conda-lock.yml file.
-
-        Args:
-            force:       Rebuild the .conda-lock.yml file even if no changes were made
-                         to the dependencies.
-            verbose:     A verbose flag passed into the `conda lock` command.
-
-        """
+    def _overrides(self):
         specified_channels = []
         specified_platforms = set()
         for fn in self.sources:
             env = EnvironmentYaml.parse_yaml(fn)
-            # env.channels = [] if env.channels is None else env.channels
             for channel in env.channels or []:
                 if channel not in specified_channels:
                     specified_channels.append(channel)
@@ -109,6 +93,51 @@ class Environment(BaseModel):
         platform_overrides = None
         if not specified_platforms:
             platform_overrides = list(DEFAULT_PLATFORMS)
+
+        return channel_overrides, platform_overrides
+
+    @property
+    def is_locked(self) -> bool:
+        channel_overrides, platform_overrides = self._overrides
+        if self.lockfile.exists():
+            lock = parse_conda_lock_file(self.lockfile)
+            spec = make_lock_spec(
+                src_files=list(self.sources),
+                channel_overrides=channel_overrides,
+                platform_overrides=platform_overrides,
+                virtual_package_repo=default_virtual_package_repodata(),
+            )
+            all_up_to_date = all(
+                spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
+                for p in lock.metadata.platforms
+            )
+            return all_up_to_date
+        else:
+            return False
+
+    def lock(
+        self,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> None:
+        """Generate locked package lists for the supplied or default platforms
+
+        Utilizes conda-lock to build the conda-lock.yml file.
+
+        Args:
+            force:       Rebuild the .conda-lock.yml file even if no changes were made
+                         to the dependencies.
+            verbose:     A verbose flag passed into the `conda lock` command.
+
+        """
+        channel_overrides, platform_overrides = self._overrides
+
+        specified_channels = []
+        for fn in self.sources:
+            env = EnvironmentYaml.parse_yaml(fn)
+            for channel in env.channels or []:
+                if channel not in specified_channels:
+                    specified_channels.append(channel)
 
         with redirect_stderr(StringIO()) as stderr_buffer:
             with env_variable("CONDARC", str(self.condarc)):
