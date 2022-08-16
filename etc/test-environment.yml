@@ -5,5 +5,7 @@ channels:
 dependencies:
   - conda-lock>=1
   - ruamel.yaml
+  - conda-libmamba-solver
+  - pydantic
   - pytest
   - pytest-cov

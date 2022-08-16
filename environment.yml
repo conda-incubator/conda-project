@@ -9,4 +9,6 @@ dependencies:
   - pylint
   - pytest-cov
   - pre-commit
-  - conda-lock
+  - conda-lock>=1
+  - pydantic
+  - ruamel.yaml
