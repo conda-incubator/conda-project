@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+import json
 import os
 
 import logging
@@ -8,8 +9,18 @@ import pytest
 from pathlib import Path
 from ruamel.yaml import YAML
 
+from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
+
+
+def is_libmamba_installed():
+    proc = call_conda(["list", "-n", "base", "conda-libmamba-solver", "--json"])
+    result = json.loads(proc.stdout)
+    if result:
+        return result[0]["name"] == "conda-libmamba-solver"
+    else:
+        return False
 
 
 def test_project_create_new_directory(tmpdir, capsys):
@@ -768,6 +779,9 @@ environments:
     assert "python" in [p["name"] for p in lock["package"]]
 
 
+@pytest.mark.skipif(
+    not is_libmamba_installed(), reason="Libmamba solver not installed."
+)
 def test_failed_to_solve_libmamba(project_directory_factory):
     env_yaml = """name: fail
 channels:
@@ -793,6 +807,9 @@ dependencies:
     )
 
 
+@pytest.mark.skipif(
+    not is_libmamba_installed(), reason="Libmamba solver not installed."
+)
 def test_failed_to_solve_classic(project_directory_factory):
     env_yaml = """name: fail
 channels:

@@ -79,6 +79,12 @@ jobs:
           else
             source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda
           fi
+      - name: Install Libmamba
+        shell: bash
+        run: |
+          if [ ${{ matrix.conda-version }} == "4.12" ] || [ ${{ matrix.conda-version }} == "4.13" ]; then
+            conda install conda-libmamba-solver -p $HOME/miniconda
+          fi
       - name: py.test
         shell: bash
         run: |
