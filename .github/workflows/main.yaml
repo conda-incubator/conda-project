@@ -83,7 +83,13 @@ jobs:
         shell: bash
         run: |
           if [ ${{ matrix.conda-version }} == "4.12" ] || [ ${{ matrix.conda-version }} == "4.13" ]; then
-            conda install conda-libmamba-solver -p $HOME/miniconda
+            if [ $RUNNER_OS == 'Windows' ]; then
+              source $HOME/miniconda/Scripts/activate root && \
+              conda install conda-libmamba-solver -p $HOME/miniconda
+            else
+              source $HOME/miniconda/bin/activate root && \
+              conda install conda-libmamba-solver -p $HOME/miniconda
+            fi
           fi
       - name: py.test
         shell: bash
