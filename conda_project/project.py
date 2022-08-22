@@ -94,6 +94,9 @@ class Environment(BaseModel):
 
     @property
     def is_locked(self) -> bool:
+        """
+        bool: Returns True if the lockfile is consistent with the source files, False otherwise.
+        """
         channel_overrides, platform_overrides = self._overrides
         if self.lockfile.exists():
             lock = parse_conda_lock_file(self.lockfile)
@@ -113,6 +116,11 @@ class Environment(BaseModel):
 
     @property
     def is_prepared(self) -> bool:
+        """
+        bool: Returns True if the Conda environment exists and is consistent with
+              the environment source and lock files, False otherwise. If is_locked is
+              False is_prepared is False.
+        """
         if (self.prefix / "conda-meta" / "history").exists():
             if self.is_locked:
                 installed_pkgs = call_conda(
