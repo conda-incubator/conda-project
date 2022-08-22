@@ -192,6 +192,57 @@ dependencies: []
     assert project.default_environment.is_prepared
 
 
+@pytest.mark.slow
+def test_is_prepared(project_directory_factory):
+    env_yaml = """name: test
+dependencies: [python=3.8]
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    _ = project.default_environment.prepare()
+    assert project.default_environment.is_prepared
+
+    updated_yaml = """name: test
+dependencies:
+  - python=3.8
+  - requests
+"""
+
+    with (project.default_environment.sources[0]).open("wt") as f:
+        f.write(updated_yaml)
+
+    assert not project.default_environment.is_locked
+    assert not project.default_environment.is_prepared
+
+    project.default_environment.lock()
+    assert project.default_environment.is_locked
+    assert not project.default_environment.is_prepared
+
+    _ = project.default_environment.prepare()
+    assert project.default_environment.is_prepared
+
+
+@pytest.mark.slow
+def test_is_prepared_live_env_changed(project_directory_factory):
+    env_yaml = """name: test
+dependencies: [python=3.8]
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    _ = project.default_environment.prepare()
+    assert project.default_environment.is_locked
+    assert project.default_environment.is_prepared
+
+    _ = call_conda(
+        ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
+    )
+
+    assert project.default_environment.is_locked
+    assert not project.default_environment.is_prepared
+
+
 def test_prepare_env_exists(project_directory_factory, capsys):
     env_yaml = """name: test
 dependencies: []

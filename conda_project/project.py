@@ -68,10 +68,6 @@ class Environment(BaseModel):
         extra = "forbid"
 
     @property
-    def is_prepared(self) -> bool:
-        return (self.prefix / "conda-meta" / "history").exists()
-
-    @property
     def _overrides(self):
         specified_channels = []
         specified_platforms = set()
@@ -114,6 +110,28 @@ class Environment(BaseModel):
             return all_up_to_date
         else:
             return False
+
+    @property
+    def is_prepared(self) -> bool:
+        if (self.prefix / "conda-meta" / "history").exists():
+            if self.is_locked:
+                installed_pkgs = call_conda(
+                    ["list", "-p", str(self.prefix), "--explicit"]
+                ).stdout.splitlines()[3:]
+
+                lock = parse_conda_lock_file(self.lockfile)
+                rendered = render_lockfile_for_platform(
+                    lockfile=lock,
+                    platform=current_platform(),
+                    kind="explicit",
+                    include_dev_dependencies=False,
+                    extras=None,
+                )
+                locked_pkgs = [p.split("#")[0] for p in rendered[3:]]
+
+                return installed_pkgs == locked_pkgs
+
+        return False
 
     def lock(
         self,
@@ -201,8 +219,7 @@ class Environment(BaseModel):
             The path to the created environment.
 
         """
-        conda_meta = self.prefix / "conda-meta" / "history"
-        if conda_meta.exists() and not force:
+        if self.is_prepared and not force:
             logger.info(f"environment already exists at {self.prefix}")
             if verbose:
                 print(
