@@ -96,7 +96,7 @@ def _create_create_parser(
         default=None,
     )
     p.add_argument(
-        "--no-lock", help="Do no create the conda-lock.yml file", action="store_true"
+        "--no-lock", help="Do not create the conda-lock.yml file", action="store_true"
     )
     p.add_argument(
         "--prepare",
