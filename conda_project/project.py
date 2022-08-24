@@ -148,7 +148,7 @@ class Environment(BaseModel):
     ) -> None:
         """Generate locked package lists for the supplied or default platforms
 
-        Utilizes conda-lock to build the conda-lock.yml file.
+        Utilizes conda-lock to build the .conda-lock.yml file.
 
         Args:
             force:       Rebuild the .conda-lock.yml file even if no changes were made
@@ -300,7 +300,13 @@ class BaseEnvironments(BaseModel):
         return getattr(self, key)
 
     def keys(self):
-        return self.__fields__.keys()
+        return self.__dict__.keys()
+
+    def items(self):
+        return self.__dict__.items()
+
+    def values(self):
+        return self.__dict__.values()
 
     class Config:
         allow_mutation = False
