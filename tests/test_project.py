@@ -219,7 +219,7 @@ dependencies:
     assert project.default_environment.is_locked
     assert not project.default_environment.is_prepared
 
-    _ = project.default_environment.prepare()
+    _ = project.default_environment.prepare(force=True)
     assert project.default_environment.is_prepared
 
 
@@ -252,13 +252,13 @@ dependencies: []
 
     env_dir = project.default_environment.prepare(verbose=True)
 
-    out, _ = capsys.readouterr()
-    assert f"environment created at {env_dir}" == out.splitlines()[-1]
+    stdout = capsys.readouterr().out
+    assert f"environment created at {env_dir}" in stdout
 
     _ = project.default_environment.prepare(verbose=True)
 
-    out, _ = capsys.readouterr()
-    assert "The environment already exists" in out.splitlines()[-1]
+    stdout = capsys.readouterr().out
+    assert "The environment already exists" in stdout
 
 
 @pytest.mark.slow
@@ -401,11 +401,16 @@ dependencies: []
 
     project = CondaProject(project_path)
     project.default_environment.lock(verbose=True)
+    stdout = capsys.readouterr().out
     assert project.default_environment.is_locked
 
     lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
     project.default_environment.lock(verbose=True)
-    assert "Skipping" in capsys.readouterr().out.splitlines()[-2]
+    stdout = capsys.readouterr().out
+    assert (
+        "The lockfile default.conda-lock.yml already exists and is up-to-date."
+        in stdout
+    )
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
 
     project.default_environment.lock(force=True)
@@ -433,33 +438,6 @@ dependencies:
 
 
 @pytest.mark.slow
-def test_update_lock(project_directory_factory):
-    env_yaml = """name: test
-dependencies: []
-"""
-    project_path = project_directory_factory(env_yaml=env_yaml)
-
-    project = CondaProject(project_path)
-    project.default_environment.lock(verbose=True)
-    assert project.default_environment.is_locked
-
-    updated_env_yaml = """name: test
-dependencies:
-  - python=3.8
-"""
-    with (project.default_environment.sources[0]).open("wt") as f:
-        f.write(updated_env_yaml)
-
-    assert not project.default_environment.is_locked
-
-    project.default_environment.lock()
-    with project.default_environment.lockfile.open() as f:
-        y = YAML().load(f)
-
-    assert "python" in [p["name"] for p in y["package"]]
-
-
-@pytest.mark.slow
 def test_relock_add_packages(project_directory_factory):
     env_yaml = """name: test
 dependencies:
@@ -473,8 +451,9 @@ dependencies:
     assert project.default_environment.lockfile.exists()
     lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
     with project.default_environment.lockfile.open() as f:
-        lock = f.read()
-    assert "requests" not in lock
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" not in [p["name"] for p in lock["package"]]
 
     env_yaml = """name: test
 dependencies:
@@ -484,15 +463,92 @@ dependencies:
     with project.default_environment.sources[0].open("w") as f:
         f.write(env_yaml)
 
+    assert not project.default_environment.is_locked
+
     project.default_environment.lock()
     with project.default_environment.lockfile.open() as f:
-        lock = f.read()
-    assert "requests" in lock
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" in [p["name"] for p in lock["package"]]
 
     assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
 
 
-def test_project_renamed_environment(project_directory_factory):
+@pytest.mark.slow
+def test_relock_remove_packages(project_directory_factory):
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+  - requests
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock()
+
+    assert project.default_environment.lockfile.exists()
+    lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" in [p["name"] for p in lock["package"]]
+
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+"""
+    with project.default_environment.sources[0].open("w") as f:
+        f.write(env_yaml)
+
+    project.default_environment.lock()
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" not in [p["name"] for p in lock["package"]]
+
+    assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
+
+
+@pytest.mark.slow
+def test_relock_failed(project_directory_factory):
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+  - requests
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock()
+
+    assert project.default_environment.lockfile.exists()
+    lockfile_mtime = os.path.getmtime(project.default_environment.lockfile)
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" in [p["name"] for p in lock["package"]]
+
+    env_yaml = """name: test
+dependencies:
+  - python=3.8
+  - __bad-package
+"""
+    with project.default_environment.sources[0].open("w") as f:
+        f.write(env_yaml)
+
+    with pytest.raises(CondaProjectError):
+        project.default_environment.lock()
+
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+    assert "python" in [p["name"] for p in lock["package"]]
+    assert "requests" in [p["name"] for p in lock["package"]]
+    assert "__bad-package" not in [p["name"] for p in lock["package"]]
+
+    assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
+
+
+def test_project_named_environment(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -519,7 +575,7 @@ environments:
     assert project.default_environment == project.environments["standard"]
 
 
-def test_project_hyphen_renamed_environment(project_directory_factory):
+def test_project_hyphen_named_environment(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -546,7 +602,7 @@ environments:
     assert project.default_environment == project.environments["my-env"]
 
 
-def test_prepare_renamed_environment(project_directory_factory):
+def test_prepare_named_environment(project_directory_factory):
     env_yaml = """dependencies: []
 """
 
@@ -883,3 +939,34 @@ dependencies:
     assert "The following packages are not available from current channels:" in str(
         exinfo.value
     )
+
+
+def test_check_multi_env(project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = f"""name: multi-envs
+environments:
+  env1: [env1{project_directory_factory._suffix}]
+  env2: [env2{project_directory_factory._suffix}]
+"""
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    project = CondaProject(project_path)
+    assert not project.check()
+
+    project.environments["env1"].lock()
+    assert not project.check()
+
+    project.environments["env2"].lock()
+    assert project.check()
+
+    env1 = "dependencies: [python=3.8]\n"
+    with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
+        f.write(env1)
+
+    assert not project.check()

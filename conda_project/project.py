@@ -3,19 +3,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
+import json
 import logging
 import os
+import shutil
 import sys
-from subprocess import SubprocessError
-import json
 import tempfile
 import warnings
 from collections import OrderedDict
 from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
-from pydantic import BaseModel, create_model
-from typing import List, Optional, Union, Tuple
+from subprocess import SubprocessError
+from typing import List, Optional, Tuple, Union
 
 from conda_lock.conda_lock import (
     default_virtual_package_repodata,
@@ -24,17 +24,20 @@ from conda_lock.conda_lock import (
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
+from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, current_platform
 from .exceptions import CondaProjectError
 from .project_file import (
-    PROJECT_YAML_FILENAMES,
     ENVIRONMENT_YAML_FILENAMES,
+    PROJECT_YAML_FILENAMES,
     CondaProjectYaml,
     EnvironmentYaml,
     yaml,
 )
 from .utils import Spinner, env_variable
+
+_TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
 DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
@@ -107,8 +110,9 @@ class Environment(BaseModel):
                 virtual_package_repo=default_virtual_package_repodata(),
             )
             all_up_to_date = all(
-                spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
-                for p in lock.metadata.platforms
+                p in lock.metadata.platforms
+                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
+                for p in spec.platforms
             )
             return all_up_to_date
         else:
@@ -156,6 +160,24 @@ class Environment(BaseModel):
             verbose:     A verbose flag passed into the `conda lock` command.
 
         """
+        if self.is_locked and not force:
+            if verbose:
+                print(
+                    f"The lockfile {self.lockfile.name} already exists and is up-to-date.\n"
+                    f"Run 'conda project lock --force {self.name} to recreate it from source specification."
+                )
+            return
+
+        # Setup temporary file for conda-lock to write to.
+        # If a package is removed from the environment source
+        # after the lockfile has been created conda-lock updates
+        # the hash in the lockfile but does not remove the unspecified
+        # package (and necessary orphaned dependencies) from the lockfile.
+        # To avoid this scenario lockfiles are written to a temporary location
+        # and copied back to the self.lockfile path if successful.
+        tempdir = Path(tempfile.mkdtemp())
+        lockfile = tempdir / self.lockfile.name
+
         channel_overrides, platform_overrides = self._overrides
 
         specified_channels = []
@@ -165,7 +187,7 @@ class Environment(BaseModel):
                 if channel not in specified_channels:
                     specified_channels.append(channel)
 
-        with redirect_stderr(StringIO()) as stderr_buffer:
+        with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.condarc)):
                 if verbose:
                     context = Spinner(prefix=f"Locking dependencies for {self.name}")
@@ -177,12 +199,12 @@ class Environment(BaseModel):
                         make_lock_files(
                             conda=CONDA_EXE,
                             src_files=list(self.sources),
-                            lockfile_path=self.lockfile,
-                            check_input_hash=not force,
+                            lockfile_path=lockfile,
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
                         )
+                        shutil.copy(lockfile, self.lockfile)
                     except SubprocessError as e:
                         output = json.loads(e.output)
                         msg = output["message"].replace(
@@ -191,19 +213,12 @@ class Environment(BaseModel):
                         )
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectError(msg)
+                    finally:
+                        shutil.rmtree(tempdir)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         logger.info(msg)
-        if verbose:
-            lines = [
-                line
-                for line in stderr_buffer.getvalue().splitlines()
-                if "Skipping" in line
-            ]
-            if lines:
-                print("\n".join(lines))
-            print(msg)
 
     def prepare(
         self,
@@ -227,22 +242,35 @@ class Environment(BaseModel):
             The path to the created environment.
 
         """
-        if self.is_prepared and not force:
-            logger.info(f"environment already exists at {self.prefix}")
-            if verbose:
-                print(
-                    "The environment already exists, use --force to recreate it from the locked dependencies."
-                )
-            return self.prefix
-
         if not self.is_locked:
+            if verbose:
+                print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
+
+        if self.is_prepared:
+            if not force:
+                logger.info(f"environment already exists at {self.prefix}")
+                if verbose:
+                    print(
+                        f"The environment already exists and is up-to-date.\n"
+                        f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
+                    )
+                return self.prefix
+        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
+            if not force:
+                if verbose:
+                    print(
+                        f"The environment exists but does not match the locked dependencies.\n"
+                        f"Run 'conda project prepare --force {self.name}' to recreate the environment from the "
+                        f"locked dependencies."
+                    )
+                return self.prefix
 
         lock = parse_conda_lock_file(self.lockfile)
         if current_platform() not in lock.metadata.platforms:
             msg = (
                 f"Your current platform, {current_platform()}, is not in the supported locked platforms.\n"
-                f"You may need to edit your environment files and run conda project lock again."
+                f"You may need to edit your environment source files and run 'conda project lock' again."
             )
             raise CondaProjectError(msg)
 
@@ -254,8 +282,7 @@ class Environment(BaseModel):
             extras=None,
         )
 
-        delete = False if sys.platform.startswith("win") else True
-        with tempfile.NamedTemporaryFile(mode="w", delete=delete) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
             f.write("\n".join(rendered))
             f.flush()
 
@@ -301,9 +328,6 @@ class BaseEnvironments(BaseModel):
 
     def keys(self):
         return self.__dict__.keys()
-
-    def items(self):
-        return self.__dict__.items()
 
     def values(self):
         return self.__dict__.values()
@@ -470,3 +494,40 @@ class CondaProject:
     def default_environment(self) -> Environment:
         name = next(iter(self._project_file.environments))
         return self.environments[name]
+
+    def check(self, verbose=False) -> bool:
+        """Check the project for inconsistencies or errors.
+
+        This will check that .conda-lock.yml files exist for each environment
+        and that they are up-to-date against the environment specification.
+
+        Returns:
+            Boolean: True if all environments are locked and update to date,
+                     False if any environment is not locked or out-of-date.
+
+        """
+        return_status = []
+
+        for env in self.environments.values():
+            if not env.lockfile.exists():
+                if verbose:
+                    print(f"The environment {env.name} is not locked.", file=sys.stderr)
+                    print(
+                        f"Run 'conda project lock {env.name}' to create.",
+                        file=sys.stderr,
+                    )
+                return_status.append(False)
+            elif not env.is_locked:
+                if verbose:
+                    print(
+                        f"The lockfile for environment {env.name} is out-of-date.",
+                        file=sys.stderr,
+                    )
+                    print(
+                        f"Run 'conda project lock {env.name}' to fix.", file=sys.stderr
+                    )
+                return_status.append(False)
+            else:
+                return_status.append(True)
+
+        return all(return_status)

@@ -16,8 +16,11 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
     @wraps(func)
     def wrapper(args: Namespace) -> int:
         try:
-            func(args)
-            return 0
+            ret = func(args)
+            if ret:
+                return 0
+            else:
+                return 1
         except CondaProjectError as e:
             print(f"{e.__class__.__name__}: {e}", file=sys.stderr)
             return 1
@@ -26,7 +29,7 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 
 @handle_errors
-def create(args: Namespace) -> None:
+def create(args: Namespace) -> bool:
     project = CondaProject.create(
         args.directory,
         args.name,
@@ -41,24 +44,32 @@ def create(args: Namespace) -> None:
     if args.prepare:
         project.default_environment.prepare(verbose=True)
 
+    return True
+
 
 @handle_errors
-def lock(args: Namespace) -> None:
+def lock(args: Namespace) -> bool:
     project = CondaProject(args.directory)
-    if args.all:
-        for _, env in project.environments:
-            env.lock(force=args.force, verbose=True)
+
+    if args.environment:
+        to_lock = [project.environments[args.environment]]
     else:
-        env = (
-            project.environments[args.environment]
-            if args.environment
-            else project.default_environment
-        )
+        to_lock = project.environments.values()
+
+    for env in to_lock:
         env.lock(force=args.force, verbose=True)
 
+    return True
+
 
 @handle_errors
-def prepare(args: Namespace) -> None:
+def check(args: Namespace) -> bool:
+    project = CondaProject(args.directory)
+    return project.check(verbose=True)
+
+
+@handle_errors
+def prepare(args: Namespace) -> bool:
     project = CondaProject(args.directory)
 
     if args.all:
@@ -72,13 +83,15 @@ def prepare(args: Namespace) -> None:
         )
         env.prepare(force=args.force, verbose=True)
 
+    return True
+
 
 @handle_errors
-def clean(args: Namespace) -> None:
+def clean(args: Namespace) -> bool:
     project = CondaProject(args.directory)
 
     if args.all:
-        for _, env in project.environments:
+        for env in project.environments.values():
             env.clean(verbose=True)
     else:
         env = (
@@ -87,3 +100,5 @@ def clean(args: Namespace) -> None:
             else project.default_environment
         )
         env.clean(verbose=True)
+
+    return True

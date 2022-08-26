@@ -8,7 +8,7 @@ import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
 
-PROJECT_COMMANDS = ("create",)
+PROJECT_COMMANDS = ("create", "check")
 ENVIRONMENT_COMMANDS = ("clean", "prepare", "lock")
 ALL_COMMANDS = PROJECT_COMMANDS + ENVIRONMENT_COMMANDS
 
@@ -39,10 +39,10 @@ def test_no_env_yaml(tmpdir, monkeypatch, capsys):
 
 def test_unknown_command(capsys):
     with pytest.raises(SystemExit):
-        assert parse_and_run(["nope"]) is None
+        assert parse_and_run(["__nope__"]) is None
 
     err = capsys.readouterr().err
-    assert "invalid choice: 'nope'" in err
+    assert "invalid choice: '__nope__'" in err
 
 
 @pytest.mark.parametrize("command", ALL_COMMANDS)
@@ -94,8 +94,7 @@ def test_cli_verbose_project(command, monkeypatch, project_directory_factory):
 
     monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
 
-    ret = parse_and_run([command, "--directory", str(project_path)])
-    assert ret == 0
+    _ = parse_and_run([command, "--directory", str(project_path)])
 
 
 def test_create_with_prepare(tmpdir):
@@ -133,8 +132,7 @@ environments:
     assert ret == 0
 
 
-@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
-def test_command_all_environments(command, monkeypatch, project_directory_factory):
+def test_prepare_and_clean_all_environments(monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
     project_yaml = f"""name: multi-envs
 environments:
@@ -152,7 +150,89 @@ environments:
     def mocked_action(self, *args, **kwargs):
         assert self.name in ["env1", "env2"]
 
-    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
+    monkeypatch.setattr("conda_project.project.Environment.prepare", mocked_action)
+    monkeypatch.setattr("conda_project.project.Environment.clean", mocked_action)
 
-    ret = parse_and_run([command, "--directory", str(project_path), "--all"])
+    ret = parse_and_run(["prepare", "--directory", str(project_path), "--all"])
     assert ret == 0
+
+    ret = parse_and_run(["clean", "--directory", str(project_path), "--all"])
+    assert ret == 0
+
+
+def test_lock_all_environments(monkeypatch, project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = f"""name: multi-envs
+environments:
+  env1: [env1{project_directory_factory._suffix}]
+  env2: [env2{project_directory_factory._suffix}]
+"""
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    def mocked_action(self, *args, **kwargs):
+        assert self.name in ["env1", "env2"]
+
+    monkeypatch.setattr("conda_project.project.Environment.lock", mocked_action)
+
+    ret = parse_and_run(["lock", "--directory", str(project_path)])
+    assert ret == 0
+
+
+@pytest.mark.slow
+def test_check_multi_env(project_directory_factory, capsys):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = f"""name: multi-envs
+environments:
+  env1: [env1{project_directory_factory._suffix}]
+  env2: [env2{project_directory_factory._suffix}]
+"""
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    ret = parse_and_run(["check", "--directory", str(project_path)])
+    assert ret == 1
+
+    stderr = capsys.readouterr().err
+    assert "The environment env1 is not locked" in stderr
+    assert "The environment env2 is not locked" in stderr
+
+    ret = parse_and_run(["lock", "--directory", str(project_path)])
+    assert ret == 0
+
+    ret = parse_and_run(["check", "--directory", str(project_path)])
+    assert ret == 0
+
+    env1 = "dependencies: [python=3.8]\n"
+    with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
+        f.write(env1)
+
+    ret = parse_and_run(["check", "--directory", str(project_path)])
+    assert ret == 1
+
+    stderr = capsys.readouterr().err
+    assert stderr
+    assert "The lockfile for environment env1 is out-of-date" in stderr
+    assert "The lockfile for environment env2" not in stderr
+
+    env2 = "dependencies: [python=3.8]\n"
+    with (project_path / f"env2{project_directory_factory._suffix}").open("w") as f:
+        f.write(env2)
+
+    ret = parse_and_run(["check", "--directory", str(project_path)])
+    assert ret == 1
+
+    stderr = capsys.readouterr().err
+    assert stderr
+    assert "The lockfile for environment env1 is out-of-date" in stderr
+    assert "The lockfile for environment env2 is out-of-date" in stderr
