@@ -215,7 +215,7 @@ dependencies:
     assert not project.default_environment.is_locked
     assert not project.default_environment.is_prepared
 
-    project.default_environment.lock()
+    _ = project.default_environment.prepare(force=False)
     assert project.default_environment.is_locked
     assert not project.default_environment.is_prepared
 
@@ -224,7 +224,7 @@ dependencies:
 
 
 @pytest.mark.slow
-def test_is_prepared_live_env_changed(project_directory_factory):
+def test_is_prepared_live_env_changed(project_directory_factory, capsys):
     env_yaml = """name: test
 dependencies: [python=3.8]
 """
@@ -241,6 +241,38 @@ dependencies: [python=3.8]
 
     assert project.default_environment.is_locked
     assert not project.default_environment.is_prepared
+
+    _ = project.default_environment.prepare(force=False, verbose=True)
+    assert not project.default_environment.is_prepared
+
+    stdout = capsys.readouterr().out
+    assert "The environment exists but does not match the locked dependencies" in stdout
+
+
+@pytest.mark.slow
+def test_is_prepared_source_changed(project_directory_factory, capsys):
+    env_yaml = """name: test
+dependencies: [python=3.8]
+"""
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    _ = project.default_environment.prepare()
+    assert project.default_environment.is_locked
+    assert project.default_environment.is_prepared
+
+    _ = call_conda(
+        ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
+    )
+
+    assert project.default_environment.is_locked
+    assert not project.default_environment.is_prepared
+
+    _ = project.default_environment.prepare(force=False, verbose=True)
+    assert not project.default_environment.is_prepared
+
+    stdout = capsys.readouterr().out
+    assert "The environment exists but does not match the locked dependencies" in stdout
 
 
 def test_prepare_env_exists(project_directory_factory, capsys):
