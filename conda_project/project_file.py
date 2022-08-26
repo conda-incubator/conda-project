@@ -66,7 +66,7 @@ class EnvironmentYaml(BaseYaml):
     def only_pip_key_allowed(cls, v):
         for item in v:
             if isinstance(item, dict):
-                if not item.keys() == ["pip"]:
+                if not item.keys() == {"pip"}:
                     raise ValueError(
                         f'The dependencies key contains an invalid map {item}. Only "pip:" is allowed.'
                     )
