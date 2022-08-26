@@ -243,7 +243,7 @@ class Environment(BaseModel):
 
         """
         if not self.is_locked:
-            if verbose:
+            if verbose and self.lockfile.exists():
                 print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
 
