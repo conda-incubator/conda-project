@@ -21,7 +21,7 @@ def env_variable(key: str, value: str) -> Generator:
     yield
 
     if old is None:
-        del os.environ[key]
+        os.environ.pop(key, None)
     else:
         os.environ[key] = old
 
