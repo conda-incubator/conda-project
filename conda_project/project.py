@@ -299,7 +299,8 @@ class Environment(BaseModel):
                 args, condarc_path=self.condarc, verbose=verbose, logger=logger
             )
 
-        (self.prefix / ".gitignore").touch()
+        with (self.prefix / ".gitignore").open("wt") as f:
+            f.write("*")
 
         msg = f"environment created at {self.prefix}"
         logger.info(msg)

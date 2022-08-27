@@ -175,6 +175,8 @@ dependencies: []
 
     env_dir = project.default_environment.prepare()
     assert (env_dir / ".gitignore").exists()
+    with (env_dir / ".gitignore").open("rt") as f:
+        assert f.read().strip() == "*"
 
 
 def test_prepare_no_dependencies(project_directory_factory):
