@@ -35,7 +35,7 @@ from .project_file import (
     EnvironmentYaml,
     yaml,
 )
-from .utils import Spinner, env_variable
+from .utils import Spinner, env_variable, find_file
 
 _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
@@ -43,20 +43,6 @@ DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("CONDA_PROJECT_LOGLEVEL", "WARNING"))
-
-
-def _find_file(directory: Path, options: tuple) -> Optional[Path]:
-    """Search for a file in directory or its parents from a tuple of filenames.
-
-    Returns:
-        The path to the file if found else None
-
-    """
-    for filename in options:
-        path = directory / filename
-        if path.exists():
-            return path.resolve()
-    return None
 
 
 class Environment(BaseModel):
@@ -358,7 +344,7 @@ class CondaProject:
         self.directory = Path(directory).resolve()
         logger.info(f"created Project instance at {self.directory}")
 
-        self.project_yaml_path = _find_file(self.directory, PROJECT_YAML_FILENAMES)
+        self.project_yaml_path = find_file(self.directory, PROJECT_YAML_FILENAMES)
         if self.project_yaml_path is not None:
             self._project_file = CondaProjectYaml.parse_yaml(self.project_yaml_path)
         else:
@@ -367,7 +353,7 @@ class CondaProject:
                 f"No {options} file was found. Checking for environment YAML files."
             )
 
-            environment_yaml_path = _find_file(
+            environment_yaml_path = find_file(
                 self.directory, ENVIRONMENT_YAML_FILENAMES
             )
             if environment_yaml_path is None:
@@ -430,7 +416,7 @@ class CondaProject:
         if not directory.exists():
             directory.mkdir(parents=True)
 
-        existing_project_file = _find_file(directory, PROJECT_YAML_FILENAMES)
+        existing_project_file = find_file(directory, PROJECT_YAML_FILENAMES)
         if existing_project_file is not None:
             if verbose:
                 print(f"Existing project file found at {existing_project_file}.")

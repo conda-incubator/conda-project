@@ -9,7 +9,10 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
+from pathlib import Path
 from typing import Optional, Type
+
+from .exceptions import CondaProjectError
 
 
 @contextmanager
@@ -73,3 +76,31 @@ class Spinner:
         exc_tb: Optional[Traceback],
     ) -> None:
         self.stop()
+
+
+def find_file(directory: Path, options: tuple) -> Optional[Path]:
+    """Search for a file in a directory from a tuple of variants.
+
+    Returns:
+        The path to the file if found else None
+
+    Raises:
+        CondaProjectError if more than one of the options is found
+
+    """
+    found = []
+
+    for filename in options:
+        path = directory / filename
+        if path.exists():
+            found.append(path.resolve())
+
+    if len(found) == 1:
+        return found[0]
+    elif len(found) > 1:
+        _found_files = "\n".join([str(p) for p in found])
+        raise CondaProjectError(
+            f"Multiple variants of the same file were found.\n{_found_files}\nConsider using one of them."
+        )
+    else:
+        return None
