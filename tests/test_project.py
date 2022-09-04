@@ -131,7 +131,8 @@ def test_conda_project_init_empty_dir(tmpdir, caplog):
 
 
 def test_conda_project_init_with_env_yaml(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -167,7 +168,8 @@ def test_project_init_path(project_directory_factory):
 
 
 def test_prepare_with_gitignore(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -180,7 +182,8 @@ dependencies: []
 
 
 def test_prepare_no_dependencies(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -196,7 +199,8 @@ dependencies: []
 
 @pytest.mark.slow
 def test_is_prepared(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: [python=3.8]
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -205,7 +209,8 @@ dependencies: [python=3.8]
     _ = project.default_environment.prepare()
     assert project.default_environment.is_prepared
 
-    updated_yaml = """name: test
+    updated_yaml = """\
+name: test
 dependencies:
   - python=3.8
   - requests
@@ -227,7 +232,8 @@ dependencies:
 
 @pytest.mark.slow
 def test_is_prepared_live_env_changed(project_directory_factory, capsys):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: [python=3.8]
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -253,7 +259,8 @@ dependencies: [python=3.8]
 
 @pytest.mark.slow
 def test_is_prepared_source_changed(project_directory_factory, capsys):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: [python=3.8]
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -278,7 +285,8 @@ dependencies: [python=3.8]
 
 
 def test_prepare_env_exists(project_directory_factory, capsys):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -297,7 +305,8 @@ dependencies: []
 
 @pytest.mark.slow
 def test_prepare_and_clean(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
 """
@@ -327,7 +336,8 @@ dependencies:
 
 @pytest.mark.slow
 def test_lock(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
 """
@@ -343,7 +353,8 @@ dependencies:
 
 
 def test_lock_no_channels(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -360,7 +371,8 @@ dependencies: []
 
 
 def test_lock_with_channels(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 channels: [defusco, conda-forge, defaults]
 dependencies: []
 """
@@ -380,7 +392,8 @@ dependencies: []
 
 
 def test_lock_no_platforms(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -395,7 +408,8 @@ dependencies: []
 
 
 def test_lock_with_platforms(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 platforms: [linux-64, osx-64]
 """
@@ -411,7 +425,8 @@ platforms: [linux-64, osx-64]
 
 
 def test_lock_wrong_platform(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 platforms: [dummy-platform]
 """
@@ -428,7 +443,8 @@ platforms: [dummy-platform]
 
 
 def test_force_relock(project_directory_factory, capsys):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -452,7 +468,8 @@ dependencies: []
 
 
 def test_lock_outdated(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies: []
 """
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -461,7 +478,8 @@ dependencies: []
     project.default_environment.lock(verbose=True)
     assert project.default_environment.is_locked
 
-    updated_env_yaml = """name: test
+    updated_env_yaml = """\
+name: test
 dependencies:
   - python=3.8
 """
@@ -473,7 +491,8 @@ dependencies:
 
 @pytest.mark.slow
 def test_relock_add_packages(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
 """
@@ -489,7 +508,8 @@ dependencies:
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" not in [p["name"] for p in lock["package"]]
 
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
   - requests
@@ -510,7 +530,8 @@ dependencies:
 
 @pytest.mark.slow
 def test_relock_remove_packages(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
   - requests
@@ -527,7 +548,8 @@ dependencies:
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" in [p["name"] for p in lock["package"]]
 
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
 """
@@ -545,7 +567,8 @@ dependencies:
 
 @pytest.mark.slow
 def test_relock_failed(project_directory_factory):
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
   - requests
@@ -562,7 +585,8 @@ dependencies:
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" in [p["name"] for p in lock["package"]]
 
-    env_yaml = """name: test
+    env_yaml = """\
+name: test
 dependencies:
   - python=3.8
   - __bad-package
@@ -583,10 +607,10 @@ dependencies:
 
 
 def test_project_named_environment(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   standard: [environment{project_directory_factory._suffix}]
 """
@@ -610,10 +634,10 @@ environments:
 
 
 def test_project_hyphen_named_environment(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   my-env: [environment{project_directory_factory._suffix}]
 """
@@ -637,10 +661,10 @@ environments:
 
 
 def test_prepare_named_environment(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   standard: [environment{project_directory_factory._suffix}]
 """
@@ -666,10 +690,10 @@ environments:
 
 
 def test_project_environments_immutable(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   default: [env{project_directory_factory._suffix}]
 """
@@ -694,10 +718,10 @@ environments:
 
 
 def test_project_multiple_envs(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   bbb: [env1{project_directory_factory._suffix}]
   default: [env2{project_directory_factory._suffix}]
@@ -717,10 +741,10 @@ environments:
 
 
 def test_lock_prepare_clean_default_with_multiple_envs(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   bbb: [env1{project_directory_factory._suffix}]
   default: [env2{project_directory_factory._suffix}]
@@ -750,10 +774,10 @@ environments:
 
 
 def test_lock_prepare_clean_named_with_multiple_envs(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   bbb: [env1{project_directory_factory._suffix}]
   default: [env2{project_directory_factory._suffix}]
@@ -785,10 +809,10 @@ environments:
 
 
 def test_lock_prepare_clean_multiple_envs(project_directory_factory):
-    env_yaml = """dependencies: []
-"""
+    env_yaml = "dependencies: []\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   bbb: [env1{project_directory_factory._suffix}]
   default: [env2{project_directory_factory._suffix}]
@@ -836,13 +860,12 @@ environments:
 
 @pytest.mark.slow
 def test_project_lock_env_multiple_sources(project_directory_factory):
-    environment_yml = """dependencies: [python]
-"""
+    environment_yml = "dependencies: [python]\n"
 
-    extras_yml = """dependencies: [requests]
-"""
+    extras_yml = "dependencies: [requests]\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   default:
     - environment{project_directory_factory._suffix}
@@ -875,13 +898,12 @@ environments:
 def test_project_lock_env_multiple_sources_different_directories(
     project_directory_factory,
 ):
-    environment_yml = """dependencies: [python]
-"""
+    environment_yml = "dependencies: [python]\n"
 
-    extras_yml = """dependencies: [requests]
-"""
+    extras_yml = "dependencies: [requests]\n"
 
-    project_yaml = f"""name: test
+    project_yaml = f"""\
+name: test
 environments:
   default:
     - ./environment{project_directory_factory._suffix}
@@ -924,7 +946,8 @@ environments:
     not is_libmamba_installed(), reason="Libmamba solver not installed."
 )
 def test_failed_to_solve_libmamba(project_directory_factory):
-    env_yaml = """name: fail
+    env_yaml = """\
+name: fail
 channels:
   - conda-forge
 
@@ -952,7 +975,8 @@ dependencies:
     not is_libmamba_installed(), reason="Libmamba solver not installed."
 )
 def test_failed_to_solve_classic(project_directory_factory):
-    env_yaml = """name: fail
+    env_yaml = """\
+name: fail
 channels:
   - conda-forge
 
@@ -977,7 +1001,8 @@ dependencies:
 
 def test_check_multi_env(project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = f"""name: multi-envs
+    project_yaml = f"""\
+name: multi-envs
 environments:
   env1: [env1{project_directory_factory._suffix}]
   env2: [env2{project_directory_factory._suffix}]

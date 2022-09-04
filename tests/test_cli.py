@@ -110,7 +110,8 @@ def test_create_with_prepare(tmpdir):
 @pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
 def test_command_with_environment_name(command, monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = f"""name: multi-envs
+    project_yaml = f"""\
+name: multi-envs
 environments:
   env1: [env1{project_directory_factory._suffix}]
   env2: [env2{project_directory_factory._suffix}]
@@ -134,7 +135,8 @@ environments:
 
 def test_prepare_and_clean_all_environments(monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = f"""name: multi-envs
+    project_yaml = f"""\
+name: multi-envs
 environments:
   env1: [env1{project_directory_factory._suffix}]
   env2: [env2{project_directory_factory._suffix}]
@@ -162,7 +164,8 @@ environments:
 
 def test_lock_all_environments(monkeypatch, project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = f"""name: multi-envs
+    project_yaml = f"""\
+name: multi-envs
 environments:
   env1: [env1{project_directory_factory._suffix}]
   env2: [env2{project_directory_factory._suffix}]
@@ -187,7 +190,8 @@ environments:
 @pytest.mark.slow
 def test_check_multi_env(project_directory_factory, capsys):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = f"""name: multi-envs
+    project_yaml = f"""\
+name: multi-envs
 environments:
   env1: [env1{project_directory_factory._suffix}]
   env2: [env2{project_directory_factory._suffix}]

@@ -64,7 +64,8 @@ def test_bad_yaml_file():
 
 
 def test_miss_spelled_env_yaml_file():
-    environment_yaml = """name: misspelled
+    environment_yaml = """\
+name: misspelled
 channel:
   - defaults
 
@@ -97,7 +98,8 @@ def test_project_file_with_one_env():
 
 
 def test_project_yaml_round_trip():
-    project_file_input = """name: my-project
+    project_file_input = """\
+name: my-project
 # comment
 environments:
   default:
@@ -114,7 +116,8 @@ environments:
 
     written_contents = stream.getvalue()
 
-    expected_contents = """name: my-project
+    expected_contents = """\
+name: my-project
 environments:
   default:
     - environment.yml
