@@ -1,11 +1,12 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-from pydantic import BaseModel, validator, ValidationError
-from pathlib import Path
-from typing import List, Dict, Optional, Union, OrderedDict, TextIO
-from ruamel.yaml import YAML
 import json
+from pathlib import Path
+from typing import Dict, List, Optional, OrderedDict, TextIO, Union
+
+from pydantic import BaseModel, ValidationError, validator
+from ruamel.yaml import YAML
 
 from .exceptions import CondaProjectError
 

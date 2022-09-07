@@ -1,14 +1,15 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-import pytest
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Optional, Dict, Union
-from io import StringIO
+from typing import Dict, List, Optional, Union
+
+import pytest
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.project_file import EnvironmentYaml, BaseYaml, CondaProjectYaml
+from conda_project.project_file import BaseYaml, CondaProjectYaml, EnvironmentYaml
 
 
 def test_empty_environment():

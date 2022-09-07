@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+
 import pytest
 
-from conda_project.utils import env_variable, find_file
 from conda_project.exceptions import CondaProjectError
+from conda_project.utils import env_variable, find_file
 
 
 def test_env_var_context():

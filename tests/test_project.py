@@ -2,13 +2,13 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 import json
-import os
-
 import logging
-import pytest
+import os
 from pathlib import Path
-from ruamel.yaml import YAML
 from textwrap import dedent
+
+import pytest
+from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError
