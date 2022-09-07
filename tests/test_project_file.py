@@ -3,6 +3,7 @@
 
 import pytest
 from pathlib import Path
+from textwrap import dedent
 from typing import List, Optional, Dict, Union
 from io import StringIO
 
@@ -64,12 +65,15 @@ def test_bad_yaml_file():
 
 
 def test_miss_spelled_env_yaml_file():
-    environment_yaml = """\
-name: misspelled
-channel:
-  - defaults
+    environment_yaml = dedent(
+        """\
+        name: misspelled
+        channel:
+            - defaults
 
-dependencies: []"""
+        dependencies: []
+        """
+    )
 
     with pytest.raises(CondaProjectError) as exinfo:
         _ = EnvironmentYaml.parse_yaml(environment_yaml)
@@ -98,16 +102,18 @@ def test_project_file_with_one_env():
 
 
 def test_project_yaml_round_trip():
-    project_file_input = """\
-name: my-project
-# comment
-environments:
-  default:
-    - ./environment.yml
-    - ../dev.yaml
-  another:
-    - another-env.yml
-"""
+    project_file_input = dedent(
+        """\
+        name: my-project
+        # comment
+        environments:
+          default:
+            - ./environment.yml
+            - ../dev.yaml
+          another:
+            - another-env.yml
+        """
+    )
 
     project_file = CondaProjectYaml.parse_yaml(project_file_input)
 
@@ -116,14 +122,16 @@ environments:
 
     written_contents = stream.getvalue()
 
-    expected_contents = """\
-name: my-project
-environments:
-  default:
-    - environment.yml
-    - ../dev.yaml
-  another:
-    - another-env.yml
-"""
+    expected_contents = dedent(
+        """\
+        name: my-project
+        environments:
+          default:
+            - environment.yml
+            - ../dev.yaml
+          another:
+            - another-env.yml
+        """
+    )
 
     assert written_contents == expected_contents
