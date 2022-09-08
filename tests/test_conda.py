@@ -7,14 +7,15 @@ from conda_project.conda import call_conda, conda_info, current_platform
 from conda_project.exceptions import CondaProjectError
 
 
-def test_local_condarc(tmpdir):
+def test_local_condarc(tmp_path):
     condarc = "channels: [__conda-project-test]\n"
-    condarc_file = tmpdir.join(".condarc")
-    condarc_file.write(condarc)
+    condarc_file = tmp_path / ".condarc"
+    with condarc_file.open("wt") as f:
+        f.write(condarc)
 
     proc = call_conda(
         ["config", "--show", "channels"],
-        condarc_path=condarc_file.strpath,
+        condarc_path=condarc_file,
         verbose=False,
     )
     channels = proc.stdout.splitlines()

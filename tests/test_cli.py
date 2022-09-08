@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-import os
 from functools import partial
 from textwrap import dedent
 
@@ -28,8 +27,8 @@ def test_no_command(capsys, monkeypatch):
     assert "conda-project [-h] [-V] command" in out
 
 
-def test_no_env_yaml(tmpdir, monkeypatch, capsys):
-    monkeypatch.chdir(tmpdir)
+def test_no_env_yaml(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
 
     monkeypatch.setattr("sys.argv", ["conda-project", "prepare"])
     assert main() == 1
@@ -98,14 +97,12 @@ def test_cli_verbose_project(command, monkeypatch, project_directory_factory):
     _ = parse_and_run([command, "--directory", str(project_path)])
 
 
-def test_create_with_prepare(tmpdir):
-    ret = parse_and_run(["create", "--directory", str(tmpdir), "--prepare"])
+def test_create_with_prepare(tmp_path):
+    ret = parse_and_run(["create", "--directory", str(tmp_path), "--prepare"])
 
     assert ret == 0
 
-    assert os.path.exists(
-        os.path.join(tmpdir, "envs", "default", "conda-meta", "history")
-    )
+    assert (tmp_path / "envs" / "default" / "conda-meta" / "history").exists()
 
 
 @pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)

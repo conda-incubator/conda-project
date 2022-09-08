@@ -24,8 +24,8 @@ def is_libmamba_installed():
         return False
 
 
-def test_project_create_new_directory(tmpdir, capsys):
-    project_directory = os.path.join(tmpdir, "new-project")
+def test_project_create_new_directory(tmp_path, capsys):
+    project_directory = tmp_path / "new-project"
     assert not os.path.exists(project_directory)
 
     p = CondaProject.create(project_directory, lock_dependencies=False, verbose=True)
@@ -44,16 +44,16 @@ def test_project_create_new_directory(tmpdir, capsys):
     assert f"Project created at {project_directory}\n" == out
 
 
-def test_project_create_twice(tmpdir, capsys):
-    _ = CondaProject.create(tmpdir, lock_dependencies=False)
-    p = CondaProject.create(tmpdir, lock_dependencies=False, verbose=True)
+def test_project_create_twice(tmp_path, capsys):
+    _ = CondaProject.create(tmp_path, lock_dependencies=False)
+    p = CondaProject.create(tmp_path, lock_dependencies=False, verbose=True)
 
     out, _ = capsys.readouterr()
     assert f"Existing project file found at {p.project_yaml_path}.\n" == out
 
 
-def test_project_create_default_platforms(tmpdir):
-    p = CondaProject.create(tmpdir, lock_dependencies=False)
+def test_project_create_default_platforms(tmp_path):
+    p = CondaProject.create(tmp_path, lock_dependencies=False)
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -61,8 +61,8 @@ def test_project_create_default_platforms(tmpdir):
     assert env["platforms"] == list(DEFAULT_PLATFORMS)
 
 
-def test_project_create_specific_platforms(tmpdir):
-    p = CondaProject.create(tmpdir, platforms=["linux-64"], lock_dependencies=False)
+def test_project_create_specific_platforms(tmp_path):
+    p = CondaProject.create(tmp_path, platforms=["linux-64"], lock_dependencies=False)
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -70,9 +70,9 @@ def test_project_create_specific_platforms(tmpdir):
     assert env["platforms"] == ["linux-64"]
 
 
-def test_project_create_specific_channels(tmpdir):
+def test_project_create_specific_channels(tmp_path):
     p = CondaProject.create(
-        tmpdir,
+        tmp_path,
         dependencies=["python=3.8", "numpy"],
         channels=["conda-forge", "defaults"],
         lock_dependencies=False,
@@ -85,9 +85,9 @@ def test_project_create_specific_channels(tmpdir):
     assert env["channels"] == ["conda-forge", "defaults"]
 
 
-def test_project_create_default_channel(tmpdir):
+def test_project_create_default_channel(tmp_path):
     p = CondaProject.create(
-        tmpdir, dependencies=["python=3.8", "numpy"], lock_dependencies=False
+        tmp_path, dependencies=["python=3.8", "numpy"], lock_dependencies=False
     )
 
     with p.default_environment.sources[0].open() as f:
@@ -97,9 +97,9 @@ def test_project_create_default_channel(tmpdir):
     assert env["channels"] == ["defaults"]
 
 
-def test_project_create_conda_configs(tmpdir):
+def test_project_create_conda_configs(tmp_path):
     p = CondaProject.create(
-        tmpdir,
+        tmp_path,
         dependencies=["python=3.8", "numpy"],
         conda_configs=["experimental_solver=libmamba"],
         lock_dependencies=False,
@@ -113,17 +113,19 @@ def test_project_create_conda_configs(tmpdir):
 
 
 @pytest.mark.slow
-def test_project_create_and_lock(tmpdir):
-    p = CondaProject.create(tmpdir, dependencies=["python=3.8"], lock_dependencies=True)
+def test_project_create_and_lock(tmp_path):
+    p = CondaProject.create(
+        tmp_path, dependencies=["python=3.8"], lock_dependencies=True
+    )
     assert p.default_environment.lockfile.exists()
-    assert p.default_environment.lockfile == Path(tmpdir) / "default.conda-lock.yml"
+    assert p.default_environment.lockfile == tmp_path / "default.conda-lock.yml"
 
 
-def test_conda_project_init_empty_dir(tmpdir, caplog):
+def test_conda_project_init_empty_dir(tmp_path, caplog):
     caplog.set_level(logging.INFO)
 
     with pytest.raises(CondaProjectError) as excinfo:
-        CondaProject(tmpdir)
+        CondaProject(tmp_path)
     assert "No Conda environment.yml or environment.yaml file was found" in str(
         excinfo.value
     )
