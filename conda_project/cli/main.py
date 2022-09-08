@@ -106,9 +106,13 @@ def _create_create_parser(
     )
     p.add_argument(
         "dependencies",
-        help="Packages to add to the environment.yml in MatchSpec format.",
+        help=(
+            "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
+            "where <op> can be =, <, >, <=, or >=."
+        ),
         action="store",
         nargs="*",
+        metavar="PACKAGE_SPECIFICATION",
     )
 
     p.set_defaults(func=commands.create)
