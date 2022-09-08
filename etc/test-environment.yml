@@ -1,6 +1,10 @@
 name: test-conda-project
 channels:
   - defaults
+  - conda-forge
 dependencies:
+  - conda-lock>=1
+  - ruamel.yaml
+  - pydantic
   - pytest
   - pytest-cov

@@ -16,22 +16,89 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
     @wraps(func)
     def wrapper(args: Namespace) -> int:
         try:
-            func(args)
-            return 0
+            ret = func(args)
+            if ret:
+                return 0
+            else:
+                return 1
         except CondaProjectError as e:
-            print(e, file=sys.stderr)
+            print(f"{e.__class__.__name__}: {e}", file=sys.stderr)
             return 1
 
     return wrapper
 
 
 @handle_errors
-def prepare(args: Namespace) -> None:
-    project = CondaProject(args.directory)
-    project.prepare(force=args.force, verbose=True)
+def create(args: Namespace) -> bool:
+    project = CondaProject.create(
+        args.directory,
+        args.name,
+        args.dependencies,
+        args.channel,
+        args.platforms.split(","),
+        [] if args.conda_configs is None else args.conda_configs.split(","),
+        not args.no_lock,
+        verbose=True,
+    )
+
+    if args.prepare:
+        project.default_environment.prepare(verbose=True)
+
+    return True
 
 
 @handle_errors
-def clean(args: Namespace) -> None:
+def lock(args: Namespace) -> bool:
     project = CondaProject(args.directory)
-    project.clean(verbose=True)
+
+    if args.environment:
+        to_lock = [project.environments[args.environment]]
+    else:
+        to_lock = project.environments.values()
+
+    for env in to_lock:
+        env.lock(force=args.force, verbose=True)
+
+    return True
+
+
+@handle_errors
+def check(args: Namespace) -> bool:
+    project = CondaProject(args.directory)
+    return project.check(verbose=True)
+
+
+@handle_errors
+def prepare(args: Namespace) -> bool:
+    project = CondaProject(args.directory)
+
+    if args.all:
+        for _, env in project.environments:
+            env.prepare(force=args.force, verbose=True)
+    else:
+        env = (
+            project.environments[args.environment]
+            if args.environment
+            else project.default_environment
+        )
+        env.prepare(force=args.force, verbose=True)
+
+    return True
+
+
+@handle_errors
+def clean(args: Namespace) -> bool:
+    project = CondaProject(args.directory)
+
+    if args.all:
+        for env in project.environments.values():
+            env.clean(verbose=True)
+    else:
+        env = (
+            project.environments[args.environment]
+            if args.environment
+            else project.default_environment
+        )
+        env.clean(verbose=True)
+
+    return True

@@ -39,7 +39,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: [3.7, 3.8, 3.9, "3.10"]
-        conda-version: [4.8, 4.9, "4.10", "4.11", "4.12"]
+        conda-version: [4.8, 4.9, "4.10", "4.11", "4.12", "4.13"]
         exclude:
           # Python 3.10
           - conda-version: 4.8
@@ -78,6 +78,18 @@ jobs:
             source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda
           else
             source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda
+          fi
+      - name: Install Libmamba
+        shell: bash
+        run: |
+          if [ ${{ matrix.conda-version }} == "4.12" ] || [ ${{ matrix.conda-version }} == "4.13" ]; then
+            if [ $RUNNER_OS == 'Windows' ]; then
+              source $HOME/miniconda/Scripts/activate root && \
+              conda install conda-libmamba-solver -p $HOME/miniconda
+            else
+              source $HOME/miniconda/bin/activate root && \
+              conda install conda-libmamba-solver -p $HOME/miniconda
+            fi
           fi
       - name: py.test
         shell: bash
