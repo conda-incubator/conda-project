@@ -268,6 +268,13 @@ class Environment(BaseModel):
             extras=None,
         )
 
+        _pip_dependency_prefix = "# pip "  # from conda-lock
+        pip_requirements = [
+            line.split(_pip_dependency_prefix)[1].replace("#md5=None", "")
+            for line in rendered
+            if line.startswith(_pip_dependency_prefix)
+        ]
+
         with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
             f.write("\n".join(rendered))
             f.flush()
@@ -284,6 +291,20 @@ class Environment(BaseModel):
             _ = call_conda(
                 args, condarc_path=self.condarc, verbose=verbose, logger=logger
             )
+
+        if pip_requirements:
+            with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+                f.write("\n".join(pip_requirements))
+                f.flush()
+                args = [
+                    "run",
+                    *("-p", str(self.prefix)),
+                    *("pip", "install", "--no-deps"),
+                    *("-r", str(f.name)),
+                ]
+                call_conda(
+                    args, condarc_path=self.condarc, verbose=verbose, logger=logger
+                )
 
         with (self.prefix / ".gitignore").open("wt") as f:
             f.write("*")
