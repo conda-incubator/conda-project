@@ -244,6 +244,37 @@ def test_is_prepared(project_directory_factory):
 
 
 @pytest.mark.slow
+def test_is_prepared_with_pip_package(project_directory_factory):
+    """Test that we can import the package if it is installed with pip."""
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.8
+          - pip
+          - pip:
+            - requests
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+
+    _ = project.default_environment.prepare()
+
+    # This assertion won't pass if there are pip packages
+    # assert project.default_environment.is_prepared
+
+    args = [
+        "run",
+        *("-p", str(project.environments["default"].prefix)),
+        "python",
+        *("-c", "import requests"),
+    ]
+    result = call_conda(args, condarc_path=project.condarc)
+    assert result.returncode == 0
+
+
+@pytest.mark.slow
 def test_is_prepared_live_env_changed(project_directory_factory, capsys):
     env_yaml = dedent(
         """\
