@@ -262,7 +262,7 @@ def test_is_prepared_with_pip_package(project_directory_factory):
     _ = project.default_environment.prepare()
 
     # This assertion won't pass if there are pip packages
-    # assert project.default_environment.is_prepared
+    assert project.default_environment.is_prepared
 
     args = [
         "run",

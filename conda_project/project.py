@@ -24,6 +24,7 @@ from conda_lock.conda_lock import (
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
+from conda_lock.vendor.conda.core.prefix_data import PrefixData
 from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, current_platform
@@ -117,20 +118,25 @@ class Environment(BaseModel):
         if not self.is_locked:
             return False
 
-        installed_pkgs = call_conda(
-            ["list", "-p", str(self.prefix), "--explicit"]
-        ).stdout.splitlines()[3:]
+        # Generate a set of (name, version) tuples from the conda environment
+        # TODO: Consider comparing more than the name & version
+        # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
+        pd = PrefixData(self.prefix, pip_interop_enabled=True)
+        installed_pkgs = {(p.name, p.version) for p in pd.iter_records()}
 
+        # Generate a set of (name, version) tuples from the lockfile
+        # We only include locked packages for the current platform, and don't
+        # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
-        rendered = render_lockfile_for_platform(
-            lockfile=lock,
-            platform=current_platform(),
-            kind="explicit",
-            include_dev_dependencies=False,
-            extras=None,
-        )
-        locked_pkgs = [p.split("#")[0] for p in rendered[3:]]
+        locked_pkgs = {
+            (p.name, p.version)
+            for p in lock.package
+            if p.platform == current_platform() and not p.optional
+        }
 
+        # Compare the sets
+        # We can do this because the tuples are hashable. Also we don't need to
+        # consider ordering.
         return installed_pkgs == locked_pkgs
 
     def lock(
