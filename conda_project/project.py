@@ -25,6 +25,7 @@ from conda_lock.conda_lock import (
     render_lockfile_for_platform,
 )
 from conda_lock.vendor.conda.core.prefix_data import PrefixData
+from conda_lock.vendor.conda.models.records import PackageType
 from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, current_platform
@@ -118,18 +119,24 @@ class Environment(BaseModel):
         if not self.is_locked:
             return False
 
-        # Generate a set of (name, version) tuples from the conda environment
-        # TODO: Consider comparing more than the name & version
+        # Generate a set of (name, version, manager) tuples from the conda environment
+        # We also convert the conda package_type attribute to a string in the set
+        # {"conda", "pip"} to allow direct comparison with conda-lock.
+        # TODO: Consider comparing more than the name, version, & manager
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
+        manager_map = {PackageType.VIRTUAL_PYTHON_WHEEL: "pip"}
         pd = PrefixData(self.prefix, pip_interop_enabled=True)
-        installed_pkgs = {(p.name, p.version) for p in pd.iter_records()}
+        installed_pkgs = {
+            (p.name, p.version, manager_map.get(p.package_type, "conda"))
+            for p in pd.iter_records()
+        }
 
-        # Generate a set of (name, version) tuples from the lockfile
+        # Generate a set of (name, version, manager) tuples from the lockfile
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
         locked_pkgs = {
-            (p.name, p.version)
+            (p.name, p.version, p.manager)
             for p in lock.package
             if p.platform == current_platform() and not p.optional
         }
