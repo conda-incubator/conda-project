@@ -111,25 +111,27 @@ class Environment(BaseModel):
               the environment source and lock files, False otherwise. If is_locked is
               False is_prepared is False.
         """
-        if (self.prefix / "conda-meta" / "history").exists():
-            if self.is_locked:
-                installed_pkgs = call_conda(
-                    ["list", "-p", str(self.prefix), "--explicit"]
-                ).stdout.splitlines()[3:]
+        if not (self.prefix / "conda-meta" / "history").exists():
+            return False
 
-                lock = parse_conda_lock_file(self.lockfile)
-                rendered = render_lockfile_for_platform(
-                    lockfile=lock,
-                    platform=current_platform(),
-                    kind="explicit",
-                    include_dev_dependencies=False,
-                    extras=None,
-                )
-                locked_pkgs = [p.split("#")[0] for p in rendered[3:]]
+        if not self.is_locked:
+            return False
 
-                return installed_pkgs == locked_pkgs
+        installed_pkgs = call_conda(
+            ["list", "-p", str(self.prefix), "--explicit"]
+        ).stdout.splitlines()[3:]
 
-        return False
+        lock = parse_conda_lock_file(self.lockfile)
+        rendered = render_lockfile_for_platform(
+            lockfile=lock,
+            platform=current_platform(),
+            kind="explicit",
+            include_dev_dependencies=False,
+            extras=None,
+        )
+        locked_pkgs = [p.split("#")[0] for p in rendered[3:]]
+
+        return installed_pkgs == locked_pkgs
 
     def lock(
         self,
