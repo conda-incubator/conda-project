@@ -17,6 +17,8 @@ from pathlib import Path
 from subprocess import SubprocessError
 from typing import List, Optional, Tuple, Union
 
+from conda_lock._vendor.conda.core.prefix_data import PrefixData
+from conda_lock._vendor.conda.models.records import PackageType
 from conda_lock.conda_lock import (
     default_virtual_package_repodata,
     make_lock_files,
@@ -24,8 +26,6 @@ from conda_lock.conda_lock import (
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
-from conda_lock.vendor.conda.core.prefix_data import PrefixData
-from conda_lock.vendor.conda.models.records import PackageType
 from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, current_platform
