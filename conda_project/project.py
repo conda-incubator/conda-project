@@ -127,7 +127,7 @@ class Environment(BaseModel):
         manager_map = {PackageType.VIRTUAL_PYTHON_WHEEL: "pip"}
         pd = PrefixData(self.prefix, pip_interop_enabled=True)
         installed_pkgs = {
-            (p.name, p.version, manager_map.get(p.package_type, default="conda"))
+            (p.name, p.version, manager_map.get(p.package_type, "conda"))
             for p in pd.iter_records()
         }
 
