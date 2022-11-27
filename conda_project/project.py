@@ -119,6 +119,10 @@ class Environment(BaseModel):
         if not self.is_locked:
             return False
 
+        # Here, we ensure that we clear the cache on the PrefixData class. This is to
+        # ensure that we freshly load the installed packages each time.
+        PrefixData._cache_.pop(self.prefix, None)
+
         # Generate a set of (name, version, manager) tuples from the conda environment
         # We also convert the conda package_type attribute to a string in the set
         # {"conda", "pip"} to allow direct comparison with conda-lock.
