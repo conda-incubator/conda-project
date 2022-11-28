@@ -137,7 +137,7 @@ class Environment(BaseModel):
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
         pd = PrefixData(self.prefix, pip_interop_enabled=True)
         installed_pkgs = {
-            (p.name, p.version, _package_type_to_manager(p.package_type))
+            (p.name, p.version, _package_type_to_manager(p.package_type), p.sha256)
             for p in pd.iter_records()
         }
 
@@ -146,7 +146,7 @@ class Environment(BaseModel):
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
         locked_pkgs = {
-            (p.name, p.version, p.manager)
+            (p.name, p.version, p.manager, p.hash.sha256)
             for p in lock.package
             if p.platform == current_platform() and not p.optional
         }
