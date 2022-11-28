@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -43,6 +44,9 @@ _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
 DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
+# A regex pattern used to extract package name and hash from output of "pip freeze"
+_PIP_FREEZE_REGEX_PATTERN = re.compile(r"(?P<name>[\w-]+) @ .*sha256=(?P<sha256>\w+)")
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("CONDA_PROJECT_LOGLEVEL", "WARNING"))
 
@@ -52,6 +56,29 @@ def _package_type_to_manager(package_type: PackageType) -> str:
     if package_type in PackageType.conda_package_types():
         return "conda"
     return "pip"
+
+
+def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
+    """Load the sha256 hashes of pip-managed packages via pip freeze.
+
+    Returns:
+        A dictionary mapping the package name to its sha256 hash.
+
+    """
+    try:
+        pip_freeze = call_conda(["run", "-p", prefix, "pip", "freeze"])
+    except CondaProjectError as e:
+        if "pip: command not found" in str(e):
+            return {}
+        else:
+            raise e
+
+    pip_sha256: dict[str, str] = {}
+    for line in pip_freeze.stdout.strip().splitlines():
+        m = _PIP_FREEZE_REGEX_PATTERN.match(line)
+        if m is not None:
+            pip_sha256[m.group("name")] = m.group("sha256")
+    return pip_sha256
 
 
 class Environment(BaseModel):
@@ -130,18 +157,24 @@ class Environment(BaseModel):
         # ensure that we freshly load the installed packages each time.
         PrefixData._cache_.pop(self.prefix, None)
 
-        # Generate a set of (name, version, manager) tuples from the conda environment
+        pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
         # We also convert the conda package_type attribute to a string in the set
         # {"conda", "pip"} to allow direct comparison with conda-lock.
-        # TODO: Consider comparing more than the name, version, & manager
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
         pd = PrefixData(self.prefix, pip_interop_enabled=True)
-        installed_pkgs = {
-            (p.name, p.version, _package_type_to_manager(p.package_type), p.sha256)
-            for p in pd.iter_records()
-        }
+        installed_pkgs = set()
+        for p in pd.iter_records():
+            manager = _package_type_to_manager(p.package_type)
+            if manager == "pip":
+                sha256 = pip_sha256.get(p.name)
+            else:
+                sha256 = p.sha256
 
-        # Generate a set of (name, version, manager) tuples from the lockfile
+            installed_pkgs.add((p.name, p.version, manager, sha256))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
