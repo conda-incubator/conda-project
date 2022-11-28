@@ -47,6 +47,13 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("CONDA_PROJECT_LOGLEVEL", "WARNING"))
 
 
+def _package_type_to_manager(package_type: PackageType) -> str:
+    """Convert a package type to its associated manager, either "conda" or "pip"."""
+    if package_type in PackageType.conda_package_types():
+        return "conda"
+    return "pip"
+
+
 class Environment(BaseModel):
     name: str
     sources: Tuple[Path, ...]
@@ -128,10 +135,9 @@ class Environment(BaseModel):
         # {"conda", "pip"} to allow direct comparison with conda-lock.
         # TODO: Consider comparing more than the name, version, & manager
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
-        manager_map = {PackageType.VIRTUAL_PYTHON_WHEEL: "pip"}
         pd = PrefixData(self.prefix, pip_interop_enabled=True)
         installed_pkgs = {
-            (p.name, p.version, manager_map.get(p.package_type, "conda"))
+            (p.name, p.version, _package_type_to_manager(p.package_type))
             for p in pd.iter_records()
         }
 
