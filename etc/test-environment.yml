@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - conda-lock>=1
+  - conda-lock>=1.2
   - ruamel.yaml
   - pydantic
   - pytest
