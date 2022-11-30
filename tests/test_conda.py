@@ -43,8 +43,16 @@ def test_conda_info():
     assert "conda_version" in info
 
 
+@pytest.fixture()
+def disable_current_platform_cache():
+    """Ensure current_platform cache is cleared before and after test."""
+    current_platform.cache_clear()
+    yield
+    current_platform.cache_clear()
+
+
+@pytest.mark.usefixtures("disable_current_platform_cache")
 def test_current_platform(monkeypatch):
     monkeypatch.setenv("CONDA_SUBDIR", "monkey-64")
-    current_platform.cache_clear()
     platform = current_platform()
     assert platform == "monkey-64"
