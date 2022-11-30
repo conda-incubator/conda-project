@@ -45,5 +45,6 @@ def test_conda_info():
 
 def test_current_platform(monkeypatch):
     monkeypatch.setenv("CONDA_SUBDIR", "monkey-64")
+    current_platform.cache_clear()
     platform = current_platform()
     assert platform == "monkey-64"
