@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -17,6 +18,8 @@ from pathlib import Path
 from subprocess import SubprocessError
 from typing import List, Optional, Tuple, Union
 
+from conda_lock._vendor.conda.core.prefix_data import PrefixData
+from conda_lock._vendor.conda.models.records import PackageType
 from conda_lock.conda_lock import (
     default_virtual_package_repodata,
     make_lock_files,
@@ -41,8 +44,41 @@ _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
 DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
+# A regex pattern used to extract package name and hash from output of "pip freeze"
+_PIP_FREEZE_REGEX_PATTERN = re.compile(r"(?P<name>[\w-]+) @ .*sha256=(?P<sha256>\w+)")
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("CONDA_PROJECT_LOGLEVEL", "WARNING"))
+
+
+def _package_type_to_manager(package_type: PackageType) -> str:
+    """Convert a package type to its associated manager, either "conda" or "pip"."""
+    if package_type in PackageType.conda_package_types():
+        return "conda"
+    return "pip"
+
+
+def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
+    """Load the sha256 hashes of pip-managed packages via pip freeze.
+
+    Returns:
+        A dictionary mapping the package name to its sha256 hash.
+
+    """
+    try:
+        pip_freeze = call_conda(["run", "-p", prefix, "pip", "freeze"])
+    except CondaProjectError as e:  # pragma: no cover
+        if "pip: command not found" in str(e):
+            return {}
+        else:
+            raise e
+
+    pip_sha256: dict[str, str] = {}
+    for line in pip_freeze.stdout.strip().splitlines():
+        m = _PIP_FREEZE_REGEX_PATTERN.match(line)
+        if m is not None:
+            pip_sha256[m.group("name")] = m.group("sha256")
+    return pip_sha256
 
 
 class Environment(BaseModel):
@@ -111,25 +147,47 @@ class Environment(BaseModel):
               the environment source and lock files, False otherwise. If is_locked is
               False is_prepared is False.
         """
-        if (self.prefix / "conda-meta" / "history").exists():
-            if self.is_locked:
-                installed_pkgs = call_conda(
-                    ["list", "-p", str(self.prefix), "--explicit"]
-                ).stdout.splitlines()[3:]
+        if not (self.prefix / "conda-meta" / "history").exists():
+            return False
 
-                lock = parse_conda_lock_file(self.lockfile)
-                rendered = render_lockfile_for_platform(
-                    lockfile=lock,
-                    platform=current_platform(),
-                    kind="explicit",
-                    include_dev_dependencies=False,
-                    extras=None,
-                )
-                locked_pkgs = [p.split("#")[0] for p in rendered[3:]]
+        if not self.is_locked:
+            return False
 
-                return installed_pkgs == locked_pkgs
+        # Here, we ensure that we clear the cache on the PrefixData class. This is to
+        # ensure that we freshly load the installed packages each time.
+        PrefixData._cache_.pop(self.prefix, None)
 
-        return False
+        pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
+        # We also convert the conda package_type attribute to a string in the set
+        # {"conda", "pip"} to allow direct comparison with conda-lock.
+        # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
+        pd = PrefixData(self.prefix, pip_interop_enabled=True)
+        installed_pkgs = set()
+        for p in pd.iter_records():
+            manager = _package_type_to_manager(p.package_type)
+            if manager == "pip":
+                sha256 = pip_sha256.get(p.name)
+            else:
+                sha256 = p.sha256
+
+            installed_pkgs.add((p.name, p.version, manager, sha256))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
+        # We only include locked packages for the current platform, and don't
+        # include optional dependencies (e.g. compile/build)
+        lock = parse_conda_lock_file(self.lockfile)
+        locked_pkgs = {
+            (p.name, p.version, p.manager, p.hash.sha256)
+            for p in lock.package
+            if p.platform == current_platform() and not p.optional
+        }
+
+        # Compare the sets
+        # We can do this because the tuples are hashable. Also we don't need to
+        # consider ordering.
+        return installed_pkgs == locked_pkgs
 
     def lock(
         self,
@@ -268,6 +326,13 @@ class Environment(BaseModel):
             extras=None,
         )
 
+        _pip_dependency_prefix = "# pip "  # from conda-lock
+        pip_requirements = [
+            line.split(_pip_dependency_prefix)[1].replace("#md5=None", "")
+            for line in rendered
+            if line.startswith(_pip_dependency_prefix)
+        ]
+
         with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
             f.write("\n".join(rendered))
             f.flush()
@@ -284,6 +349,20 @@ class Environment(BaseModel):
             _ = call_conda(
                 args, condarc_path=self.condarc, verbose=verbose, logger=logger
             )
+
+        if pip_requirements:
+            with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+                f.write("\n".join(pip_requirements))
+                f.flush()
+                args = [
+                    "run",
+                    *("-p", str(self.prefix)),
+                    *("pip", "install", "--no-deps"),
+                    *("-r", str(f.name)),
+                ]
+                call_conda(
+                    args, condarc_path=self.condarc, verbose=verbose, logger=logger
+                )
 
         with (self.prefix / ".gitignore").open("wt") as f:
             f.write("*")
