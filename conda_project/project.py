@@ -16,7 +16,7 @@ from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
 from subprocess import SubprocessError
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
@@ -29,7 +29,7 @@ from conda_lock.conda_lock import (
 )
 from pydantic import BaseModel, create_model
 
-from .conda import CONDA_EXE, call_conda, current_platform
+from .conda import CONDA_EXE, call_conda, conda_activate, conda_run, current_platform
 from .exceptions import CondaProjectError
 from .project_file import (
     ENVIRONMENT_YAML_FILENAMES,
@@ -79,6 +79,25 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
         if m is not None:
             pip_sha256[m.group("name")] = m.group("sha256")
     return pip_sha256
+
+
+def _check_variables(variables: Dict[str, str]) -> None:
+    missing_vars = []
+    for k, v in variables.items():
+        if v is None and k not in os.environ:
+            missing_vars.append(k)
+    if missing_vars:
+        errs = "\n".join(missing_vars)
+        msg = (
+            "The following variables do not have a default value and were not"
+            f" set when executing 'conda project run':\n{errs}"
+        )
+        raise CondaProjectError(msg)
+
+
+class Variable(BaseModel):
+    key: str
+    default_value: str
 
 
 class Environment(BaseModel):
@@ -387,9 +406,53 @@ class Environment(BaseModel):
             logger=logger,
         )
 
+    def activate(self, directory=None, variables=None, verbose=False) -> None:
+        if not self.is_prepared:
+            self.prepare(verbose=verbose)
+
+        if variables is not None:
+            _check_variables(variables)
+
+        conda_activate(str(self.prefix), str(directory), variables)
+
 
 class BaseEnvironments(BaseModel):
     def __getitem__(self, key: str) -> Environment:
+        return getattr(self, key)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    class Config:
+        allow_mutation = False
+
+
+class Command(BaseModel):
+    name: str
+    cmd: str
+    environment: Environment
+    variables: Dict[str, Optional[str]]
+    directory: Path
+
+    def run(self, verbose=False):
+        if not self.environment.is_prepared:
+            self.environment.prepare(verbose=verbose)
+
+        _check_variables(self.variables)
+
+        conda_run(
+            self.cmd, str(self.environment.prefix), str(self.directory), self.variables
+        )
+
+
+Command.update_forward_refs()
+
+
+class BaseCommands(BaseModel):
+    def __getitem__(self, key: str) -> Command:
         return getattr(self, key)
 
     def keys(self):
@@ -544,7 +607,7 @@ class CondaProject:
         for env_name, sources in self._project_file.environments.items():
             envs[env_name] = Environment(
                 name=env_name,
-                sources=[self.directory / str(s) for s in sources],
+                sources=tuple([self.directory / str(s) for s in sources]),
                 prefix=self.directory / "envs" / env_name,
                 lockfile=self.directory / f"{env_name}.conda-lock.yml",
                 condarc=self.condarc,
@@ -560,6 +623,38 @@ class CondaProject:
     def default_environment(self) -> Environment:
         name = next(iter(self._project_file.environments))
         return self.environments[name]
+
+    @property
+    def commands(self) -> BaseCommands:
+        cmds = OrderedDict()
+        for name, cmd in self._project_file.commands.items():
+            if isinstance(cmd, str):
+                cmd_args = cmd
+                environment = self.default_environment
+            else:
+                cmd_args = cmd.cmd
+                environment = (
+                    self.environments[cmd.environment]
+                    if cmd.environment is not None
+                    else self.default_environment
+                )
+
+            cmds[name] = Command(
+                name=name,
+                cmd=cmd_args,
+                environment=environment,
+                variables=self._project_file.variables,
+                directory=self.directory,
+            )
+        Commands = create_model(
+            "Commands", **{k: (Command, ...) for k in cmds}, __base__=BaseCommands
+        )
+        return Commands(**cmds)
+
+    @property
+    def default_command(self) -> Command:
+        name = next(iter(self._project_file.commands))
+        return self.commands[name]
 
     def check(self, verbose=False) -> bool:
         """Check the project for inconsistencies or errors.

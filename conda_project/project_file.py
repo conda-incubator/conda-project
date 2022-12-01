@@ -1,5 +1,6 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -24,11 +25,11 @@ def _cleandict(d: Dict) -> Dict:
 
 
 class BaseYaml(BaseModel):
-    def yaml(self, stream: Union[TextIO, Path]):
+    def yaml(self, stream: Union[TextIO, Path], drop_empty_keys=False):
         # Passing through self.json() allows json_encoders
-        # to serialize objects and the _cleandict hook avoids
-        # writing empty keys to the yaml file.
-        encoded = json.loads(self.json(), object_hook=_cleandict)
+        # to serialize objects.
+        object_hook = _cleandict if drop_empty_keys else None
+        encoded = json.loads(self.json(), object_hook=object_hook)
         return yaml.dump(encoded, stream)
 
     @classmethod
@@ -50,16 +51,23 @@ class BaseYaml(BaseModel):
         extra = "forbid"
 
 
+class Command(BaseYaml):
+    cmd: str
+    environment: Optional[str] = None
+
+
 class CondaProjectYaml(BaseYaml):
     name: str
     environments: OrderedDict[str, List[Path]]
+    variables: Dict[str, Optional[str]] = {}
+    commands: OrderedDict[str, Union[Command, str]] = OrderedDict()
 
 
 class EnvironmentYaml(BaseYaml):
     name: Optional[str] = None
     channels: Optional[List[str]] = None
     dependencies: List[Union[str, Dict[str, List[str]]]] = []
-    variables: Optional[Dict[str, str]] = None
+    variables: Optional[Dict[str, str]] = {}
     prefix: Optional[Path] = None
     platforms: Optional[List[str]] = None
 
