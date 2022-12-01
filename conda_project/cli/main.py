@@ -45,7 +45,9 @@ def cli() -> ArgumentParser:
     _create_lock_parser(subparsers, common)
     _create_check_parser(subparsers, common)
     _create_prepare_parser(subparsers, common)
+    _create_activate_parser(subparsers, common)
     _create_clean_parser(subparsers, common)
+    _create_run_parser(subparsers, common)
 
     return p
 
@@ -158,10 +160,12 @@ def _create_check_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Check the project for inconsistencies or errors. This will check that .conda-lock.yml files "
-    "have been created for each environment and are up-to-date with the source environment specifications. "
-    "If the project is fully locked this command will not print anything and return status code 0. If any "
-    "environment is not fully locked details are printed to stderr and the command returns status code 1."
+    desc = (
+        "Check the project for inconsistencies or errors. This will check that .conda-lock.yml files "
+        "have been created for each environment and are up-to-date with the source environment specifications. "
+        "If the project is fully locked this command will not print anything and return status code 0. If any "
+        "environment is not fully locked details are printed to stderr and the command returns status code 1."
+    )
 
     p = subparsers.add_parser(
         "check", description=desc, help=desc, parents=[parent_parser]
@@ -238,6 +242,56 @@ def _create_clean_parser(
     )
 
     p.set_defaults(func=commands.clean)
+
+
+def _create_run_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "run" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
+    desc = "Run commands defined in the conda-project.yml file."
+
+    p = subparsers.add_parser(
+        "run", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "command",
+        help="Optional: Run the specified command by name. If no environment name is selected "
+        "the first command in the conda-project.yml file is run.",
+        nargs="?",
+    )
+
+    p.set_defaults(func=commands.run)
+
+
+def _create_activate_parser(
+    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+) -> None:
+    """Add a subparser for the "run" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+
+    """
+    desc = "Activate a conda environment defined in the environment.yml or conda-project.yml files."
+
+    p = subparsers.add_parser(
+        "activate", description=desc, help=desc, parents=[parent_parser]
+    )
+    p.add_argument(
+        "environment",
+        help="Activate selected environment in a new shell. If no environment name is selected "
+        "the first environment defined in the conda-project.yml file is activated.",
+        nargs="?",
+    )
+
+    p.set_defaults(func=commands.activate)
 
 
 def parse_and_run(args: list[str] | None = None) -> int:
