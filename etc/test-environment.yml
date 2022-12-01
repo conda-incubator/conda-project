@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - conda-lock>=1.2
+  - lockfile
   - ruamel.yaml
   - pydantic
   - pytest

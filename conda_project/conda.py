@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+from functools import lru_cache
 from logging import Logger
 from pathlib import Path
 from typing import List, Optional
@@ -53,6 +54,8 @@ def conda_info():
     return parsed
 
 
-def current_platform():
+@lru_cache()
+def current_platform() -> str:
+    """Load the current platform by calling conda info."""
     info = conda_info()
     return info.get("platform")
