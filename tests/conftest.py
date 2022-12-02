@@ -9,9 +9,20 @@ from typing import Optional
 import pytest
 
 
-@pytest.fixture(params=[".yml", ".yaml"])
+@pytest.fixture()
 def project_directory_factory(tmp_path, request):
-    """A fixture returning a factory function used to create a temporary project directory."""
+    """A fixture returning a factory function used to create a temporary project directory.
+
+    By default, it will create YAML files with the `.yml` extension. f another test needs
+    additional extensions, add a parameterization decorator like:
+
+        @pytest.mark.parametrize('project_directory_factory', ['.yml', '.yaml'], indirect=True)
+        def test_something(project_directory_factory):
+            ...
+
+    """
+
+    suffix = getattr(request, "param", ".yml")
 
     def create_project_directory(
         env_yaml: Optional[str] = None,
@@ -30,7 +41,6 @@ def project_directory_factory(tmp_path, request):
             A path to the temporary project directory.
 
         """
-        suffix = request.param
         if env_yaml is not None:
             env_file = (tmp_path / "environment").with_suffix(suffix)
             with env_file.open("w") as f:
@@ -50,6 +60,6 @@ def project_directory_factory(tmp_path, request):
 
         return tmp_path
 
-    create_project_directory._suffix = request.param
+    create_project_directory._suffix = suffix
 
     return create_project_directory

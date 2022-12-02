@@ -65,6 +65,7 @@ def test_command_args(command, monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
+@pytest.mark.parametrize("project_directory_factory", [".yml", ".yaml"], indirect=True)
 def test_cli_verbose_env(command, monkeypatch, project_directory_factory):
     if command == "create":
         project_path = project_directory_factory()
