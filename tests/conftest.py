@@ -13,7 +13,7 @@ import pytest
 def project_directory_factory(tmp_path, request):
     """A fixture returning a factory function used to create a temporary project directory.
 
-    By default, it will create YAML files with the `.yml` extension. f another test needs
+    By default, it will create YAML files with the `.yml` extension. If another test needs
     additional extensions, add a parameterization decorator like:
 
         @pytest.mark.parametrize('project_directory_factory', ['.yml', '.yaml'], indirect=True)
