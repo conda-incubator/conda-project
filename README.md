@@ -63,3 +63,17 @@ them manually with
 ```
 conda run --no-capture-output -p ./env pre-commit run --all-files
 ```
+
+### Documentation
+
+To develop the documentation, you can run the following command from the project root:
+
+```shell
+make -C docs html
+```
+
+To develop with live-updating documentation, run:
+
+```shell
+make -C docs live
+```
