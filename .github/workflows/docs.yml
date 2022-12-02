@@ -5,9 +5,6 @@ on:
   push:
     branches: ["main"]
 
-  # TODO: Run on PR updates for development, remove when done
-  pull_request:
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -25,20 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          activate-environment: conda-libmamba-solver
-#          environment-file: docs/environment.yml
-#          python-version: '3.11'
-#          auto-activate-base: false
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Build Documentation
         run: |
-          cd docs
-          make html
+          make -C docs html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
@@ -49,8 +39,6 @@ jobs:
   pages:
 
     runs-on: ubuntu-latest
-    # TODO: Uncomment before merging
-#    if: github.ref == 'refs/heads/main'
     needs: [docs]
 
     # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
