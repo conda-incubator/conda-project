@@ -117,7 +117,7 @@ def run(args: Namespace) -> None:
 
 
 @handle_errors
-def activate(args: Namespace) -> None:
+def activate(args: Namespace) -> bool:
     project = CondaProject(args.directory)
 
     if args.environment:
@@ -125,4 +125,6 @@ def activate(args: Namespace) -> None:
     else:
         env = project.default_environment
 
-    env.activate(project.directory, project._project_file.variables)
+    env.activate(project.directory, project._project_file.variables, verbose=True)
+
+    return True
