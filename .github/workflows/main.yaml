@@ -1,9 +1,19 @@
 name: Build and test
 on:
   push:
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "MANIFEST"
+      - "docs/**"
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "MANIFEST"
+      - "docs/**"
     branches:
       - main
 jobs:
