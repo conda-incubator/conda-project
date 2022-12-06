@@ -95,8 +95,12 @@ def conda_run(cmd, prefix, working_dir, variables=None):
     parent_vars = os.environ.copy()
     env = {**variables, **parent_vars}
 
-    os.chdir(working_dir)
-    os.execvpe(shell, ["-c", script_path], env)
+    old_dir = os.getcwd()
+    try:
+        os.chdir(working_dir)
+        os.execvpe(shell, ["-c", script_path], env)
+    finally:
+        os.chdir(old_dir)
 
 
 def conda_activate(prefix, working_dir, variables=None):
