@@ -10,7 +10,9 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
-from typing import Optional, Type
+from typing import Dict, Optional, Type
+
+from dotenv import dotenv_values
 
 from .exceptions import CondaProjectError
 
@@ -104,3 +106,28 @@ def find_file(directory: Path, options: tuple) -> Optional[Path]:
         )
     else:
         return None
+
+
+def prepare_variables(
+    project_directory: Path, variables: Optional[Dict[str, Optional[str]]] = None
+) -> Dict[str, str]:
+    variables = {} if variables is None else variables
+    dotenv = dotenv_values(project_directory / ".env")
+
+    missing_vars = []
+    for k, v in variables.items():
+        if v is None and ((k not in dotenv) and (k not in os.environ)):
+            missing_vars.append(k)
+
+    if missing_vars:
+        errs = "\n".join(missing_vars)
+        msg = (
+            "The following variables do not have a default value and values\n"
+            "were not provided in the .env file or set on the command line"
+            f" when executing 'conda project run':\n{errs}"
+        )
+        raise CondaProjectError(msg)
+
+    env = {**variables, **dotenv, **os.environ}
+
+    return env

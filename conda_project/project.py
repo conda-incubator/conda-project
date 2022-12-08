@@ -38,7 +38,7 @@ from .project_file import (
     EnvironmentYaml,
     yaml,
 )
-from .utils import Spinner, env_variable, find_file
+from .utils import Spinner, env_variable, find_file, prepare_variables
 
 _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
@@ -79,20 +79,6 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
         if m is not None:
             pip_sha256[m.group("name")] = m.group("sha256")
     return pip_sha256
-
-
-def _check_variables(variables: Dict[str, str]) -> None:
-    missing_vars = []
-    for k, v in variables.items():
-        if v is None and k not in os.environ:
-            missing_vars.append(k)
-    if missing_vars:
-        errs = "\n".join(missing_vars)
-        msg = (
-            "The following variables do not have a default value and were not"
-            f" set when executing 'conda project run':\n{errs}"
-        )
-        raise CondaProjectError(msg)
 
 
 class Variable(BaseModel):
@@ -406,14 +392,13 @@ class Environment(BaseModel):
             logger=logger,
         )
 
-    def activate(self, directory=None, variables=None, verbose=False) -> None:
+    def activate(self, directory, variables=None, verbose=False) -> None:
         if not self.is_prepared:
             self.prepare(verbose=verbose)
 
-        if variables is not None:
-            _check_variables(variables)
+        env = prepare_variables(directory, variables)
 
-        conda_activate(str(self.prefix), str(directory), variables)
+        conda_activate(self.prefix, directory, env)
 
 
 class BaseEnvironments(BaseModel):
@@ -441,11 +426,9 @@ class Command(BaseModel):
         if not self.environment.is_prepared:
             self.environment.prepare(verbose=verbose)
 
-        _check_variables(self.variables)
+        env = prepare_variables(self.directory, self.variables)
 
-        conda_run(
-            self.cmd, str(self.environment.prefix), str(self.directory), self.variables
-        )
+        conda_run(self.cmd, self.environment.prefix, self.directory, env)
 
 
 Command.update_forward_refs()

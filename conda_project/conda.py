@@ -15,7 +15,7 @@ import termios
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pexpect
 import shellingham
@@ -81,19 +81,19 @@ def current_platform() -> str:
     return info.get("platform")
 
 
-def conda_run(cmd, prefix, working_dir, variables=None):
+def conda_run(
+    cmd: str, prefix: Path, working_dir: Path, env: Optional[Dict[str, str]] = None
+):
     script_path, (shell, *_) = wrap_subprocess_call(
         root_prefix=CONDA_ROOT,
-        prefix=prefix,
+        prefix=str(prefix),
         dev_mode=False,
         debug_wrapper_scripts=False,
         arguments=shlex.split(cmd),
         use_system_tmp_path=True,
     )
 
-    variables = {} if variables is None else variables
-    parent_vars = os.environ.copy()
-    env = {**variables, **parent_vars}
+    env = {} if env is None else env
 
     old_dir = os.getcwd()
     try:
@@ -103,10 +103,8 @@ def conda_run(cmd, prefix, working_dir, variables=None):
         os.chdir(old_dir)
 
 
-def conda_activate(prefix, working_dir, variables=None):
-    variables = {} if variables is None else variables
-    parent_vars = os.environ.copy()
-    env = {**variables, **parent_vars}
+def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
+    env = {} if env is None else env
 
     _, shell = shellingham.detect_shell()
 
@@ -117,7 +115,7 @@ def conda_activate(prefix, working_dir, variables=None):
         args = ["-il"]
 
     activate_message = (
-        f"## Project environment {os.path.basename(prefix)} activated in a new shell.\n"
+        f"## Project environment {prefix.name} activated in a new shell.\n"
         f"## Exit this shell to de-activate."
     )
     print(activate_message)

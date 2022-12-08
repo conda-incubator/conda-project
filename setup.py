@@ -15,6 +15,7 @@ requirements = [
     "ruamel.yaml",
     "pydantic",
     "shellingham",
+    "python-dotenv",
 ]
 docs_requirements = [
     "Sphinx>=5.1.1",

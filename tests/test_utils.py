@@ -6,7 +6,7 @@ import os
 import pytest
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.utils import env_variable, find_file
+from conda_project.utils import env_variable, find_file, prepare_variables
 
 
 def test_env_var_context():
@@ -42,3 +42,95 @@ def test_find_file(tmp_path):
 
     with pytest.raises(CondaProjectError):
         find_file(tmp_path, ("file.yaml", "file.yml"))
+
+
+def test_prepare_variables_from_environ(tmp_path):
+    env = prepare_variables(tmp_path, variables=None)
+
+    assert env == os.environ
+
+
+def test_prepare_variables_from_project(tmp_path):
+    variables = {"FOO": "set-by-project"}
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "set-by-project"
+
+
+def test_prepare_variables_from_dotenv(tmp_path):
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, variables=None)
+
+    assert env.get("FOO") == "from-dot-env"
+
+
+def test_prepare_variables_override_environ(tmp_path, monkeypatch):
+    variables = {"FOO": "set-by-project"}
+    monkeypatch.setenv("FOO", "set-by-environ")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "set-by-environ"
+
+
+def test_prepare_variables_override_dotenv(tmp_path):
+    variables = {"FOO": "set-by-project"}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "from-dot-env"
+
+
+def test_prepare_variables_override_environ_and_dotenv(tmp_path, monkeypatch):
+    monkeypatch.setenv("FOO", "set-by-environ")
+    variables = {"FOO": "set-by-project"}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "set-by-environ"
+
+
+def test_prepare_variables_none_override_environ(tmp_path, monkeypatch):
+    variables = {"FOO": None}
+    monkeypatch.setenv("FOO", "set-by-environ")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "set-by-environ"
+
+
+def test_prepare_variables_none_override_dotenv(tmp_path):
+    variables = {"FOO": None}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "from-dot-env"
+
+
+def test_prepare_variables_none_override_environ_and_dotenv(tmp_path, monkeypatch):
+    monkeypatch.setenv("FOO", "set-by-environ")
+    variables = {"FOO": None}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, variables)
+
+    assert env.get("FOO") == "set-by-environ"
+
+
+def test_prepare_variables_fail(tmp_path):
+    variables = {"FOO": None}
+
+    with pytest.raises(CondaProjectError) as e:
+        prepare_variables(tmp_path, variables)
+
+        assert "do not have a default value" in str(e)

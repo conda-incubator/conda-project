@@ -60,7 +60,7 @@ def test_current_platform(monkeypatch):
     assert platform == "monkey-64"
 
 
-def test_conda_run_without_variables(monkeypatch, empty_conda_environment):
+def test_conda_run_without_env(monkeypatch, empty_conda_environment):
     execvpe_arguments = {}
 
     def mocked_execvpe(file, args, env=None):
@@ -72,12 +72,12 @@ def test_conda_run_without_variables(monkeypatch, empty_conda_environment):
 
     conda_run(
         "dummy-cmd",
-        str(empty_conda_environment),
-        str(empty_conda_environment),
-        variables=None,
+        empty_conda_environment,
+        empty_conda_environment,
+        env=None,
     )
 
-    assert execvpe_arguments["env"] == os.environ
+    assert execvpe_arguments["env"] == {}
 
 
 def test_conda_run_with_variables(monkeypatch, empty_conda_environment):
@@ -92,14 +92,10 @@ def test_conda_run_with_variables(monkeypatch, empty_conda_environment):
 
     variables = {"FOO": "bar"}
     conda_run(
-        "dummy-cmd",
-        str(empty_conda_environment),
-        str(empty_conda_environment),
-        variables=variables,
+        "dummy-cmd", empty_conda_environment, empty_conda_environment, env=variables
     )
 
-    assert execvpe_arguments["env"] != os.environ
-    assert execvpe_arguments["env"].get("FOO") == "bar"
+    assert execvpe_arguments["env"] == variables
 
 
 def test_conda_run_working_dir(monkeypatch, empty_conda_environment):
@@ -116,9 +112,9 @@ def test_conda_run_working_dir(monkeypatch, empty_conda_environment):
     current_dir = os.getcwd()
     conda_run(
         "dummy-cmd",
-        str(empty_conda_environment),
-        str(empty_conda_environment),
-        variables=None,
+        empty_conda_environment,
+        empty_conda_environment,
+        env=None,
     )
 
     assert execvpe_arguments["cwd"] == str(empty_conda_environment)
@@ -141,9 +137,9 @@ def test_conda_run_failed_working_dir(monkeypatch, empty_conda_environment):
     with pytest.raises(RuntimeError):
         conda_run(
             "dummy-cmd",
-            str(empty_conda_environment),
-            str(empty_conda_environment),
-            variables=None,
+            empty_conda_environment,
+            empty_conda_environment,
+            env=None,
         )
 
     assert execvpe_arguments["cwd"] == str(empty_conda_environment)
