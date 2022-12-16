@@ -113,7 +113,7 @@ def run(args: Namespace) -> None:
     else:
         to_run = project.default_command
 
-    to_run.run(verbose=True)
+    to_run.run(environment=args.environment, verbose=True)
 
 
 @handle_errors

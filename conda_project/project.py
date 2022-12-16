@@ -11,6 +11,7 @@ import shutil
 import sys
 import tempfile
 import warnings
+import weakref
 from collections import OrderedDict
 from contextlib import nullcontext, redirect_stderr
 from io import StringIO
@@ -79,376 +80,6 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
         if m is not None:
             pip_sha256[m.group("name")] = m.group("sha256")
     return pip_sha256
-
-
-class Variable(BaseModel):
-    key: str
-    default_value: str
-
-
-class Environment(BaseModel):
-    name: str
-    sources: Tuple[Path, ...]
-    prefix: Path
-    lockfile: Path
-    condarc: Path
-
-    class Config:
-        allow_mutation = False
-        extra = "forbid"
-
-    @property
-    def _overrides(self):
-        specified_channels = []
-        specified_platforms = set()
-        for fn in self.sources:
-            env = EnvironmentYaml.parse_yaml(fn)
-            for channel in env.channels or []:
-                if channel not in specified_channels:
-                    specified_channels.append(channel)
-            if env.platforms is not None:
-                specified_platforms.update(env.platforms)
-
-        channel_overrides = None
-        if not specified_channels:
-            env_files = ",".join([source.name for source in self.sources])
-            msg = f"there are no 'channels:' key in {env_files} assuming 'defaults'."
-            warnings.warn(msg)
-            channel_overrides = ["defaults"]
-
-        platform_overrides = None
-        if not specified_platforms:
-            platform_overrides = list(DEFAULT_PLATFORMS)
-
-        return channel_overrides, platform_overrides
-
-    @property
-    def is_locked(self) -> bool:
-        """
-        bool: Returns True if the lockfile is consistent with the source files, False otherwise.
-        """
-        channel_overrides, platform_overrides = self._overrides
-        if self.lockfile.exists():
-            lock = parse_conda_lock_file(self.lockfile)
-            spec = make_lock_spec(
-                src_files=list(self.sources),
-                channel_overrides=channel_overrides,
-                platform_overrides=platform_overrides,
-                virtual_package_repo=default_virtual_package_repodata(),
-            )
-            all_up_to_date = all(
-                p in lock.metadata.platforms
-                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
-                for p in spec.platforms
-            )
-            return all_up_to_date
-        else:
-            return False
-
-    @property
-    def is_prepared(self) -> bool:
-        """
-        bool: Returns True if the Conda environment exists and is consistent with
-              the environment source and lock files, False otherwise. If is_locked is
-              False is_prepared is False.
-        """
-        if not (self.prefix / "conda-meta" / "history").exists():
-            return False
-
-        if not self.is_locked:
-            return False
-
-        # Here, we ensure that we clear the cache on the PrefixData class. This is to
-        # ensure that we freshly load the installed packages each time.
-        PrefixData._cache_.pop(self.prefix, None)
-
-        pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
-
-        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
-        # We also convert the conda package_type attribute to a string in the set
-        # {"conda", "pip"} to allow direct comparison with conda-lock.
-        # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
-        pd = PrefixData(self.prefix, pip_interop_enabled=True)
-        installed_pkgs = set()
-        for p in pd.iter_records():
-            manager = _package_type_to_manager(p.package_type)
-            if manager == "pip":
-                sha256 = pip_sha256.get(p.name)
-            else:
-                sha256 = p.sha256
-
-            installed_pkgs.add((p.name, p.version, manager, sha256))
-
-        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
-        # We only include locked packages for the current platform, and don't
-        # include optional dependencies (e.g. compile/build)
-        lock = parse_conda_lock_file(self.lockfile)
-        locked_pkgs = {
-            (p.name, p.version, p.manager, p.hash.sha256)
-            for p in lock.package
-            if p.platform == current_platform() and not p.optional
-        }
-
-        # Compare the sets
-        # We can do this because the tuples are hashable. Also we don't need to
-        # consider ordering.
-        return installed_pkgs == locked_pkgs
-
-    def lock(
-        self,
-        force: bool = False,
-        verbose: bool = False,
-    ) -> None:
-        """Generate locked package lists for the supplied or default platforms
-
-        Utilizes conda-lock to build the .conda-lock.yml file.
-
-        Args:
-            force:       Rebuild the .conda-lock.yml file even if no changes were made
-                         to the dependencies.
-            verbose:     A verbose flag passed into the `conda lock` command.
-
-        """
-        if self.is_locked and not force:
-            if verbose:
-                print(
-                    f"The lockfile {self.lockfile.name} already exists and is up-to-date.\n"
-                    f"Run 'conda project lock --force {self.name} to recreate it from source specification."
-                )
-            return
-
-        # Setup temporary file for conda-lock to write to.
-        # If a package is removed from the environment source
-        # after the lockfile has been created conda-lock updates
-        # the hash in the lockfile but does not remove the unspecified
-        # package (and necessary orphaned dependencies) from the lockfile.
-        # To avoid this scenario lockfiles are written to a temporary location
-        # and copied back to the self.lockfile path if successful.
-        tempdir = Path(tempfile.mkdtemp())
-        lockfile = tempdir / self.lockfile.name
-
-        channel_overrides, platform_overrides = self._overrides
-
-        specified_channels = []
-        for fn in self.sources:
-            env = EnvironmentYaml.parse_yaml(fn)
-            for channel in env.channels or []:
-                if channel not in specified_channels:
-                    specified_channels.append(channel)
-
-        with redirect_stderr(StringIO()) as _:
-            with env_variable("CONDARC", str(self.condarc)):
-                if verbose:
-                    context = Spinner(prefix=f"Locking dependencies for {self.name}")
-                else:
-                    context = nullcontext()
-
-                with context:
-                    try:
-                        make_lock_files(
-                            conda=CONDA_EXE,
-                            src_files=list(self.sources),
-                            lockfile_path=lockfile,
-                            kinds=["lock"],
-                            platform_overrides=platform_overrides,
-                            channel_overrides=channel_overrides,
-                        )
-                        shutil.copy(lockfile, self.lockfile)
-                    except SubprocessError as e:
-                        output = json.loads(e.output)
-                        msg = output["message"].replace(
-                            "target environment",
-                            f"supplied channels: {channel_overrides or specified_channels}",
-                        )
-                        msg = "Project failed to lock\n" + msg
-                        raise CondaProjectError(msg)
-                    finally:
-                        shutil.rmtree(tempdir)
-
-        lock = parse_conda_lock_file(self.lockfile)
-        msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
-        logger.info(msg)
-
-    def prepare(
-        self,
-        force: bool = False,
-        verbose: bool = False,
-    ) -> Path:
-        """Prepare the conda environment.
-
-        Creates a new conda environment and installs the packages from the environment.yaml file.
-        Environments are always created from the conda-lock.yml file. The conda-lock.yml
-        will be created if it does not already exist.
-
-        Args:
-            force: If True, will force creation of a new conda environment.
-            verbose: A verbose flag passed into the `conda create` command.
-
-        Raises:
-            CondaProjectError: If no suitable environment file can be found.
-
-        Returns:
-            The path to the created environment.
-
-        """
-        if not self.is_locked:
-            if verbose and self.lockfile.exists():
-                print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
-            self.lock(verbose=verbose)
-
-        if self.is_prepared:
-            if not force:
-                logger.info(f"environment already exists at {self.prefix}")
-                if verbose:
-                    print(
-                        f"The environment already exists and is up-to-date.\n"
-                        f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
-                    )
-                return self.prefix
-        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
-            if not force:
-                if verbose:
-                    print(
-                        f"The environment exists but does not match the locked dependencies.\n"
-                        f"Run 'conda project prepare --force {self.name}' to recreate the environment from the "
-                        f"locked dependencies."
-                    )
-                return self.prefix
-
-        lock = parse_conda_lock_file(self.lockfile)
-        if current_platform() not in lock.metadata.platforms:
-            msg = (
-                f"Your current platform, {current_platform()}, is not in the supported locked platforms.\n"
-                f"You may need to edit your environment source files and run 'conda project lock' again."
-            )
-            raise CondaProjectError(msg)
-
-        rendered = render_lockfile_for_platform(
-            lockfile=lock,
-            platform=current_platform(),
-            kind="explicit",
-            include_dev_dependencies=False,
-            extras=None,
-        )
-
-        _pip_dependency_prefix = "# pip "  # from conda-lock
-        pip_requirements = [
-            line.split(_pip_dependency_prefix)[1].replace("#md5=None", "")
-            for line in rendered
-            if line.startswith(_pip_dependency_prefix)
-        ]
-
-        with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
-            f.write("\n".join(rendered))
-            f.flush()
-
-            args = [
-                "create",
-                "-y",
-                *("--file", f.name),
-                *("-p", str(self.prefix)),
-            ]
-            if force:
-                args.append("--force")
-
-            _ = call_conda(
-                args, condarc_path=self.condarc, verbose=verbose, logger=logger
-            )
-
-        if pip_requirements:
-            with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
-                f.write("\n".join(pip_requirements))
-                f.flush()
-                args = [
-                    "run",
-                    *("-p", str(self.prefix)),
-                    *("pip", "install", "--no-deps"),
-                    *("-r", str(f.name)),
-                ]
-                call_conda(
-                    args, condarc_path=self.condarc, verbose=verbose, logger=logger
-                )
-
-        with (self.prefix / ".gitignore").open("wt") as f:
-            f.write("*")
-
-        msg = f"environment created at {self.prefix}"
-        logger.info(msg)
-        if verbose:
-            print(msg)
-
-        return self.prefix
-
-    def clean(
-        self,
-        verbose: bool = False,
-    ) -> None:
-        """Remove the conda environment."""
-
-        _ = call_conda(
-            ["env", "remove", "-p", str(self.prefix)],
-            condarc_path=self.condarc,
-            verbose=verbose,
-            logger=logger,
-        )
-
-    def activate(self, directory, variables=None, verbose=False) -> None:
-        if not self.is_prepared:
-            self.prepare(verbose=verbose)
-
-        env = prepare_variables(directory, variables)
-
-        conda_activate(self.prefix, directory, env)
-
-
-class BaseEnvironments(BaseModel):
-    def __getitem__(self, key: str) -> Environment:
-        return getattr(self, key)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    class Config:
-        allow_mutation = False
-
-
-class Command(BaseModel):
-    name: str
-    cmd: str
-    environment: Environment
-    project_variables: Optional[Dict[str, Optional[str]]] = None
-    command_variables: Optional[Dict[str, Optional[str]]] = None
-    directory: Path
-
-    def run(self, verbose=False):
-        if not self.environment.is_prepared:
-            self.environment.prepare(verbose=verbose)
-
-        env = prepare_variables(
-            self.directory, self.project_variables, self.command_variables
-        )
-
-        conda_run(self.cmd, self.environment.prefix, self.directory, env)
-
-
-Command.update_forward_refs()
-
-
-class BaseCommands(BaseModel):
-    def __getitem__(self, key: str) -> Command:
-        return getattr(self, key)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    class Config:
-        allow_mutation = False
 
 
 class CondaProject:
@@ -596,7 +227,7 @@ class CondaProject:
                 sources=tuple([self.directory / str(s) for s in sources]),
                 prefix=self.directory / "envs" / env_name,
                 lockfile=self.directory / f"{env_name}.conda-lock.yml",
-                condarc=self.condarc,
+                project=weakref.proxy(self),
             )
         Environments = create_model(
             "Environments",
@@ -631,9 +262,8 @@ class CondaProject:
                 name=name,
                 cmd=cmd_args,
                 environment=environment,
-                project_variables=self._project_file.variables,
                 command_variables=command_variables,
-                directory=self.directory,
+                project=weakref.proxy(self),
             )
         Commands = create_model(
             "Commands", **{k: (Command, ...) for k in cmds}, __base__=BaseCommands
@@ -642,6 +272,9 @@ class CondaProject:
 
     @property
     def default_command(self) -> Command:
+        if not self._project_file.commands:
+            raise CondaProjectError("This project has no defined commands.")
+
         name = next(iter(self._project_file.commands))
         return self.commands[name]
 
@@ -681,3 +314,390 @@ class CondaProject:
                 return_status.append(True)
 
         return all(return_status)
+
+
+class Variable(BaseModel):
+    key: str
+    default_value: str
+
+
+class Environment(BaseModel):
+    name: str
+    sources: Tuple[Path, ...]
+    prefix: Path
+    lockfile: Path
+    project: CondaProject
+
+    class Config:
+        allow_mutation = False
+        extra = "forbid"
+        arbitrary_types_allowed = True
+
+    @property
+    def _overrides(self):
+        specified_channels = []
+        specified_platforms = set()
+        for fn in self.sources:
+            env = EnvironmentYaml.parse_yaml(fn)
+            for channel in env.channels or []:
+                if channel not in specified_channels:
+                    specified_channels.append(channel)
+            if env.platforms is not None:
+                specified_platforms.update(env.platforms)
+
+        channel_overrides = None
+        if not specified_channels:
+            env_files = ",".join([source.name for source in self.sources])
+            msg = f"there are no 'channels:' key in {env_files} assuming 'defaults'."
+            warnings.warn(msg)
+            channel_overrides = ["defaults"]
+
+        platform_overrides = None
+        if not specified_platforms:
+            platform_overrides = list(DEFAULT_PLATFORMS)
+
+        return channel_overrides, platform_overrides
+
+    @property
+    def is_locked(self) -> bool:
+        """
+        bool: Returns True if the lockfile is consistent with the source files, False otherwise.
+        """
+        channel_overrides, platform_overrides = self._overrides
+        if self.lockfile.exists():
+            lock = parse_conda_lock_file(self.lockfile)
+            spec = make_lock_spec(
+                src_files=list(self.sources),
+                channel_overrides=channel_overrides,
+                platform_overrides=platform_overrides,
+                virtual_package_repo=default_virtual_package_repodata(),
+            )
+            all_up_to_date = all(
+                p in lock.metadata.platforms
+                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
+                for p in spec.platforms
+            )
+            return all_up_to_date
+        else:
+            return False
+
+    @property
+    def is_prepared(self) -> bool:
+        """
+        bool: Returns True if the Conda environment exists and is consistent with
+              the environment source and lock files, False otherwise. If is_locked is
+              False is_prepared is False.
+        """
+        if not (self.prefix / "conda-meta" / "history").exists():
+            return False
+
+        if not self.is_locked:
+            return False
+
+        # Here, we ensure that we clear the cache on the PrefixData class. This is to
+        # ensure that we freshly load the installed packages each time.
+        PrefixData._cache_.pop(self.prefix, None)
+
+        pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
+        # We also convert the conda package_type attribute to a string in the set
+        # {"conda", "pip"} to allow direct comparison with conda-lock.
+        # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
+        pd = PrefixData(self.prefix, pip_interop_enabled=True)
+        installed_pkgs = set()
+        for p in pd.iter_records():
+            manager = _package_type_to_manager(p.package_type)
+            if manager == "pip":
+                sha256 = pip_sha256.get(p.name)
+            else:
+                sha256 = p.sha256
+
+            installed_pkgs.add((p.name, p.version, manager, sha256))
+
+        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
+        # We only include locked packages for the current platform, and don't
+        # include optional dependencies (e.g. compile/build)
+        lock = parse_conda_lock_file(self.lockfile)
+        locked_pkgs = {
+            (p.name, p.version, p.manager, p.hash.sha256)
+            for p in lock.package
+            if p.platform == current_platform() and not p.optional
+        }
+
+        # Compare the sets
+        # We can do this because the tuples are hashable. Also we don't need to
+        # consider ordering.
+        return installed_pkgs == locked_pkgs
+
+    def lock(
+        self,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> None:
+        """Generate locked package lists for the supplied or default platforms
+
+        Utilizes conda-lock to build the .conda-lock.yml file.
+
+        Args:
+            force:       Rebuild the .conda-lock.yml file even if no changes were made
+                         to the dependencies.
+            verbose:     A verbose flag passed into the `conda lock` command.
+
+        """
+        if self.is_locked and not force:
+            if verbose:
+                print(
+                    f"The lockfile {self.lockfile.name} already exists and is up-to-date.\n"
+                    f"Run 'conda project lock --force {self.name} to recreate it from source specification."
+                )
+            return
+
+        # Setup temporary file for conda-lock to write to.
+        # If a package is removed from the environment source
+        # after the lockfile has been created conda-lock updates
+        # the hash in the lockfile but does not remove the unspecified
+        # package (and necessary orphaned dependencies) from the lockfile.
+        # To avoid this scenario lockfiles are written to a temporary location
+        # and copied back to the self.lockfile path if successful.
+        tempdir = Path(tempfile.mkdtemp())
+        lockfile = tempdir / self.lockfile.name
+
+        channel_overrides, platform_overrides = self._overrides
+
+        specified_channels = []
+        for fn in self.sources:
+            env = EnvironmentYaml.parse_yaml(fn)
+            for channel in env.channels or []:
+                if channel not in specified_channels:
+                    specified_channels.append(channel)
+
+        with redirect_stderr(StringIO()) as _:
+            with env_variable("CONDARC", str(self.project.condarc)):
+                if verbose:
+                    context = Spinner(prefix=f"Locking dependencies for {self.name}")
+                else:
+                    context = nullcontext()
+
+                with context:
+                    try:
+                        make_lock_files(
+                            conda=CONDA_EXE,
+                            src_files=list(self.sources),
+                            lockfile_path=lockfile,
+                            kinds=["lock"],
+                            platform_overrides=platform_overrides,
+                            channel_overrides=channel_overrides,
+                        )
+                        shutil.copy(lockfile, self.lockfile)
+                    except SubprocessError as e:
+                        output = json.loads(e.output)
+                        msg = output["message"].replace(
+                            "target environment",
+                            f"supplied channels: {channel_overrides or specified_channels}",
+                        )
+                        msg = "Project failed to lock\n" + msg
+                        raise CondaProjectError(msg)
+                    finally:
+                        shutil.rmtree(tempdir)
+
+        lock = parse_conda_lock_file(self.lockfile)
+        msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
+        logger.info(msg)
+
+    def prepare(
+        self,
+        force: bool = False,
+        verbose: bool = False,
+    ) -> Path:
+        """Prepare the conda environment.
+
+        Creates a new conda environment and installs the packages from the environment.yaml file.
+        Environments are always created from the conda-lock.yml file. The conda-lock.yml
+        will be created if it does not already exist.
+
+        Args:
+            force: If True, will force creation of a new conda environment.
+            verbose: A verbose flag passed into the `conda create` command.
+
+        Raises:
+            CondaProjectError: If no suitable environment file can be found.
+
+        Returns:
+            The path to the created environment.
+
+        """
+        if not self.is_locked:
+            if verbose and self.lockfile.exists():
+                print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
+            self.lock(verbose=verbose)
+
+        if self.is_prepared:
+            if not force:
+                logger.info(f"environment already exists at {self.prefix}")
+                if verbose:
+                    print(
+                        f"The environment already exists and is up-to-date.\n"
+                        f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
+                    )
+                return self.prefix
+        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
+            if not force:
+                if verbose:
+                    print(
+                        f"The environment exists but does not match the locked dependencies.\n"
+                        f"Run 'conda project prepare --force {self.name}' to recreate the environment from the "
+                        f"locked dependencies."
+                    )
+                return self.prefix
+
+        lock = parse_conda_lock_file(self.lockfile)
+        if current_platform() not in lock.metadata.platforms:
+            msg = (
+                f"Your current platform, {current_platform()}, is not in the supported locked platforms.\n"
+                f"You may need to edit your environment source files and run 'conda project lock' again."
+            )
+            raise CondaProjectError(msg)
+
+        rendered = render_lockfile_for_platform(
+            lockfile=lock,
+            platform=current_platform(),
+            kind="explicit",
+            include_dev_dependencies=False,
+            extras=None,
+        )
+
+        _pip_dependency_prefix = "# pip "  # from conda-lock
+        pip_requirements = [
+            line.split(_pip_dependency_prefix)[1].replace("#md5=None", "")
+            for line in rendered
+            if line.startswith(_pip_dependency_prefix)
+        ]
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+            f.write("\n".join(rendered))
+            f.flush()
+
+            args = [
+                "create",
+                "-y",
+                *("--file", f.name),
+                *("-p", str(self.prefix)),
+            ]
+            if force:
+                args.append("--force")
+
+            _ = call_conda(
+                args, condarc_path=self.project.condarc, verbose=verbose, logger=logger
+            )
+
+        if pip_requirements:
+            with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+                f.write("\n".join(pip_requirements))
+                f.flush()
+                args = [
+                    "run",
+                    *("-p", str(self.prefix)),
+                    *("pip", "install", "--no-deps"),
+                    *("-r", str(f.name)),
+                ]
+                call_conda(
+                    args,
+                    condarc_path=self.project.condarc,
+                    verbose=verbose,
+                    logger=logger,
+                )
+
+        with (self.prefix / ".gitignore").open("wt") as f:
+            f.write("*")
+
+        msg = f"environment created at {self.prefix}"
+        logger.info(msg)
+        if verbose:
+            print(msg)
+
+        return self.prefix
+
+    def clean(
+        self,
+        verbose: bool = False,
+    ) -> None:
+        """Remove the conda environment."""
+
+        _ = call_conda(
+            ["env", "remove", "-p", str(self.prefix)],
+            condarc_path=self.project.condarc,
+            verbose=verbose,
+            logger=logger,
+        )
+
+    def activate(self, directory, variables=None, verbose=False) -> None:
+        if not self.is_prepared:
+            self.prepare(verbose=verbose)
+
+        env = prepare_variables(directory, variables)
+
+        conda_activate(self.prefix, directory, env)
+
+
+Environment.update_forward_refs()
+
+
+class BaseEnvironments(BaseModel):
+    def __getitem__(self, key: str) -> Environment:
+        return getattr(self, key)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    class Config:
+        allow_mutation = False
+
+
+class Command(BaseModel):
+    name: str
+    cmd: str
+    environment: Environment
+    command_variables: Optional[Dict[str, Optional[str]]] = None
+    project: CondaProject
+
+    def run(self, environment=None, verbose=False):
+        if environment is None:
+            environment = self.environment
+        else:
+            if isinstance(environment, str):
+                environment = self.project.environments[environment]
+
+        if not environment.is_prepared:
+            environment.prepare(verbose=verbose)
+
+        env = prepare_variables(
+            self.project.directory,
+            self.project._project_file.variables,
+            self.command_variables,
+        )
+
+        conda_run(self.cmd, environment.prefix, self.project.directory, env)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+Command.update_forward_refs()
+
+
+class BaseCommands(BaseModel):
+    def __getitem__(self, key: str) -> Command:
+        return getattr(self, key)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    class Config:
+        allow_mutation = False

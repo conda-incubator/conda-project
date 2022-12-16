@@ -260,6 +260,13 @@ def _create_run_parser(
         "run", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
+        "--environment",
+        help=(
+            "Specify the environment in which to run the command. The default environment for the command is either "
+            "what was specified in the command definition or the first environment defined in the project."
+        ),
+    )
+    p.add_argument(
         "command",
         help="Optional: Run the specified command by name. If no environment name is selected "
         "the first command in the conda-project.yml file is run.",
