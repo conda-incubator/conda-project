@@ -6,6 +6,7 @@ import os
 import sys
 import threading
 import time
+from collections import ChainMap
 from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
@@ -108,17 +109,18 @@ def find_file(directory: Path, options: tuple) -> Optional[Path]:
         return None
 
 
-def prepare_variables(
-    project_directory: Path, variables: Optional[Dict[str, Optional[str]]] = None
-) -> Dict[str, str]:
-    variables = {} if variables is None else variables
+def merge_dicts(*dicts):
+    return dict(ChainMap(*reversed(dicts)))
+
+
+def prepare_variables(project_directory: Path, *variable_dicts) -> Dict[str, str]:
+    variables = [{} if vars is None else vars for vars in variable_dicts]
+
     dotenv = dotenv_values(project_directory / ".env")
 
-    missing_vars = []
-    for k, v in variables.items():
-        if v is None and ((k not in dotenv) and (k not in os.environ)):
-            missing_vars.append(k)
+    env = merge_dicts(*variables, dotenv, os.environ)
 
+    missing_vars = [k for k, v in env.items() if v is None]
     if missing_vars:
         errs = "\n".join(missing_vars)
         msg = (
@@ -127,7 +129,5 @@ def prepare_variables(
             f" when executing 'conda project run':\n{errs}"
         )
         raise CondaProjectError(msg)
-
-    env = {**variables, **dotenv, **os.environ}
 
     return env

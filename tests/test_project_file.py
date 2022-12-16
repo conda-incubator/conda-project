@@ -7,9 +7,15 @@ from textwrap import dedent
 from typing import Dict, List, Optional, Union
 
 import pytest
+from pydantic import ValidationError
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.project_file import BaseYaml, CondaProjectYaml, EnvironmentYaml
+from conda_project.project_file import (
+    BaseYaml,
+    Command,
+    CondaProjectYaml,
+    EnvironmentYaml,
+)
 
 
 def test_empty_environment():
@@ -49,7 +55,7 @@ def test_yaml_dump_skip_empty_keys():
 
     yml = Yaml(filled="foo", nested={"a": ["b"], "c": None, "d": []})
     stream = StringIO()
-    yml.yaml(stream)
+    yml.yaml(stream, drop_empty_keys=True)
     assert stream.getvalue() == "filled: foo\nnested:\n  a:\n    - b\n  d: []\n"
 
 
@@ -132,7 +138,60 @@ def test_project_yaml_round_trip():
             - ../dev.yaml
           another:
             - another-env.yml
+        variables: {}
+        commands: {}
         """
     )
 
     assert written_contents == expected_contents
+
+
+def test_command_without_env():
+    command = {"cmd": "run-this"}
+
+    parsed = Command(**command)
+    assert parsed.environment is None
+
+
+def test_command_with_env_name():
+    command = {"cmd": "run-this", "environment": "default"}
+
+    parsed = Command(**command)
+    assert parsed.environment == "default"
+
+
+def test_command_fails_with_env_non_string():
+    command = {"cmd": "run-this", "environment": type}
+
+    with pytest.raises(ValidationError):
+        _ = Command(**command)
+
+
+def test_command_failed_with_extra_keys():
+    command = {"cmd": "run-this", "extra": "nope"}
+
+    with pytest.raises(ValidationError):
+        _ = Command(**command)
+
+
+def test_command_without_variables():
+    command = {"cmd": "run-this"}
+
+    parsed = Command(**command)
+    assert parsed.variables is None
+
+
+def test_command_with_variable():
+    command = {"cmd": "run-this", "variables": {"FOO": "bar"}}
+
+    parsed = Command(**command)
+    assert parsed.variables is not None
+    assert parsed.variables.get("FOO") == "bar"
+
+
+def test_command_with_empty_variable():
+    command = {"cmd": "run-this", "variables": {"FOO": None}}
+
+    parsed = Command(**command)
+    assert parsed.variables is not None
+    assert parsed.variables.get("FOO") is None

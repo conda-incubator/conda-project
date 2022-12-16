@@ -45,7 +45,7 @@ def test_find_file(tmp_path):
 
 
 def test_prepare_variables_from_environ(tmp_path):
-    env = prepare_variables(tmp_path, variables=None)
+    env = prepare_variables(tmp_path)
 
     assert env == os.environ
 
@@ -62,7 +62,7 @@ def test_prepare_variables_from_dotenv(tmp_path):
     dotenv = tmp_path / ".env"
     dotenv.write_text("FOO=from-dot-env")
 
-    env = prepare_variables(tmp_path, variables=None)
+    env = prepare_variables(tmp_path)
 
     assert env.get("FOO") == "from-dot-env"
 
@@ -134,3 +134,53 @@ def test_prepare_variables_fail(tmp_path):
         prepare_variables(tmp_path, variables)
 
         assert "do not have a default value" in str(e)
+
+
+def test_variable_overrides_by_command(tmp_path):
+    project_variables = {"FOO": None}
+    command_variables = {"FOO": "set-by-command"}
+
+    env = prepare_variables(tmp_path, project_variables, command_variables)
+
+    assert env.get("FOO") == "set-by-command"
+
+
+def test_variable_overrides_by_command_and_dotenv(tmp_path):
+    project_variables = {"FOO": None}
+    command_variables = {"FOO": "set-by-command"}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+
+    env = prepare_variables(tmp_path, project_variables, command_variables)
+
+    assert env.get("FOO") == "from-dot-env"
+
+
+def test_variable_overrides_by_command_and_dotenv_and_environ(tmp_path, monkeypatch):
+    project_variables = {"FOO": None}
+    command_variables = {"FOO": "set-by-command"}
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("FOO=from-dot-env")
+    monkeypatch.setenv("FOO", "set-by-environ")
+
+    env = prepare_variables(tmp_path, project_variables, command_variables)
+
+    assert env.get("FOO") == "set-by-environ"
+
+
+def test_prepare_variables_override_fail(tmp_path):
+    project_variables = {"FOO": "bar"}
+    command_variables = {"FOO": None}
+
+    with pytest.raises(CondaProjectError) as e:
+        prepare_variables(tmp_path, project_variables, command_variables)
+
+        assert "do not have a default value" in str(e)
+
+
+def test_variables_is_none_or_empty(tmp_path):
+    env = prepare_variables(tmp_path, None, None)
+    assert env == os.environ
+
+    env = prepare_variables(tmp_path, {}, {})
+    assert env == os.environ

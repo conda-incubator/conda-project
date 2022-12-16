@@ -419,14 +419,17 @@ class Command(BaseModel):
     name: str
     cmd: str
     environment: Environment
-    variables: Dict[str, Optional[str]]
+    project_variables: Optional[Dict[str, Optional[str]]] = None
+    command_variables: Optional[Dict[str, Optional[str]]] = None
     directory: Path
 
     def run(self, verbose=False):
         if not self.environment.is_prepared:
             self.environment.prepare(verbose=verbose)
 
-        env = prepare_variables(self.directory, self.variables)
+        env = prepare_variables(
+            self.directory, self.project_variables, self.command_variables
+        )
 
         conda_run(self.cmd, self.environment.prefix, self.directory, env)
 
@@ -614,6 +617,7 @@ class CondaProject:
             if isinstance(cmd, str):
                 cmd_args = cmd
                 environment = self.default_environment
+                command_variables = None
             else:
                 cmd_args = cmd.cmd
                 environment = (
@@ -621,12 +625,14 @@ class CondaProject:
                     if cmd.environment is not None
                     else self.default_environment
                 )
+                command_variables = cmd.variables
 
             cmds[name] = Command(
                 name=name,
                 cmd=cmd_args,
                 environment=environment,
-                variables=self._project_file.variables,
+                project_variables=self._project_file.variables,
+                command_variables=command_variables,
                 directory=self.directory,
             )
         Commands = create_model(

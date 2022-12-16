@@ -51,9 +51,13 @@ class BaseYaml(BaseModel):
         extra = "forbid"
 
 
-class Command(BaseYaml):
+class Command(BaseModel):
     cmd: str
     environment: Optional[str] = None
+    variables: Optional[Dict[str, Optional[str]]] = None
+
+    class Config:
+        extra = "forbid"
 
 
 class CondaProjectYaml(BaseYaml):
@@ -67,7 +71,7 @@ class EnvironmentYaml(BaseYaml):
     name: Optional[str] = None
     channels: Optional[List[str]] = None
     dependencies: List[Union[str, Dict[str, List[str]]]] = []
-    variables: Optional[Dict[str, str]] = {}
+    variables: Optional[Dict[str, str]] = None
     prefix: Optional[Path] = None
     platforms: Optional[List[str]] = None
 
