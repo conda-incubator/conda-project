@@ -664,7 +664,7 @@ class Command(BaseModel):
     command_variables: Optional[Dict[str, Optional[str]]] = None
     project: CondaProject
 
-    def run(self, environment=None, verbose=False):
+    def run(self, environment=None, extra_args=None, verbose=False):
         if environment is None:
             environment = self.environment
         else:
@@ -680,7 +680,7 @@ class Command(BaseModel):
             self.command_variables,
         )
 
-        conda_run(self.cmd, environment.prefix, self.project.directory, env)
+        conda_run(self.cmd, environment.prefix, self.project.directory, env, extra_args)
 
     class Config:
         arbitrary_types_allowed = True
@@ -691,7 +691,10 @@ Command.update_forward_refs()
 
 class BaseCommands(BaseModel):
     def __getitem__(self, key: str) -> Command:
-        return getattr(self, key)
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise CondaProjectError(f"The command {key} is not defined.")
 
     def keys(self):
         return self.__dict__.keys()

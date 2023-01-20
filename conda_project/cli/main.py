@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import typing
-from argparse import ArgumentParser
+from argparse import REMAINDER, ArgumentParser
 
 from conda_project import __version__
 
@@ -271,6 +271,12 @@ def _create_run_parser(
         help="Optional: Run the specified command by name. If no environment name is selected "
         "the first command in the conda-project.yml file is run.",
         nargs="?",
+    )
+    p.add_argument(
+        "extra_args",
+        help="Optional arguments passed to the command",
+        nargs=REMAINDER,
+        default=None,
     )
 
     p.set_defaults(func=commands.run)

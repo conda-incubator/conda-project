@@ -82,14 +82,22 @@ def current_platform() -> str:
 
 
 def conda_run(
-    cmd: str, prefix: Path, working_dir: Path, env: Optional[Dict[str, str]] = None
+    cmd: str,
+    prefix: Path,
+    working_dir: Path,
+    env: Optional[Dict[str, str]] = None,
+    extra_args: Optional[List[str]] = None,
 ):
+
+    extra_args = [] if extra_args is None else extra_args
+    arguments = shlex.split(cmd) + extra_args
+
     script_path, (shell, *_) = wrap_subprocess_call(
         root_prefix=CONDA_ROOT,
         prefix=str(prefix),
         dev_mode=False,
         debug_wrapper_scripts=False,
-        arguments=shlex.split(cmd),
+        arguments=arguments,
         use_system_tmp_path=True,
     )
 
