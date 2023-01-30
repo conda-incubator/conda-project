@@ -28,7 +28,8 @@ def test_project_create_new_directory(tmp_path, capsys):
     project_directory = tmp_path / "new-project"
     assert not os.path.exists(project_directory)
 
-    p = CondaProject.create(project_directory, lock_dependencies=False, verbose=True)
+    p = CondaProject(project_directory)
+    p.create(lock_dependencies=False, verbose=True)
 
     assert os.path.exists(project_directory)
     assert p.project_yaml_path.exists()
@@ -45,15 +46,17 @@ def test_project_create_new_directory(tmp_path, capsys):
 
 
 def test_project_create_twice(tmp_path, capsys):
-    _ = CondaProject.create(tmp_path, lock_dependencies=False)
-    p = CondaProject.create(tmp_path, lock_dependencies=False, verbose=True)
+    p = CondaProject(tmp_path)
+    p.create(lock_dependencies=False)
+    p.create(lock_dependencies=False, verbose=True)
 
     out, _ = capsys.readouterr()
     assert f"Existing project file found at {p.project_yaml_path}.\n" == out
 
 
 def test_project_create_default_platforms(tmp_path):
-    p = CondaProject.create(tmp_path, lock_dependencies=False)
+    p = CondaProject(tmp_path)
+    p.create(lock_dependencies=False)
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -62,7 +65,8 @@ def test_project_create_default_platforms(tmp_path):
 
 
 def test_project_create_specific_platforms(tmp_path):
-    p = CondaProject.create(tmp_path, platforms=["linux-64"], lock_dependencies=False)
+    p = CondaProject(tmp_path)
+    p.create(platforms=["linux-64"], lock_dependencies=False)
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -71,8 +75,8 @@ def test_project_create_specific_platforms(tmp_path):
 
 
 def test_project_create_specific_channels(tmp_path):
-    p = CondaProject.create(
-        tmp_path,
+    p = CondaProject(tmp_path)
+    p.create(
         dependencies=["python=3.8", "numpy"],
         channels=["conda-forge", "defaults"],
         lock_dependencies=False,
@@ -86,9 +90,8 @@ def test_project_create_specific_channels(tmp_path):
 
 
 def test_project_create_default_channel(tmp_path):
-    p = CondaProject.create(
-        tmp_path, dependencies=["python=3.8", "numpy"], lock_dependencies=False
-    )
+    p = CondaProject(tmp_path)
+    p.create(dependencies=["python=3.8", "numpy"], lock_dependencies=False)
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -98,8 +101,8 @@ def test_project_create_default_channel(tmp_path):
 
 
 def test_project_create_conda_configs(tmp_path):
-    p = CondaProject.create(
-        tmp_path,
+    p = CondaProject(tmp_path)
+    p.create(
         dependencies=["python=3.8", "numpy"],
         conda_configs=["experimental_solver=libmamba"],
         lock_dependencies=False,
@@ -114,9 +117,8 @@ def test_project_create_conda_configs(tmp_path):
 
 @pytest.mark.slow
 def test_project_create_and_lock(tmp_path):
-    p = CondaProject.create(
-        tmp_path, dependencies=["python=3.8"], lock_dependencies=True
-    )
+    p = CondaProject(tmp_path)
+    p.create(dependencies=["python=3.8"], lock_dependencies=True)
     assert p.default_environment.lockfile.exists()
     assert p.default_environment.lockfile == tmp_path / "default.conda-lock.yml"
 
@@ -124,8 +126,9 @@ def test_project_create_and_lock(tmp_path):
 def test_conda_project_init_empty_dir(tmp_path, caplog):
     caplog.set_level(logging.INFO)
 
+    p = CondaProject(tmp_path)
     with pytest.raises(CondaProjectError) as excinfo:
-        CondaProject(tmp_path)
+        _ = p._project_file
     assert "No Conda environment.yml or environment.yaml file was found" in str(
         excinfo.value
     )

@@ -10,7 +10,7 @@ repos:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
 -   repo: https://github.com/pycqa/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
     -   id: isort
         name: isort
@@ -23,7 +23,7 @@ repos:
     hooks:
     -   id: flake8
 -   repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.4.1
+    rev: v1.4.2
     hooks:
     -   id: insert-license
         files: \.py$
