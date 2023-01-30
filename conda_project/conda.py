@@ -3,15 +3,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
-import fcntl
 import json
 import os
 import shlex
 import signal
-import struct
 import subprocess
 import sys
-import termios
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
@@ -128,20 +125,15 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     )
     print(activate_message)
 
-    def get_terminal_size():
-        s = struct.pack("HHHH", 0, 0, 0, 0)
-        a = struct.unpack(
-            "hhhh", fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, s)
-        )
-        return a[0], a[1]
-
     c = pexpect.spawn(shell, args, cwd=working_dir, env=env, echo=False)
 
     def sigwinch_passthrough(sig, data):
         if not c.closed:
-            c.setwinsize(*get_terminal_size())
+            t = os.get_terminal_size()
+            c.setwinsize(t.lines, t.columns)
 
-    c.setwinsize(*get_terminal_size())
+    t = os.get_terminal_size()
+    c.setwinsize(t.lines, t.columns)
     signal.signal(signal.SIGWINCH, sigwinch_passthrough)
     c.sendline(f"conda activate {prefix}")
     c.interact()
