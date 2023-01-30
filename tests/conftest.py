@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -72,3 +73,32 @@ def empty_conda_environment(tmp_path):
     args = ["create", "-p", str(tmp_path), "--yes"]
     call_conda(args)
     yield tmp_path
+
+
+@pytest.fixture()
+def execvpe(monkeypatch):
+    execvpe_arguments = {}
+
+    def mocked_execvpe(file, args, env=None):
+        execvpe_arguments["file"] = file
+        execvpe_arguments["args"] = args
+        execvpe_arguments["env"] = env
+        execvpe_arguments["cwd"] = os.getcwd()
+
+    monkeypatch.setattr("os.execvpe", mocked_execvpe)
+    return execvpe_arguments
+
+
+@pytest.fixture()
+def execvpe_failed(monkeypatch):
+    execvpe_arguments = {}
+
+    def mocked_execvpe(file, args, env=None):
+        execvpe_arguments["file"] = file
+        execvpe_arguments["args"] = args
+        execvpe_arguments["env"] = env
+        execvpe_arguments["cwd"] = os.getcwd()
+        raise RuntimeError("os.execvpe failed to run")
+
+    monkeypatch.setattr("os.execvpe", mocked_execvpe)
+    return execvpe_arguments

@@ -31,7 +31,7 @@ from conda_lock.conda_lock import (
 from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, conda_activate, conda_run, current_platform
-from .exceptions import CondaProjectError
+from .exceptions import CommandNotFoundError, CondaProjectError
 from .project_file import (
     ENVIRONMENT_YAML_FILENAMES,
     PROJECT_YAML_FILENAMES,
@@ -273,7 +273,7 @@ class CondaProject:
     @property
     def default_command(self) -> Command:
         if not self._project_file.commands:
-            raise CondaProjectError("This project has no defined commands.")
+            raise CommandNotFoundError("This project has no defined commands.")
 
         name = next(iter(self._project_file.commands))
         return self.commands[name]
@@ -694,7 +694,7 @@ class BaseCommands(BaseModel):
         try:
             return getattr(self, key)
         except AttributeError:
-            raise CondaProjectError(f"The command {key} is not defined.")
+            raise CommandNotFoundError(f"The command {key} is not defined.")
 
     def keys(self):
         return self.__dict__.keys()

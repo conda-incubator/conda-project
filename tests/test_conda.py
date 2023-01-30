@@ -60,87 +60,51 @@ def test_current_platform(monkeypatch):
     assert platform == "monkey-64"
 
 
-def test_conda_run_without_env(monkeypatch, empty_conda_environment):
-    execvpe_arguments = {}
-
-    def mocked_execvpe(file, args, env=None):
-        execvpe_arguments["file"] = file
-        execvpe_arguments["args"] = args
-        execvpe_arguments["env"] = env
-
-    monkeypatch.setattr(os, "execvpe", mocked_execvpe)
-
+def test_conda_run_without_env(execvpe, empty_conda_environment):
     conda_run(
-        "dummy-cmd",
-        empty_conda_environment,
-        empty_conda_environment,
+        cmd="dummy-cmd",
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
         env=None,
     )
 
-    assert execvpe_arguments["env"] == {}
+    assert execvpe["env"] == {}
 
 
-def test_conda_run_with_variables(monkeypatch, empty_conda_environment):
-    execvpe_arguments = {}
-
-    def mocked_execvpe(file, args, env=None):
-        execvpe_arguments["file"] = file
-        execvpe_arguments["args"] = args
-        execvpe_arguments["env"] = env
-
-    monkeypatch.setattr(os, "execvpe", mocked_execvpe)
-
+def test_conda_run_with_variables(execvpe, empty_conda_environment):
     variables = {"FOO": "bar"}
     conda_run(
-        "dummy-cmd", empty_conda_environment, empty_conda_environment, env=variables
+        cmd="dummy-cmd",
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
+        env=variables,
     )
 
-    assert execvpe_arguments["env"] == variables
+    assert execvpe["env"] == variables
 
 
-def test_conda_run_working_dir(monkeypatch, empty_conda_environment):
-    execvpe_arguments = {}
-
-    def mocked_execvpe(file, args, env=None):
-        execvpe_arguments["file"] = file
-        execvpe_arguments["args"] = args
-        execvpe_arguments["env"] = env
-        execvpe_arguments["cwd"] = os.getcwd()
-
-    monkeypatch.setattr(os, "execvpe", mocked_execvpe)
-
+def test_conda_run_working_dir(execvpe, empty_conda_environment):
     current_dir = os.getcwd()
     conda_run(
-        "dummy-cmd",
-        empty_conda_environment,
-        empty_conda_environment,
+        cmd="dummy-cmd",
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
         env=None,
     )
 
-    assert execvpe_arguments["cwd"] == str(empty_conda_environment)
+    assert execvpe["cwd"] == str(empty_conda_environment)
     assert os.getcwd() == current_dir
 
 
-def test_conda_run_failed_working_dir(monkeypatch, empty_conda_environment):
-    execvpe_arguments = {}
-
-    def mocked_execvpe(file, args, env=None):
-        execvpe_arguments["file"] = file
-        execvpe_arguments["args"] = args
-        execvpe_arguments["env"] = env
-        execvpe_arguments["cwd"] = os.getcwd()
-        raise RuntimeError("os.execvpe failed to run")
-
-    monkeypatch.setattr(os, "execvpe", mocked_execvpe)
-
+def test_conda_run_failed_working_dir(execvpe_failed, empty_conda_environment):
     current_dir = os.getcwd()
     with pytest.raises(RuntimeError):
         conda_run(
-            "dummy-cmd",
-            empty_conda_environment,
-            empty_conda_environment,
+            cmd="dummy-cmd",
+            prefix=empty_conda_environment,
+            working_dir=empty_conda_environment,
             env=None,
         )
 
-    assert execvpe_arguments["cwd"] == str(empty_conda_environment)
+    assert execvpe_failed["cwd"] == str(empty_conda_environment)
     assert os.getcwd() == current_dir

@@ -5,3 +5,7 @@
 
 class CondaProjectError(Exception):
     pass
+
+
+class CommandNotFoundError(CondaProjectError):
+    pass
