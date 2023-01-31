@@ -13,7 +13,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
-from typing import Dict, List, NoReturn, Optional, Union, Type
+from typing import Dict, List, NoReturn, Optional, Type, Union
 
 from dotenv import dotenv_values
 
@@ -136,13 +136,12 @@ def prepare_variables(project_directory: Path, *variable_dicts) -> Dict[str, str
 
 
 def is_windows():
-    return platform.system() == 'Windows'
+    return platform.system() == "Windows"
 
 
-def execvped(file: Union[Path, str],
-             args: List[str],
-             env: Dict[str, str],
-             cwd: Union[Path, str]) -> NoReturn:
+def execvped(
+    file: Union[Path, str], args: List[str], env: Dict[str, str], cwd: Union[Path, str]
+) -> NoReturn:
     """A cross-platform os.execvpe - like executor
 
     The goal is the be able to launch a command and ensure

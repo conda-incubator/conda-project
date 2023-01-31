@@ -8,7 +8,6 @@ import os
 import shlex
 import signal
 import subprocess
-import sys
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
@@ -88,7 +87,7 @@ def conda_run(
 ) -> None:
 
     extra_args = [] if extra_args is None else extra_args
-    arguments = shlex.split(cmd + ' ' + ' '.join(extra_args))
+    arguments = shlex.split(cmd + " " + " ".join(extra_args))
 
     _, (shell, *args) = wrap_subprocess_call(
         root_prefix=CONDA_ROOT,
@@ -109,9 +108,18 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     shell_name, shell_path = shellingham.detect_shell()
 
     if is_windows():
-        if shell_name in ['powershell', 'pwsh']:
+        if shell_name in ["powershell", "pwsh"]:
             conda_hook = str(Path(CONDA_ROOT) / "shell" / "condabin" / "conda-hook.ps1")
-            args = ["-ExecutionPolicy", "ByPass", "-NoExit", conda_hook, ";", "conda", "activate", str(prefix)]
+            args = [
+                "-ExecutionPolicy",
+                "ByPass",
+                "-NoExit",
+                conda_hook,
+                ";",
+                "conda",
+                "activate",
+                str(prefix),
+            ]
         elif shell_name == "cmd":
             activate_bat = str(Path(CONDA_ROOT) / "Scripts" / "activate.bat")
             args = ["/K", activate_bat, str(prefix)]
