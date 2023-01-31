@@ -105,11 +105,10 @@ def test_project_create_conda_configs(tmp_path):
         lock_dependencies=False,
     )
 
-    for path in [p.condarc, p.default_environment.condarc]:
-        with path.open() as f:
-            condarc = YAML().load(f)
+    with p.condarc.open() as f:
+        condarc = YAML().load(f)
 
-        assert condarc["experimental_solver"] == "libmamba"
+    assert condarc["experimental_solver"] == "libmamba"
 
 
 @pytest.mark.slow
@@ -670,7 +669,7 @@ def test_relock_failed(project_directory_factory):
         name: test
         dependencies:
           - python=3.8
-          - __bad-package
+          - _bad-package-8933
         """
     )
     with project.default_environment.sources[0].open("w") as f:
@@ -683,7 +682,7 @@ def test_relock_failed(project_directory_factory):
         lock = YAML().load(f)
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" in [p["name"] for p in lock["package"]]
-    assert "__bad-package" not in [p["name"] for p in lock["package"]]
+    assert "_bad-package-8933" not in [p["name"] for p in lock["package"]]
 
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
 
@@ -1137,3 +1136,28 @@ def test_check_multi_env(project_directory_factory):
         f.write(env1)
 
     assert not project.check()
+
+
+def test_commands(project_directory_factory):
+    env_yaml = "dependencies: []\n"
+    project_yaml = dedent(
+        f"""\
+        name: commands
+        variables:
+          FOO: project-level
+          BAR:
+        environments:
+          default: [environment{project_directory_factory._suffix}]
+        commands:
+          default:
+            cmd: foo
+            variables:
+              FOO: command-level
+        """
+    )
+    project_path = project_directory_factory(
+        project_yaml=project_yaml, env_yaml=env_yaml
+    )
+
+    project = CondaProject(project_path)
+    assert project.default_command.run()
