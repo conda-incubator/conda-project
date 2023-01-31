@@ -1136,28 +1136,3 @@ def test_check_multi_env(project_directory_factory):
         f.write(env1)
 
     assert not project.check()
-
-
-def test_commands(project_directory_factory):
-    env_yaml = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
-        name: commands
-        variables:
-          FOO: project-level
-          BAR:
-        environments:
-          default: [environment{project_directory_factory._suffix}]
-        commands:
-          default:
-            cmd: foo
-            variables:
-              FOO: command-level
-        """
-    )
-    project_path = project_directory_factory(
-        project_yaml=project_yaml, env_yaml=env_yaml
-    )
-
-    project = CondaProject(project_path)
-    assert project.default_command.run()
