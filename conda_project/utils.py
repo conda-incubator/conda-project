@@ -3,6 +3,8 @@
 
 import itertools
 import os
+import platform
+import subprocess
 import sys
 import threading
 import time
@@ -11,7 +13,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
-from typing import Dict, Optional, Type
+from typing import Dict, List, NoReturn, Optional, Union, Type
 
 from dotenv import dotenv_values
 
@@ -131,3 +133,35 @@ def prepare_variables(project_directory: Path, *variable_dicts) -> Dict[str, str
         raise CondaProjectError(msg)
 
     return env
+
+
+def is_windows():
+    return platform.system() == 'Windows'
+
+
+def execvped(file: Union[Path, str],
+             args: List[str],
+             env: Dict[str, str],
+             cwd: Union[Path, str]) -> NoReturn:
+    """A cross-platform os.execvpe - like executor
+
+    The goal is the be able to launch a command and ensure
+    that output is not captured and that the return code is
+    the return code of the executed command, not conda-project CLI.
+
+    The "d" in the function name refers to the requirement that
+    the working directory (cwd) flag be used.
+    """
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    if is_windows():
+        sys.exit(subprocess.Popen(args=[file] + args, env=env, cwd=cwd).wait())
+    else:
+        old_dir = os.getcwd()
+        try:
+            os.chdir(cwd)
+            os.execvpe(file, args, env)
+        finally:
+            os.chdir(old_dir)

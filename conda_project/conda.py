@@ -19,6 +19,7 @@ import shellingham
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
 
 from .exceptions import CondaProjectError
+from .utils import execvped, is_windows
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 CONDA_ROOT = os.environ.get("CONDA_ROOT")
@@ -87,9 +88,9 @@ def conda_run(
 ) -> None:
 
     extra_args = [] if extra_args is None else extra_args
-    arguments = shlex.split(cmd) + extra_args
+    arguments = shlex.split(cmd + ' ' + ' '.join(extra_args))
 
-    script_path, (shell, *_) = wrap_subprocess_call(
+    _, (shell, *args) = wrap_subprocess_call(
         root_prefix=CONDA_ROOT,
         prefix=str(prefix),
         dev_mode=False,
@@ -99,23 +100,21 @@ def conda_run(
     )
 
     env = {} if env is None else env
-
-    old_dir = os.getcwd()
-    try:
-        os.chdir(working_dir)
-        os.execvpe(shell, ["-c", script_path], env)
-    finally:
-        os.chdir(old_dir)
+    execvped(shell, args, env=env, cwd=working_dir)
 
 
 def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     env = {} if env is None else env
 
-    _, shell = shellingham.detect_shell()
+    shell_name, shell_path = shellingham.detect_shell()
 
-    if sys.platform.startswith("win"):
-        activate_bat = str(Path(CONDA_ROOT) / "Scripts" / "activate.bat")
-        args = ["/K", activate_bat, CONDA_PREFIX]
+    if is_windows():
+        if shell_name in ['powershell', 'pwsh']:
+            conda_hook = str(Path(CONDA_ROOT) / "shell" / "condabin" / "conda-hook.ps1")
+            args = ["-ExecutionPolicy", "ByPass", "-NoExit", conda_hook, ";", "conda", "activate", str(prefix)]
+        elif shell_name == "cmd":
+            activate_bat = str(Path(CONDA_ROOT) / "Scripts" / "activate.bat")
+            args = ["/K", activate_bat, str(prefix)]
     else:
         args = ["-il"]
 
@@ -125,16 +124,19 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     )
     print(activate_message)
 
-    c = pexpect.spawn(shell, args, cwd=working_dir, env=env, echo=False)
+    if is_windows():
+        subprocess.run([shell_path, *args], cwd=working_dir, env=env)
+    else:
+        c = pexpect.spawn(shell_path, args, cwd=working_dir, env=env, echo=False)
 
-    def sigwinch_passthrough(sig, data):
-        if not c.closed:
-            t = os.get_terminal_size()
-            c.setwinsize(t.lines, t.columns)
+        def sigwinch_passthrough(sig, data):
+            if not c.closed:
+                t = os.get_terminal_size()
+                c.setwinsize(t.lines, t.columns)
 
-    t = os.get_terminal_size()
-    c.setwinsize(t.lines, t.columns)
-    signal.signal(signal.SIGWINCH, sigwinch_passthrough)
-    c.sendline(f"conda activate {prefix}")
-    c.interact()
-    c.close()
+        t = os.get_terminal_size()
+        c.setwinsize(t.lines, t.columns)
+        signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+        c.sendline(f"conda activate {prefix}")
+        c.interact()
+        c.close()
