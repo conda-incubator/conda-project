@@ -17,7 +17,7 @@ from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
 from subprocess import SubprocessError
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, NoReturn, Optional, Tuple, Union
 
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
@@ -693,7 +693,7 @@ class Command(BaseModel):
     command_variables: Optional[Dict[str, Optional[str]]] = None
     project: CondaProject
 
-    def run(self, environment=None, extra_args=None, verbose=False):
+    def run(self, environment=None, extra_args=None, verbose=False) -> NoReturn:
         if environment is None:
             environment = self.environment
         else:

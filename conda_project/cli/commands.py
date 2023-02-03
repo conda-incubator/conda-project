@@ -4,7 +4,7 @@
 import sys
 from argparse import Namespace
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
 from ..project import Command, CondaProject
@@ -105,7 +105,7 @@ def clean(args: Namespace) -> bool:
 
 
 @handle_errors
-def run(args: Namespace) -> None:
+def run(args: Namespace) -> NoReturn:
     project = CondaProject(args.directory)
 
     if args.command:

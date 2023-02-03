@@ -11,7 +11,7 @@ import subprocess
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, NoReturn, Optional
 
 import pexpect
 import shellingham
@@ -84,7 +84,7 @@ def conda_run(
     working_dir: Path,
     env: Optional[Dict[str, str]] = None,
     extra_args: Optional[List[str]] = None,
-) -> None:
+) -> NoReturn:
 
     extra_args = [] if extra_args is None else extra_args
     arguments = shlex.split(cmd + " " + " ".join(extra_args))
