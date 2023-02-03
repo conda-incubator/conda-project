@@ -26,7 +26,7 @@ setup(
     name="conda-project",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description="Tool for encapsulating, running, and reproducing projects with Conda environments",
+    description="Tool for encapsulating, running, and reproducing projects with conda environments",
     license="BSD",
     author="Albert DeFusco",
     author_email="adefusco@anaconda.com",

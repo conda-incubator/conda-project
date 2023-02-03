@@ -1,12 +1,12 @@
-# Conda Project
+# conda-project
 
 [![codecov](https://codecov.io/gh/conda-incubator/conda-project/branch/main/graph/badge.svg?token=XNRS8JKT75)](https://codecov.io/gh/conda-incubator/conda-project)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
 
-Tool for encapsulating, running, and reproducing projects with Conda environments
+Tool for encapsulating, running, and reproducing projects with conda environments
 
 This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
-Please continue to use Anaconda Project until it has been delcared deprecated and Conda Project has
+Please continue to use Anaconda Project until it has been declared deprecated and conda-project has
 stabilized.
 
 ## Setup for development
@@ -50,7 +50,7 @@ Pre-Commit is configured to run
 This repository is configured with [Pre-Commit.ci](https://pre-commit.ci/), which
 will automatically fix Pull Requests to comply with the above linters.
 
-The pre-commit Conda package is included in the development environment.yml file.
+The pre-commit conda package is included in the development environment.yml file.
 To install the hooks in your local clone run
 
 ```

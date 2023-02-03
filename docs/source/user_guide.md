@@ -48,10 +48,10 @@ optional arguments:
   --platforms PLATFORMS
                         Comma separated list of platforms for which to lock dependencies. The default is win-64,linux-64,osx-64,osx-arm64
   --conda-configs CONDA_CONFIGS
-                        Comma separated list of Conda configuration parameters to write into the .condarc file in the project directory. The
+                        Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
                         format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
   --no-lock             Do no create the conda-lock.yml file
-  --prepare             Create the local Conda environment for the current platform.
+  --prepare             Create the local conda environment for the current platform.
 ```
 
 
@@ -160,7 +160,7 @@ environments:
 The Python API provides full support for the above workflows by creating a `CondaProject` object.
 `CondaProject` takes a single optional argument to supply the path to the project.
 The default value is the current working directory, `.` Every CondaProject has at least one
-Conda  environment.
+conda  environment.
 
 A project directory containing only an `environment.yml` file will create a single environment
 of the name `default`, which can be locked or prepared.

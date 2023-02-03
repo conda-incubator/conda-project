@@ -34,7 +34,7 @@ def test_no_env_yaml(tmp_path, monkeypatch, capsys):
     assert main() == 1
 
     err = capsys.readouterr().err
-    assert "No Conda environment.yml or environment.yaml file was found" in err
+    assert "No conda environment.yml or environment.yaml file was found" in err
 
 
 def test_unknown_command(capsys):
