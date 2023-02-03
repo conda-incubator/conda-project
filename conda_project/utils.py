@@ -4,7 +4,6 @@
 import itertools
 import os
 import platform
-import subprocess
 import sys
 import threading
 import time
@@ -13,6 +12,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
+from subprocess import Popen
 from typing import Dict, List, NoReturn, Optional, Type, Union
 
 from dotenv import dotenv_values
@@ -144,9 +144,10 @@ def execvped(
 ) -> NoReturn:
     """A cross-platform os.execvpe - like executor
 
-    The goal is the be able to launch a command and ensure
-    that output is not captured and that the return code is
-    the return code of the executed command, not conda-project CLI.
+    The goal is the be able to launch a command in a working directory,
+    with environment variables and exit to the shell with the return code
+    of the command and ensure that on error the previous working directory
+    is restored.
 
     The "d" in the function name refers to the requirement that
     the working directory (cwd) flag be used.
@@ -156,9 +157,9 @@ def execvped(
     sys.stderr.flush()
 
     if is_windows():
-        sys.exit(subprocess.Popen(args=[file] + args, env=env, cwd=cwd).wait())
+        sys.exit(Popen(args=[file] + args, env=env, cwd=cwd).wait())
     else:
-        old_dir = os.getcwd()
+        old_dir = Path.cwd()
         try:
             os.chdir(cwd)
             os.execvpe(file, args, env)

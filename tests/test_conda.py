@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-import os
 
 import pytest
 
@@ -60,7 +59,7 @@ def test_current_platform(monkeypatch):
     assert platform == "monkey-64"
 
 
-def test_conda_run_without_env(execvpe, empty_conda_environment):
+def test_conda_run_without_variables(mocked_execvped, empty_conda_environment):
     conda_run(
         cmd="dummy-cmd",
         prefix=empty_conda_environment,
@@ -68,10 +67,11 @@ def test_conda_run_without_env(execvpe, empty_conda_environment):
         env=None,
     )
 
-    assert execvpe["env"] == {}
+    assert mocked_execvped.call_count == 1
+    assert mocked_execvped.call_args.kwargs["env"] == {}
 
 
-def test_conda_run_with_variables(execvpe, empty_conda_environment):
+def test_conda_run_with_variables(mocked_execvped, empty_conda_environment):
     variables = {"FOO": "bar"}
     conda_run(
         cmd="dummy-cmd",
@@ -80,31 +80,5 @@ def test_conda_run_with_variables(execvpe, empty_conda_environment):
         env=variables,
     )
 
-    assert execvpe["env"] == variables
-
-
-def test_conda_run_working_dir(execvpe, empty_conda_environment):
-    current_dir = os.getcwd()
-    conda_run(
-        cmd="dummy-cmd",
-        prefix=empty_conda_environment,
-        working_dir=empty_conda_environment,
-        env=None,
-    )
-
-    assert execvpe["cwd"] == str(empty_conda_environment)
-    assert os.getcwd() == current_dir
-
-
-def test_conda_run_failed_working_dir(execvpe_failed, empty_conda_environment):
-    current_dir = os.getcwd()
-    with pytest.raises(RuntimeError):
-        conda_run(
-            cmd="dummy-cmd",
-            prefix=empty_conda_environment,
-            working_dir=empty_conda_environment,
-            env=None,
-        )
-
-    assert execvpe_failed["cwd"] == str(empty_conda_environment)
-    assert os.getcwd() == current_dir
+    assert mocked_execvped.call_count == 1
+    assert mocked_execvped.call_args.kwargs["env"] == variables

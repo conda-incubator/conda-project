@@ -2,11 +2,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import os
+from pathlib import Path
 
 import pytest
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.utils import env_variable, find_file, prepare_variables
+from conda_project.utils import (
+    env_variable,
+    execvped,
+    find_file,
+    is_windows,
+    prepare_variables,
+)
 
 
 def test_env_var_context():
@@ -184,3 +191,49 @@ def test_variables_is_none_or_empty(tmp_path):
 
     env = prepare_variables(tmp_path, {}, {})
     assert env == os.environ
+
+
+@pytest.mark.skipif(
+    is_windows(), reason="Windows uses subprocess.Popen, which natively supports cwd"
+)
+def test_execvpe_in_working_directory(mocker, tmp_path):
+    spy = mocker.spy(os, "chdir")
+    mocker.patch("os.execvpe")
+
+    current_dir = Path.cwd()
+    execvped(file="valid-cmd", args=["arg1", "arg2"], env={"FOO": "bar"}, cwd=tmp_path)
+
+    assert spy.call_args_list == [mocker.call(tmp_path), mocker.call(current_dir)]
+    assert Path.cwd() == current_dir
+
+
+@pytest.mark.skipif(
+    is_windows(), reason="Windows uses subprocess.Popen, which natively supports cwd"
+)
+def test_execvpe_failed_in_working_dir(mocker, tmp_path):
+    spy = mocker.spy(os, "chdir")
+    mocker.patch("os.execvpe", side_effect=OSError())
+
+    current_dir = Path.cwd()
+    with pytest.raises(OSError):
+        execvped(
+            file="invalid-cmd", args=["arg1", "arg2"], env={"FOO": "bar"}, cwd=tmp_path
+        )
+
+    assert spy.call_args_list == [mocker.call(tmp_path), mocker.call(current_dir)]
+    assert Path.cwd() == current_dir
+
+
+@pytest.mark.skipif(
+    not is_windows(), reason="Non-Windows uses os.execvpe, which does not run sys.exit"
+)
+def test_popen_return_code(mocker, tmp_path):
+    mocked_popen = mocker.patch("conda_project.utils.Popen")
+    mocker.patch.object(mocked_popen, "wait", return_value=0)
+
+    with pytest.raises(SystemExit) as exinfo:
+        execvped(
+            file="valid-cmd", args=["arg1", "arg2"], env={"FOO": "bar"}, cwd=tmp_path
+        )
+
+    assert exinfo.value.code == 0

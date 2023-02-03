@@ -10,5 +10,6 @@ dependencies:
   - pydantic
   - pytest
   - pytest-cov
+  - pytest-mock
   - shellingham
   - python-dotenv

@@ -99,7 +99,7 @@ def conda_run(
     )
 
     env = {} if env is None else env
-    execvped(shell, args, env=env, cwd=working_dir)
+    execvped(file=shell, args=args, env=env, cwd=working_dir)
 
 
 def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
