@@ -30,7 +30,7 @@ setup(
     license="BSD",
     author="Albert DeFusco",
     author_email="adefusco@anaconda.com",
-    url="https://github.com/AlbertDeFusco/conda-project",
+    url="https://github.com/conda-incubator/conda-project",
     packages=find_packages(),
     entry_points={"console_scripts": ["conda-project=conda_project.cli.main:main"]},
     python_requires=">=3.7",

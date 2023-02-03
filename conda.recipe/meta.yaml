@@ -46,7 +46,7 @@ test:
     - pytest
 
 about:
-  home: https://github.com/AlbertDeFusco/conda-project
+  home: https://github.com/conda-incubator/conda-project
   summary: Tool for encapsulating, running, and reproducing projects with conda environments
   license: {{ data.get('license') }}
   license_file: LICENSE
