@@ -228,12 +228,19 @@ def test_execvpe_failed_in_working_dir(mocker, tmp_path):
     not is_windows(), reason="Non-Windows uses os.execvpe, which does not run sys.exit"
 )
 def test_popen_return_code(mocker, tmp_path):
-    mocked_popen = mocker.patch("conda_project.utils.Popen")
-    mocker.patch.object(mocked_popen, "wait", return_value=0)
+    class MockedPopen(mocker.MagicMock):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def wait(self):
+            return 1
+
+    mocked_popen = mocker.patch('conda_project.utils.Popen', new_callable=MockedPopen)
 
     with pytest.raises(SystemExit) as exinfo:
         execvped(
-            file="valid-cmd", args=["arg1", "arg2"], env={"FOO": "bar"}, cwd=tmp_path
+            file="invalid-cmd", args=["arg1", "arg2"], env={"FOO": "bar"}, cwd=tmp_path
         )
 
-    assert exinfo.value.code == 0
+    assert exinfo.value.code == 1
+    assert mocked_popen.call_args.kwargs["args"] == ["invalid-cmd", "arg1", "arg2"]

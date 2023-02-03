@@ -157,7 +157,7 @@ def execvped(
     sys.stderr.flush()
 
     if is_windows():
-        sys.exit(Popen(args=[file] + args, env=env, cwd=cwd).wait())
+        sys.exit(Popen(args=[file, *args], env=env, cwd=cwd).wait())
     else:
         old_dir = Path.cwd()
         try:
