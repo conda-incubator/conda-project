@@ -235,7 +235,7 @@ def test_popen_return_code(mocker, tmp_path):
         def wait(self):
             return 1
 
-    mocked_popen = mocker.patch('conda_project.utils.Popen', new_callable=MockedPopen)
+    mocked_popen = mocker.patch("conda_project.utils.Popen", new_callable=MockedPopen)
 
     with pytest.raises(SystemExit) as exinfo:
         execvped(
