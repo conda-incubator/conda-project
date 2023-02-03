@@ -197,6 +197,12 @@ def _create_prepare_parser(
         nargs="?",
     )
     group.add_argument(
+        "--as-platform",
+        help="Prepare the conda environment assuming a different platform/subdir name.",
+        action="store",
+        metavar="PLATFORM",
+    )
+    group.add_argument(
         "--all", help="Check or prepare all defined environments.", action="store_true"
     )
     p.add_argument(

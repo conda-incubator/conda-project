@@ -81,7 +81,7 @@ def prepare(args: Namespace) -> bool:
             if args.environment
             else project.default_environment
         )
-        env.prepare(force=args.force, verbose=True)
+        env.prepare(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
 

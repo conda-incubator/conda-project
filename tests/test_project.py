@@ -505,6 +505,36 @@ def test_lock_wrong_platform(project_directory_factory):
     assert "not in the supported locked platforms" in str(e.value)
 
 
+def test_prepare_as_platform(project_directory_factory):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        platforms: [dummy-platform]
+        """
+    )
+
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock()
+    assert project.default_environment.is_locked
+
+    project.default_environment.prepare(as_platform="dummy-platform")
+
+    with (project.default_environment.prefix / "condarc") as f:
+        env_condarc = YAML().load(f)
+
+    assert env_condarc["subdir"] == "dummy-platform"
+
+    project.default_environment.prepare(force=True)
+
+    with (project.default_environment.prefix / "condarc") as f:
+        env_condarc = YAML().load(f)
+
+    assert env_condarc["subdir"] == "dummy-platform"
+
+
 def test_force_relock(project_directory_factory, capsys):
     env_yaml = dedent(
         """\

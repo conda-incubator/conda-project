@@ -508,6 +508,7 @@ class Environment(BaseModel):
     def prepare(
         self,
         force: bool = False,
+        as_platform: Optional[str] = None,
         verbose: bool = False,
     ) -> Path:
         """Prepare the conda environment.
@@ -552,16 +553,30 @@ class Environment(BaseModel):
                 return self.prefix
 
         lock = parse_conda_lock_file(self.lockfile)
-        if current_platform() not in lock.metadata.platforms:
+
+        local_env_condarc = self.prefix / "condarc"
+        if local_env_condarc.exists():
+            with local_env_condarc.open("r") as f:
+                previous_platform = yaml.load(f).get("subdir", None)
+
+        platform = current_platform()
+        if as_platform is None:
+            if previous_platform is not None:
+                platform = previous_platform
+        else:
+            platform = as_platform
+
+        if platform not in lock.metadata.platforms:
             msg = (
-                f"Your current platform, {current_platform()}, is not in the supported locked platforms.\n"
-                f"You may need to edit your environment source files and run 'conda project lock' again."
+                f"Your current platform, {platform}, is not in the supported locked platforms.\n"
+                f"You may need to edit your environment source files and run 'conda project lock' again.\n"
+                f"If your system supports multiple platforms you can try using the --as-platform <subdir> flag."
             )
             raise CondaProjectError(msg)
 
         rendered = render_lockfile_for_platform(
             lockfile=lock,
-            platform=current_platform(),
+            platform=platform,
             kind="explicit",
             include_dev_dependencies=False,
             extras=None,
@@ -578,6 +593,10 @@ class Environment(BaseModel):
             f.write("\n".join(rendered))
             f.flush()
 
+            variables = {}
+            if as_platform is not None:
+                variables["CONDA_SUBDIR"] = as_platform
+
             args = [
                 "create",
                 "-y",
@@ -588,7 +607,11 @@ class Environment(BaseModel):
                 args.append("--force")
 
             _ = call_conda(
-                args, condarc_path=self.project.condarc, verbose=verbose, logger=logger
+                args,
+                condarc_path=self.project.condarc,
+                variables=variables,
+                verbose=verbose,
+                logger=logger,
             )
 
         if pip_requirements:
@@ -610,6 +633,10 @@ class Environment(BaseModel):
 
         with (self.prefix / ".gitignore").open("wt") as f:
             f.write("*")
+
+        if platform != current_platform():
+            with (self.prefix / "condarc").open("wt") as f:
+                f.write(f"subdir: {platform}\n")
 
         msg = f"environment created at {self.prefix}"
         logger.info(msg)
