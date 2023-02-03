@@ -555,6 +555,8 @@ class Environment(BaseModel):
         lock = parse_conda_lock_file(self.lockfile)
 
         local_env_condarc = self.prefix / "condarc"
+
+        previous_platform = None
         if local_env_condarc.exists():
             with local_env_condarc.open("r") as f:
                 previous_platform = yaml.load(f).get("subdir", None)
