@@ -153,3 +153,14 @@ jobs:
       uses: glassechidna/artifact-cleaner@master
       with:
         minimumAge: 86400
+  # This check job runs to ensure all tests have passed, such that we can use it as a "wildcard" for branch
+  # protection to ensure all tests pass before a PR can be merged.
+  check:
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Decide whether all required jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}
