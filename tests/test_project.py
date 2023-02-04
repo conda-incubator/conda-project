@@ -717,6 +717,34 @@ def test_relock_failed(project_directory_factory):
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
 
 
+def test_prepare_relocks(project_directory_factory, capsys):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+    assert project.default_environment.is_locked
+
+    updated_env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.8
+        """
+    )
+    with (project.default_environment.sources[0]).open("wt") as f:
+        f.write(updated_env_yaml)
+
+    project.default_environment.prepare(verbose=True, force=True)
+
+    assert "is out-of-date, re-locking" in capsys.readouterr().out
+
+
 def test_project_named_environment(project_directory_factory):
     env_yaml = "dependencies: []\n"
 
@@ -1134,7 +1162,7 @@ def test_failed_to_solve_classic(project_directory_factory):
     )
 
 
-def test_check_multi_env(project_directory_factory):
+def test_check_multi_env(project_directory_factory, capsys):
     env1 = env2 = "dependencies: []\n"
     project_yaml = dedent(
         f"""\
@@ -1153,7 +1181,9 @@ def test_check_multi_env(project_directory_factory):
     )
 
     project = CondaProject(project_path)
-    assert not project.check()
+    assert not project.check(verbose=True)
+
+    assert "is not locked" in capsys.readouterr().err
 
     project.environments["env1"].lock()
     assert not project.check()
@@ -1165,4 +1195,6 @@ def test_check_multi_env(project_directory_factory):
     with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
         f.write(env1)
 
-    assert not project.check()
+    assert not project.check(verbose=True)
+
+    assert "is out-of-date" in capsys.readouterr().err

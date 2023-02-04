@@ -709,7 +709,13 @@ class Command(BaseModel):
             self.command_variables,
         )
 
-        conda_run(self.cmd, environment.prefix, self.project.directory, env, extra_args)
+        conda_run(
+            cmd=self.cmd,
+            prefix=environment.prefix,
+            working_dir=self.project.directory,
+            env=env,
+            extra_args=extra_args,
+        )
 
     class Config:
         arbitrary_types_allowed = True
