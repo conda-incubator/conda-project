@@ -4,7 +4,14 @@
 
 import pytest
 
-from conda_project.conda import call_conda, conda_info, conda_run, current_platform
+from conda_project.conda import (
+    call_conda,
+    conda_activate,
+    conda_info,
+    conda_run,
+    current_platform,
+    is_windows,
+)
 from conda_project.exceptions import CondaProjectError
 
 
@@ -82,3 +89,49 @@ def test_conda_run_with_variables(mocked_execvped, empty_conda_environment):
 
     assert mocked_execvped.call_count == 1
     assert mocked_execvped.call_args.kwargs["env"] == variables
+
+
+@pytest.mark.skipif(is_windows(), reason="On Windows we call subprocess")
+def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
+    mocked_spawn = mocker.patch("conda_project.conda.pexpect.spawn")
+    mocker.patch(
+        "conda_project.conda.shellingham.detect_shell",
+        return_value=("/bin/sh", "/bin/sh"),
+    )
+    mocker.patch("conda_project.conda._send_activation")
+
+    conda_activate(
+        prefix=empty_conda_environment, working_dir=empty_conda_environment, env=None
+    )
+
+    assert "activated in a new shell" in capsys.readouterr().out
+
+    assert mocked_spawn.call_args == mocker.call(
+        command="/bin/sh", args=["-il"], cwd=empty_conda_environment, env={}, echo=False
+    )
+
+
+@pytest.mark.skipif(is_windows(), reason="On Windows we call subprocess")
+def test_conda_activate_pexpect_with_variables(mocker, empty_conda_environment, capsys):
+    mocked_spawn = mocker.patch("conda_project.conda.pexpect.spawn")
+    mocker.patch(
+        "conda_project.conda.shellingham.detect_shell",
+        return_value=("/bin/sh", "/bin/sh"),
+    )
+    mocker.patch("conda_project.conda._send_activation")
+
+    conda_activate(
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
+        env={"FOO": "set-in-project"},
+    )
+
+    assert "activated in a new shell" in capsys.readouterr().out
+
+    assert mocked_spawn.call_args == mocker.call(
+        command="/bin/sh",
+        args=["-il"],
+        cwd=empty_conda_environment,
+        env={"FOO": "set-in-project"},
+        echo=False,
+    )

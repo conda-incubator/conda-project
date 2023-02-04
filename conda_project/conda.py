@@ -102,11 +102,34 @@ def conda_run(
     execvped(file=shell, args=args, env=env, cwd=working_dir)
 
 
+def _send_activation(child_shell, prefix):
+    def sigwinch_passthrough(sig, data):
+        if not child_shell.closed:
+            t = os.get_terminal_size()
+            child_shell.setwinsize(t.lines, t.columns)
+
+    t = os.get_terminal_size()
+    child_shell.setwinsize(t.lines, t.columns)
+    signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+    child_shell.sendline(f"conda activate {prefix}")
+    child_shell.interact()
+    child_shell.close()
+
+
 def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     env = {} if env is None else env
 
-    shell_name, shell_path = shellingham.detect_shell()
+    try:
+        shell_name, shell_path = shellingham.detect_shell()
+    except shellingham.ShellDetectionFailure:
+        if os.name == "posix":
+            shell_name = shell_path = os.environ.get("SHELL", "/bin/sh")
+        elif os.name == "nt":
+            shell_name, shell_path = os.environ.get("COMSPEC", "cmd.exe")
+        else:
+            raise RuntimeError("Could not determine an appropriate shell to activate.")
 
+    args = []
     if is_windows():
         if shell_name in ["powershell", "pwsh"]:
             conda_hook = str(Path(CONDA_ROOT) / "shell" / "condabin" / "conda-hook.ps1")
@@ -135,16 +158,8 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     if is_windows():
         subprocess.run([shell_path, *args], cwd=working_dir, env=env)
     else:
-        c = pexpect.spawn(shell_path, args, cwd=working_dir, env=env, echo=False)
+        child_shell = pexpect.spawn(
+            command=shell_path, args=args, cwd=working_dir, env=env, echo=False
+        )
 
-        def sigwinch_passthrough(sig, data):
-            if not c.closed:
-                t = os.get_terminal_size()
-                c.setwinsize(t.lines, t.columns)
-
-        t = os.get_terminal_size()
-        c.setwinsize(t.lines, t.columns)
-        signal.signal(signal.SIGWINCH, sigwinch_passthrough)
-        c.sendline(f"conda activate {prefix}")
-        c.interact()
-        c.close()
+        _send_activation(child_shell, prefix)
