@@ -522,14 +522,14 @@ def test_prepare_as_platform(project_directory_factory):
 
     project.default_environment.prepare(as_platform="dummy-platform")
 
-    with (project.default_environment.prefix / "condarc") as f:
+    with project.default_environment.prefix / "condarc" as f:
         env_condarc = YAML().load(f)
 
     assert env_condarc["subdir"] == "dummy-platform"
 
     project.default_environment.prepare(force=True)
 
-    with (project.default_environment.prefix / "condarc") as f:
+    with project.default_environment.prefix / "condarc" as f:
         env_condarc = YAML().load(f)
 
     assert env_condarc["subdir"] == "dummy-platform"

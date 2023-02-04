@@ -85,7 +85,6 @@ def conda_run(
     env: Optional[Dict[str, str]] = None,
     extra_args: Optional[List[str]] = None,
 ) -> NoReturn:
-
     extra_args = [] if extra_args is None else extra_args
     arguments = shlex.split(cmd + " " + " ".join(extra_args))
 
