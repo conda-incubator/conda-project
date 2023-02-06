@@ -126,7 +126,7 @@ def test_conda_project_init_empty_dir(tmp_path, caplog):
 
     with pytest.raises(CondaProjectError) as excinfo:
         CondaProject(tmp_path)
-    assert "No Conda environment.yml or environment.yaml file was found" in str(
+    assert "No conda environment.yml or environment.yaml file was found" in str(
         excinfo.value
     )
 
