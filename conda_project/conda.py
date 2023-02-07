@@ -98,6 +98,10 @@ def conda_run(
     )
 
     env = {} if env is None else env
+
+    if not is_windows():
+        args = ["-c", *args]
+
     execvped(file=shell, args=args, env=env, cwd=working_dir)
 
 
