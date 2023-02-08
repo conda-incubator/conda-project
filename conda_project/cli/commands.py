@@ -4,13 +4,16 @@
 import sys
 from argparse import Namespace
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 from ..exceptions import CondaProjectError
 from ..project import CondaProject
 
 
-def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
+def handle_errors(
+    func: Callable[[Namespace], Any]
+) -> Callable[[Namespace], int]:
     """Wrap a subcommand function to catch exceptions and return an appropriate error code."""
 
     @wraps(func)

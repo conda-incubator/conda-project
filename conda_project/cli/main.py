@@ -11,6 +11,7 @@ from conda_project import __version__
 from ..project import DEFAULT_PLATFORMS
 from . import commands
 
+
 if typing.TYPE_CHECKING:
     # This is here to prevent potential future breaking API changes
     # in argparse from affecting at runtime
@@ -66,7 +67,11 @@ def _create_create_parser(
         "create", description=desc, help=desc, parents=[parent_parser]
     )
     p.add_argument(
-        "-n", "--name", help="Name for the project.", action="store", default=None
+        "-n",
+        "--name",
+        help="Name for the project.",
+        action="store",
+        default=None,
     )
     p.add_argument(
         "-c",
@@ -97,7 +102,9 @@ def _create_create_parser(
         default=None,
     )
     p.add_argument(
-        "--no-lock", help="Do not create the conda-lock.yml file", action="store_true"
+        "--no-lock",
+        help="Do not create the conda-lock.yml file",
+        action="store_true",
     )
     p.add_argument(
         "--prepare",
@@ -193,7 +200,9 @@ def _create_prepare_parser(
         nargs="?",
     )
     group.add_argument(
-        "--all", help="Check or prepare all defined environments.", action="store_true"
+        "--all",
+        help="Check or prepare all defined environments.",
+        action="store_true",
     )
     p.add_argument(
         "--check-only",

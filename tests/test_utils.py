@@ -3,10 +3,11 @@
 
 import os
 
-import pytest
-
 from conda_project.exceptions import CondaProjectError
-from conda_project.utils import env_variable, find_file
+from conda_project.utils import env_variable
+from conda_project.utils import find_file
+
+import pytest
 
 
 def test_env_var_context():

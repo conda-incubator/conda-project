@@ -3,12 +3,19 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, OrderedDict, TextIO, Union
-
-from pydantic import BaseModel, ValidationError, validator
-from ruamel.yaml import YAML
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import OrderedDict
+from typing import TextIO
+from typing import Union
 
 from .exceptions import CondaProjectError
+from pydantic import BaseModel
+from pydantic import ValidationError
+from pydantic import validator
+from ruamel.yaml import YAML
+
 
 PROJECT_YAML_FILENAMES = ("conda-project.yml", "conda-project.yaml")
 ENVIRONMENT_YAML_FILENAMES = ("environment.yml", "environment.yaml")
@@ -35,9 +42,7 @@ class BaseYaml(BaseModel):
     def parse_yaml(cls, fn: Union[str, Path]):
         d = yaml.load(fn)
         if d is None:
-            msg = (
-                f"Failed to read {fn} as {cls.__name__}. The file appears to be empty."
-            )
+            msg = f"Failed to read {fn} as {cls.__name__}. The file appears to be empty."
             raise CondaProjectError(msg)
         try:
             return cls(**d)

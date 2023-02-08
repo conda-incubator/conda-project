@@ -10,7 +10,8 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional
+from typing import Type
 
 from .exceptions import CondaProjectError
 

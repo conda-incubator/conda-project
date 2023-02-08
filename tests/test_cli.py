@@ -4,9 +4,12 @@
 from functools import partial
 from textwrap import dedent
 
+from conda_project.cli.main import cli
+from conda_project.cli.main import main
+from conda_project.cli.main import parse_and_run
+
 import pytest
 
-from conda_project.cli.main import cli, main, parse_and_run
 
 PROJECT_COMMANDS = ("create", "check")
 ENVIRONMENT_COMMANDS = ("clean", "prepare", "lock")
@@ -53,7 +56,8 @@ def test_command_args(command, monkeypatch, capsys):
         return 42
 
     monkeypatch.setattr(
-        f"conda_project.cli.commands.{command}", partial(mocked_command, command)
+        f"conda_project.cli.commands.{command}",
+        partial(mocked_command, command),
     )
 
     ret = parse_and_run([command, "--directory", "project-dir"])
@@ -65,7 +69,9 @@ def test_command_args(command, monkeypatch, capsys):
 
 
 @pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
-@pytest.mark.parametrize("project_directory_factory", [".yml", ".yaml"], indirect=True)
+@pytest.mark.parametrize(
+    "project_directory_factory", [".yml", ".yaml"], indirect=True
+)
 def test_cli_verbose_env(command, monkeypatch, project_directory_factory):
     if command == "create":
         project_path = project_directory_factory()
@@ -76,7 +82,9 @@ def test_cli_verbose_env(command, monkeypatch, project_directory_factory):
     def mocked_action(*_, **kwargs):
         assert kwargs.get("verbose", False)
 
-    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
+    monkeypatch.setattr(
+        f"conda_project.project.Environment.{command}", mocked_action
+    )
 
     ret = parse_and_run([command, "--directory", str(project_path)])
     assert ret == 0
@@ -93,7 +101,9 @@ def test_cli_verbose_project(command, monkeypatch, project_directory_factory):
     def mocked_action(*_, **kwargs):
         assert kwargs.get("verbose", False)
 
-    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
+    monkeypatch.setattr(
+        f"conda_project.project.CondaProject.{command}", mocked_action
+    )
 
     _ = parse_and_run([command, "--directory", str(project_path)])
 
@@ -107,7 +117,9 @@ def test_create_with_prepare(tmp_path):
 
 
 @pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
-def test_command_with_environment_name(command, monkeypatch, project_directory_factory):
+def test_command_with_environment_name(
+    command, monkeypatch, project_directory_factory
+):
     env1 = env2 = "dependencies: []\n"
     project_yaml = dedent(
         f"""\
@@ -128,13 +140,17 @@ def test_command_with_environment_name(command, monkeypatch, project_directory_f
     def mocked_action(self, *args, **kwargs):
         assert self.name == "env1"
 
-    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
+    monkeypatch.setattr(
+        f"conda_project.project.Environment.{command}", mocked_action
+    )
 
     ret = parse_and_run([command, "--directory", str(project_path), "env1"])
     assert ret == 0
 
 
-def test_prepare_and_clean_all_environments(monkeypatch, project_directory_factory):
+def test_prepare_and_clean_all_environments(
+    monkeypatch, project_directory_factory
+):
     env1 = env2 = "dependencies: []\n"
     project_yaml = dedent(
         f"""\
@@ -155,8 +171,12 @@ def test_prepare_and_clean_all_environments(monkeypatch, project_directory_facto
     def mocked_action(self, *args, **kwargs):
         assert self.name in ["env1", "env2"]
 
-    monkeypatch.setattr("conda_project.project.Environment.prepare", mocked_action)
-    monkeypatch.setattr("conda_project.project.Environment.clean", mocked_action)
+    monkeypatch.setattr(
+        "conda_project.project.Environment.prepare", mocked_action
+    )
+    monkeypatch.setattr(
+        "conda_project.project.Environment.clean", mocked_action
+    )
 
     ret = parse_and_run(["prepare", "--directory", str(project_path), "--all"])
     assert ret == 0
@@ -186,7 +206,9 @@ def test_lock_all_environments(monkeypatch, project_directory_factory):
     def mocked_action(self, *args, **kwargs):
         assert self.name in ["env1", "env2"]
 
-    monkeypatch.setattr("conda_project.project.Environment.lock", mocked_action)
+    monkeypatch.setattr(
+        "conda_project.project.Environment.lock", mocked_action
+    )
 
     ret = parse_and_run(["lock", "--directory", str(project_path)])
     assert ret == 0
@@ -225,7 +247,9 @@ def test_check_multi_env(project_directory_factory, capsys):
     assert ret == 0
 
     env1 = "dependencies: [python=3.8]\n"
-    with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
+    with (project_path / f"env1{project_directory_factory._suffix}").open(
+        "w"
+    ) as f:
         f.write(env1)
 
     ret = parse_and_run(["check", "--directory", str(project_path)])
@@ -237,7 +261,9 @@ def test_check_multi_env(project_directory_factory, capsys):
     assert "The lockfile for environment env2" not in stderr
 
     env2 = "dependencies: [python=3.8]\n"
-    with (project_path / f"env2{project_directory_factory._suffix}").open("w") as f:
+    with (project_path / f"env2{project_directory_factory._suffix}").open(
+        "w"
+    ) as f:
         f.write(env2)
 
     ret = parse_and_run(["check", "--directory", str(project_path)])

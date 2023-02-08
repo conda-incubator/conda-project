@@ -12,40 +12,47 @@ import sys
 import tempfile
 import warnings
 from collections import OrderedDict
-from contextlib import nullcontext, redirect_stderr
+from contextlib import nullcontext
+from contextlib import redirect_stderr
 from io import StringIO
 from pathlib import Path
 from subprocess import SubprocessError
-from typing import List, Optional, Tuple, Union
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
+from .conda import CONDA_EXE
+from .conda import call_conda
+from .conda import current_platform
+from .exceptions import CondaProjectError
+from .project_file import ENVIRONMENT_YAML_FILENAMES
+from .project_file import PROJECT_YAML_FILENAMES
+from .project_file import CondaProjectYaml
+from .project_file import EnvironmentYaml
+from .project_file import yaml
+from .utils import Spinner
+from .utils import env_variable
+from .utils import find_file
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
-from conda_lock.conda_lock import (
-    default_virtual_package_repodata,
-    make_lock_files,
-    make_lock_spec,
-    parse_conda_lock_file,
-    render_lockfile_for_platform,
-)
-from pydantic import BaseModel, create_model
+from conda_lock.conda_lock import default_virtual_package_repodata
+from conda_lock.conda_lock import make_lock_files
+from conda_lock.conda_lock import make_lock_spec
+from conda_lock.conda_lock import parse_conda_lock_file
+from conda_lock.conda_lock import render_lockfile_for_platform
+from pydantic import BaseModel
+from pydantic import create_model
 
-from .conda import CONDA_EXE, call_conda, current_platform
-from .exceptions import CondaProjectError
-from .project_file import (
-    ENVIRONMENT_YAML_FILENAMES,
-    PROJECT_YAML_FILENAMES,
-    CondaProjectYaml,
-    EnvironmentYaml,
-    yaml,
-)
-from .utils import Spinner, env_variable, find_file
 
 _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
 DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
 # A regex pattern used to extract package name and hash from output of "pip freeze"
-_PIP_FREEZE_REGEX_PATTERN = re.compile(r"(?P<name>[\w-]+) @ .*sha256=(?P<sha256>\w+)")
+_PIP_FREEZE_REGEX_PATTERN = re.compile(
+    r"(?P<name>[\w-]+) @ .*sha256=(?P<sha256>\w+)"
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=os.environ.get("CONDA_PROJECT_LOGLEVEL", "WARNING"))
@@ -133,7 +140,8 @@ class Environment(BaseModel):
             )
             all_up_to_date = all(
                 p in lock.metadata.platforms
-                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
+                and spec.content_hash_for_platform(p)
+                == lock.metadata.content_hash[p]
                 for p in spec.platforms
             )
             return all_up_to_date
@@ -234,7 +242,9 @@ class Environment(BaseModel):
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.condarc)):
                 if verbose:
-                    context = Spinner(prefix=f"Locking dependencies for {self.name}")
+                    context = Spinner(
+                        prefix=f"Locking dependencies for {self.name}"
+                    )
                 else:
                     context = nullcontext()
 
@@ -288,7 +298,9 @@ class Environment(BaseModel):
         """
         if not self.is_locked:
             if verbose and self.lockfile.exists():
-                print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
+                print(
+                    f"The lockfile {self.lockfile} is out-of-date, re-locking..."
+                )
             self.lock(verbose=verbose)
 
         if self.is_prepared:
@@ -300,7 +312,9 @@ class Environment(BaseModel):
                         f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
                     )
                 return self.prefix
-        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
+        elif (
+            self.prefix / "conda-meta" / "history"
+        ).exists() and not self.is_prepared:
             if not force:
                 if verbose:
                     print(
@@ -333,7 +347,9 @@ class Environment(BaseModel):
             if line.startswith(_pip_dependency_prefix)
         ]
 
-        with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=_TEMPFILE_DELETE
+        ) as f:
             f.write("\n".join(rendered))
             f.flush()
 
@@ -351,7 +367,9 @@ class Environment(BaseModel):
             )
 
         if pip_requirements:
-            with tempfile.NamedTemporaryFile(mode="w", delete=_TEMPFILE_DELETE) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", delete=_TEMPFILE_DELETE
+            ) as f:
                 f.write("\n".join(pip_requirements))
                 f.flush()
                 args = [
@@ -361,7 +379,10 @@ class Environment(BaseModel):
                     *("-r", str(f.name)),
                 ]
                 call_conda(
-                    args, condarc_path=self.condarc, verbose=verbose, logger=logger
+                    args,
+                    condarc_path=self.condarc,
+                    verbose=verbose,
+                    logger=logger,
                 )
 
         with (self.prefix / ".gitignore").open("wt") as f:
@@ -423,9 +444,13 @@ class CondaProject:
         self.directory = Path(directory).resolve()
         logger.info(f"created Project instance at {self.directory}")
 
-        self.project_yaml_path = find_file(self.directory, PROJECT_YAML_FILENAMES)
+        self.project_yaml_path = find_file(
+            self.directory, PROJECT_YAML_FILENAMES
+        )
         if self.project_yaml_path is not None:
-            self._project_file = CondaProjectYaml.parse_yaml(self.project_yaml_path)
+            self._project_file = CondaProjectYaml.parse_yaml(
+                self.project_yaml_path
+            )
         else:
             options = " or ".join(PROJECT_YAML_FILENAMES)
             logger.info(
@@ -442,7 +467,16 @@ class CondaProject:
             self._project_file = CondaProjectYaml(
                 name=self.directory.name,
                 environments=OrderedDict(
-                    [("default", [environment_yaml_path.relative_to(self.directory)])]
+                    [
+                        (
+                            "default",
+                            [
+                                environment_yaml_path.relative_to(
+                                    self.directory
+                                )
+                            ],
+                        )
+                    ]
                 ),
             )
 
@@ -498,7 +532,9 @@ class CondaProject:
         existing_project_file = find_file(directory, PROJECT_YAML_FILENAMES)
         if existing_project_file is not None:
             if verbose:
-                print(f"Existing project file found at {existing_project_file}.")
+                print(
+                    f"Existing project file found at {existing_project_file}."
+                )
             return cls(directory)
 
         if name is None:
@@ -577,7 +613,10 @@ class CondaProject:
         for env in self.environments.values():
             if not env.lockfile.exists():
                 if verbose:
-                    print(f"The environment {env.name} is not locked.", file=sys.stderr)
+                    print(
+                        f"The environment {env.name} is not locked.",
+                        file=sys.stderr,
+                    )
                     print(
                         f"Run 'conda project lock {env.name}' to create.",
                         file=sys.stderr,
@@ -590,7 +629,8 @@ class CondaProject:
                         file=sys.stderr,
                     )
                     print(
-                        f"Run 'conda project lock {env.name}' to fix.", file=sys.stderr
+                        f"Run 'conda project lock {env.name}' to fix.",
+                        file=sys.stderr,
                     )
                 return_status.append(False)
             else:

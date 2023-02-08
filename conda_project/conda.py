@@ -9,9 +9,11 @@ import subprocess
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 from .exceptions import CondaProjectError
+
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 
@@ -43,7 +45,9 @@ def call_conda(
 
     if proc.returncode != 0:
         print_cmd = " ".join(cmd)
-        raise CondaProjectError(f"Failed to run:\n  {print_cmd}\n{proc.stderr.strip()}")
+        raise CondaProjectError(
+            f"Failed to run:\n  {print_cmd}\n{proc.stderr.strip()}"
+        )
 
     return proc
 

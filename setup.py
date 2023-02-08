@@ -1,9 +1,11 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
-from setuptools import find_packages, setup
-
 import versioneer
+
+from setuptools import find_packages
+from setuptools import setup
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -32,7 +34,9 @@ setup(
     author_email="adefusco@anaconda.com",
     url="https://github.com/conda-incubator/conda-project",
     packages=find_packages(),
-    entry_points={"console_scripts": ["conda-project=conda_project.cli.main:main"]},
+    entry_points={
+        "console_scripts": ["conda-project=conda_project.cli.main:main"]
+    },
     python_requires=">=3.7",
     install_requires=requirements,
     extras_require={

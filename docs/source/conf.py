@@ -8,6 +8,7 @@ from datetime import datetime
 
 from conda_project import __version__
 
+
 # General information about the project.
 project = "conda-project"
 author = "conda-project team"

@@ -7,16 +7,19 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
+from conda_project.conda import call_conda
+from conda_project.exceptions import CondaProjectError
+from conda_project.project import DEFAULT_PLATFORMS
+from conda_project.project import CondaProject
+
 import pytest
 from ruamel.yaml import YAML
 
-from conda_project.conda import call_conda
-from conda_project.exceptions import CondaProjectError
-from conda_project.project import DEFAULT_PLATFORMS, CondaProject
-
 
 def is_libmamba_installed():
-    proc = call_conda(["list", "-n", "base", "conda-libmamba-solver", "--json"])
+    proc = call_conda(
+        ["list", "-n", "base", "conda-libmamba-solver", "--json"]
+    )
     result = json.loads(proc.stdout)
     if result:
         return result[0]["name"] == "conda-libmamba-solver"
@@ -28,7 +31,9 @@ def test_project_create_new_directory(tmp_path, capsys):
     project_directory = tmp_path / "new-project"
     assert not os.path.exists(project_directory)
 
-    p = CondaProject.create(project_directory, lock_dependencies=False, verbose=True)
+    p = CondaProject.create(
+        project_directory, lock_dependencies=False, verbose=True
+    )
 
     assert os.path.exists(project_directory)
     assert p.project_yaml_path.exists()
@@ -62,7 +67,9 @@ def test_project_create_default_platforms(tmp_path):
 
 
 def test_project_create_specific_platforms(tmp_path):
-    p = CondaProject.create(tmp_path, platforms=["linux-64"], lock_dependencies=False)
+    p = CondaProject.create(
+        tmp_path, platforms=["linux-64"], lock_dependencies=False
+    )
 
     with p.default_environment.sources[0].open() as f:
         env = YAML().load(f)
@@ -118,7 +125,9 @@ def test_project_create_and_lock(tmp_path):
         tmp_path, dependencies=["python=3.8"], lock_dependencies=True
     )
     assert p.default_environment.lockfile.exists()
-    assert p.default_environment.lockfile == tmp_path / "default.conda-lock.yml"
+    assert (
+        p.default_environment.lockfile == tmp_path / "default.conda-lock.yml"
+    )
 
 
 def test_conda_project_init_empty_dir(tmp_path, caplog):
@@ -126,11 +135,15 @@ def test_conda_project_init_empty_dir(tmp_path, caplog):
 
     with pytest.raises(CondaProjectError) as excinfo:
         CondaProject(tmp_path)
-    assert "No conda environment.yml or environment.yaml file was found" in str(
-        excinfo.value
+    assert (
+        "No conda environment.yml or environment.yaml file was found"
+        in str(excinfo.value)
     )
 
-    assert "No conda-project.yml or conda-project.yaml file was found" in caplog.text
+    assert (
+        "No conda-project.yml or conda-project.yaml file was found"
+        in caplog.text
+    )
 
 
 def test_conda_project_init_with_env_yaml(project_directory_factory):
@@ -154,7 +167,10 @@ def test_conda_project_init_with_env_yaml(project_directory_factory):
             project_directory_factory._suffix
         ),
     )
-    assert project.default_environment.prefix == project.directory / "envs" / "default"
+    assert (
+        project.default_environment.prefix
+        == project.directory / "envs" / "default"
+    )
 
 
 def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
@@ -290,7 +306,13 @@ def test_is_prepared_live_env_changed(project_directory_factory, capsys):
     assert project.default_environment.is_prepared
 
     _ = call_conda(
-        ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
+        [
+            "install",
+            "-p",
+            str(project.default_environment.prefix),
+            "requests",
+            "-y",
+        ]
     )
 
     assert project.default_environment.is_locked
@@ -300,7 +322,10 @@ def test_is_prepared_live_env_changed(project_directory_factory, capsys):
     assert not project.default_environment.is_prepared
 
     stdout = capsys.readouterr().out
-    assert "The environment exists but does not match the locked dependencies" in stdout
+    assert (
+        "The environment exists but does not match the locked dependencies"
+        in stdout
+    )
 
 
 @pytest.mark.slow
@@ -319,7 +344,13 @@ def test_is_prepared_source_changed(project_directory_factory, capsys):
     assert project.default_environment.is_prepared
 
     _ = call_conda(
-        ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
+        [
+            "install",
+            "-p",
+            str(project.default_environment.prefix),
+            "requests",
+            "-y",
+        ]
     )
 
     assert project.default_environment.is_locked
@@ -329,7 +360,10 @@ def test_is_prepared_source_changed(project_directory_factory, capsys):
     assert not project.default_environment.is_prepared
 
     stdout = capsys.readouterr().out
-    assert "The environment exists but does not match the locked dependencies" in stdout
+    assert (
+        "The environment exists but does not match the locked dependencies"
+        in stdout
+    )
 
 
 def test_prepare_env_exists(project_directory_factory, capsys):
@@ -527,10 +561,14 @@ def test_force_relock(project_directory_factory, capsys):
         "The lockfile default.conda-lock.yml already exists and is up-to-date."
         in stdout
     )
-    assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
+    assert lockfile_mtime == os.path.getmtime(
+        project.default_environment.lockfile
+    )
 
     project.default_environment.lock(force=True)
-    assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
+    assert lockfile_mtime < os.path.getmtime(
+        project.default_environment.lockfile
+    )
 
 
 def test_lock_outdated(project_directory_factory):
@@ -599,7 +637,9 @@ def test_relock_add_packages(project_directory_factory):
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" in [p["name"] for p in lock["package"]]
 
-    assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
+    assert lockfile_mtime < os.path.getmtime(
+        project.default_environment.lockfile
+    )
 
 
 @pytest.mark.slow
@@ -640,7 +680,9 @@ def test_relock_remove_packages(project_directory_factory):
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" not in [p["name"] for p in lock["package"]]
 
-    assert lockfile_mtime < os.path.getmtime(project.default_environment.lockfile)
+    assert lockfile_mtime < os.path.getmtime(
+        project.default_environment.lockfile
+    )
 
 
 @pytest.mark.slow
@@ -685,7 +727,9 @@ def test_relock_failed(project_directory_factory):
     assert "requests" in [p["name"] for p in lock["package"]]
     assert "__bad-package" not in [p["name"] for p in lock["package"]]
 
-    assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
+    assert lockfile_mtime == os.path.getmtime(
+        project.default_environment.lockfile
+    )
 
 
 def test_project_named_environment(project_directory_factory):
@@ -832,7 +876,9 @@ def test_project_multiple_envs(project_directory_factory):
     assert project.default_environment.name == "bbb"
 
 
-def test_lock_prepare_clean_default_with_multiple_envs(project_directory_factory):
+def test_lock_prepare_clean_default_with_multiple_envs(
+    project_directory_factory,
+):
     env_yaml = "dependencies: []\n"
 
     project_yaml = dedent(
@@ -860,14 +906,20 @@ def test_lock_prepare_clean_default_with_multiple_envs(project_directory_factory
     )
     assert project.default_environment.lockfile.exists()
 
-    assert project.default_environment.prefix.samefile(project_path / "envs" / "bbb")
-    assert (project.default_environment.prefix / "conda-meta" / "history").exists()
+    assert project.default_environment.prefix.samefile(
+        project_path / "envs" / "bbb"
+    )
+    assert (
+        project.default_environment.prefix / "conda-meta" / "history"
+    ).exists()
 
     project.default_environment.clean()
     assert not project.default_environment.prefix.exists()
 
 
-def test_lock_prepare_clean_named_with_multiple_envs(project_directory_factory):
+def test_lock_prepare_clean_named_with_multiple_envs(
+    project_directory_factory,
+):
     env_yaml = "dependencies: []\n"
 
     project_yaml = dedent(
@@ -898,7 +950,9 @@ def test_lock_prepare_clean_named_with_multiple_envs(project_directory_factory):
     assert project.environments["default"].prefix.samefile(
         project_path / "envs" / "default"
     )
-    assert (project.environments["default"].prefix / "conda-meta" / "history").exists()
+    assert (
+        project.environments["default"].prefix / "conda-meta" / "history"
+    ).exists()
 
     project.environments["default"].clean()
     assert not project.environments["default"].prefix.exists()
@@ -933,8 +987,12 @@ def test_lock_prepare_clean_multiple_envs(project_directory_factory):
     )
     assert project.environments["bbb"].lockfile.exists()
 
-    assert project.environments["bbb"].prefix.samefile(project_path / "envs" / "bbb")
-    assert (project.environments["bbb"].prefix / "conda-meta" / "history").exists()
+    assert project.environments["bbb"].prefix.samefile(
+        project_path / "envs" / "bbb"
+    )
+    assert (
+        project.environments["bbb"].prefix / "conda-meta" / "history"
+    ).exists()
 
     project.environments["default"].lock()
     project.environments["default"].prepare()
@@ -947,7 +1005,9 @@ def test_lock_prepare_clean_multiple_envs(project_directory_factory):
     assert project.environments["default"].prefix.samefile(
         project_path / "envs" / "default"
     )
-    assert (project.environments["default"].prefix / "conda-meta" / "history").exists()
+    assert (
+        project.environments["default"].prefix / "conda-meta" / "history"
+    ).exists()
 
     project.environments["bbb"].clean()
     assert not project.environments["bbb"].prefix.exists()
@@ -1022,7 +1082,9 @@ def test_project_lock_env_multiple_sources_different_directories(
     project = CondaProject(project_path / "project")
 
     assert project.default_environment.sources[0].samefile(
-        project_path / "project" / f"environment{project_directory_factory._suffix}"
+        project_path
+        / "project"
+        / f"environment{project_directory_factory._suffix}"
     )
     assert project.default_environment.sources[1].samefile(
         project_path / f"extras{project_directory_factory._suffix}"
@@ -1034,7 +1096,9 @@ def test_project_lock_env_multiple_sources_different_directories(
         lock = YAML().load(f)
 
     assert Path(lock["metadata"]["sources"][0]).samefile(
-        project_path / "project" / f"environment{project_directory_factory._suffix}"
+        project_path
+        / "project"
+        / f"environment{project_directory_factory._suffix}"
     )
     assert Path(lock["metadata"]["sources"][1]).samefile(
         project_path / f"extras{project_directory_factory._suffix}"
@@ -1070,8 +1134,9 @@ def test_failed_to_solve_libmamba(project_directory_factory):
     with pytest.raises(CondaProjectError) as exinfo:
         project.default_environment.lock()
 
-    assert "The following packages are missing from the supplied channels" in str(
-        exinfo.value
+    assert (
+        "The following packages are missing from the supplied channels"
+        in str(exinfo.value)
     )
 
 
@@ -1100,8 +1165,9 @@ def test_failed_to_solve_classic(project_directory_factory):
     with pytest.raises(CondaProjectError) as exinfo:
         project.default_environment.lock()
 
-    assert "The following packages are not available from current channels:" in str(
-        exinfo.value
+    assert (
+        "The following packages are not available from current channels:"
+        in str(exinfo.value)
     )
 
 
@@ -1133,7 +1199,9 @@ def test_check_multi_env(project_directory_factory):
     assert project.check()
 
     env1 = "dependencies: [python=3.8]\n"
-    with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
+    with (project_path / f"env1{project_directory_factory._suffix}").open(
+        "w"
+    ) as f:
         f.write(env1)
 
     assert not project.check()

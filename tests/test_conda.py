@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-import pytest
-
-from conda_project.conda import call_conda, conda_info, current_platform
+from conda_project.conda import call_conda
+from conda_project.conda import conda_info
+from conda_project.conda import current_platform
 from conda_project.exceptions import CondaProjectError
+
+import pytest
 
 
 def test_local_condarc(tmp_path):

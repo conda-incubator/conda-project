@@ -4,12 +4,17 @@
 from io import StringIO
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional, Union
-
-import pytest
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 from conda_project.exceptions import CondaProjectError
-from conda_project.project_file import BaseYaml, CondaProjectYaml, EnvironmentYaml
+from conda_project.project_file import BaseYaml
+from conda_project.project_file import CondaProjectYaml
+from conda_project.project_file import EnvironmentYaml
+
+import pytest
 
 
 def test_empty_environment():
@@ -24,7 +29,10 @@ def test_empty_environment():
 
 
 def test_unsupported_key_in_dependencies():
-    env_dict = {"name": "unsupported", "dependencies": ["python", {"npm": ["foo"]}]}
+    env_dict = {
+        "name": "unsupported",
+        "dependencies": ["python", {"npm": ["foo"]}],
+    }
 
     with pytest.raises(ValueError):
         _ = EnvironmentYaml(**env_dict)
@@ -50,7 +58,9 @@ def test_yaml_dump_skip_empty_keys():
     yml = Yaml(filled="foo", nested={"a": ["b"], "c": None, "d": []})
     stream = StringIO()
     yml.yaml(stream)
-    assert stream.getvalue() == "filled: foo\nnested:\n  a:\n    - b\n  d: []\n"
+    assert (
+        stream.getvalue() == "filled: foo\nnested:\n  a:\n    - b\n  d: []\n"
+    )
 
 
 def test_bad_yaml_file():
