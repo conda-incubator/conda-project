@@ -84,9 +84,9 @@ lint-isort:
 lint-flake8:
 	@flake8 .
 lint-mypy:
-	@mypy ./finder
+	@mypy ./conda_project
 lint-mypy-report:
-	@mypy ./finder --html-report ./mypy_html
+	@mypy ./conda_project --html-report ./mypy_html
 format: format-black format-isort
 lint: lint-black lint-isort lint-flake8 lint-mypy
 
@@ -101,9 +101,9 @@ coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 test-cov: ## run tests with coverage
-	pytest --cov=finder --cov-report term-missing --cov-report=html
+	pytest --cov=conda_project --cov-report term-missing --cov-report=html
 tests-cov-fail:
-	@pytest --cov=finder --cov-report term-missing --cov-report=html --cov-fail-under=80
+	@pytest --cov=conda_project --cov-report term-missing --cov-report=html --cov-fail-under=80
 test-all: ## run tests on every Python version with tox
 	tox
 
