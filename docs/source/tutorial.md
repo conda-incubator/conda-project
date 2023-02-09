@@ -69,9 +69,9 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    commands: {}
    ```
 
-   Note that the `name` key is populated with the value supplied in the `create` action. 
+   Note that the `name` key is populated with the value supplied in the `create` action.
 
-   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also 
+   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also
    possible to define variables using the `variables` key.  These key varlue pairs are loaded as overrides
    to the inherited execution environment when a `run` action is issued.
 
@@ -95,9 +95,9 @@ This section of the tutorial explores the `create` and `activate` subcommands of
 In this section, first create a new notebook called ``Interactive.ipynb`` by using one of the following methods:
 
  * Download this [quickstart](https://raw.githubusercontent.com/Anaconda-Platform/anaconda-project/master/examples/quickstart/Interactive.ipynb) example:
-  
+
    * Right-click the link and "*Save As*", naming the file ``Interactive.ipynb`` and saving it into your new *cp-tutorial* folder, or
-  
+
    * Use the ``curl`` command below. *This can be used on a unix-like platform.*
      ```shell
      $ curl https://raw.githubusercontent.com/Anaconda-Platform/anaconda-project/master/examples/quickstart/Interactive.ipynb -o Interactive.ipynb
@@ -105,7 +105,7 @@ In this section, first create a new notebook called ``Interactive.ipynb`` by usi
 
      ```{note}
      This example is taken from a larger, more full-featured [hvPlot interactive](https://raw.githubusercontent.com/holoviz/hvplot/master/examples/user_guide/Interactive.ipynb).
-     The larger example will also work in this tutorial.                                                                                                                        
+     The larger example will also work in this tutorial.
      ```
 
  * Alternatively, a Jupyter notebook session can be launched using the following shell command:
