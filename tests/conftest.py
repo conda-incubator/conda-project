@@ -67,7 +67,7 @@ def project_directory_factory(tmp_path, request):
     return create_project_directory
 
 
-@pytest.fixture()
+@pytest.fixture
 def empty_conda_environment(tmp_path):
     args = ["create", "-p", str(tmp_path), "--yes"]
     call_conda(args)

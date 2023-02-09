@@ -93,6 +93,58 @@ def test_conda_run_with_variables(mocked_execvped, empty_conda_environment):
     assert mocked_execvped.call_args.kwargs["args"][0] == "-c"
 
 
+@pytest.mark.skipif(
+    is_windows(),
+    reason="On Windows the extra_args needs to shlex.split in before wrap_subprocess_call",
+)
+def test_conda_run_extra_args_unix(mocker, mocked_execvped, empty_conda_environment):
+    import conda_project.conda
+
+    wrap_subprocess_call = mocker.spy(conda_project.conda, "wrap_subprocess_call")
+
+    extra_args = ["arg", "-f", "--flag", """import os; print(os.environ["FOO" ])"""]
+    conda_run(
+        cmd="dummy-cmd",
+        extra_args=extra_args,
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
+        env=None,
+    )
+
+    assert wrap_subprocess_call.call_count == 1
+    assert wrap_subprocess_call.call_args.kwargs["arguments"] == [
+        "dummy-cmd",
+        *extra_args,
+    ]
+    assert mocked_execvped.call_count == 1
+
+
+@pytest.mark.skipif(
+    not is_windows(),
+    reason="On Windows the extra_args needs to shlex.split in before wrap_subprocess_call",
+)
+def test_conda_run_extra_args_win(mocker, mocked_execvped, empty_conda_environment):
+    import conda_project.conda
+
+    wrap_subprocess_call = mocker.spy(conda_project.conda, "wrap_subprocess_call")
+
+    extra_args = ["arg", "-f", "--flag", """import os; print(os.environ["FOO" ])"""]
+    conda_run(
+        cmd="dummy-cmd",
+        extra_args=extra_args,
+        prefix=empty_conda_environment,
+        working_dir=empty_conda_environment,
+        env=None,
+    )
+
+    assert wrap_subprocess_call.call_count == 1
+    assert wrap_subprocess_call.call_args.kwargs["arguments"] == [
+        "dummy-cmd",
+        *extra_args,
+    ]
+    assert mocked_execvped.call_count == 1
+
+
 @pytest.mark.skipif(is_windows(), reason="On Windows we call subprocess")
 def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
     mocked_spawn = mocker.patch("conda_project.conda.pexpect.spawn")
