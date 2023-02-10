@@ -75,9 +75,9 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    commands: {}
    ```
 
-   Note that the `name` key is populated with the value supplied in the `create` action. 
+   Note that the `name` key is populated with the value supplied in the `create` action.
 
-   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also 
+   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also
    possible to define variables using the `variables` key.  These key varlue pairs are loaded as overrides
    to the inherited execution environment when a `run` action is issued.
 
