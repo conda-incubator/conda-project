@@ -18,50 +18,46 @@ This section of the tutorial explores the `create` and `activate` subcommands of
 
 2. Initialize the project in a new directory:
    ```shell
-   $ conda-project create -n learn-cp --directory cp-tutorial -c conda-forge -c r \
-        python=3.10 notebook hvplot panel xarray pooch netCDF4 r-essentials r-plotly r-shiny
+   conda-project create -n learn-cp --directory cp-tutorial --platform osx-arm64,linux-64 -c defaults -c conda-forge \
+       python=3.10 notebook r-essentials r-plotly r-shiny
    ```
+
+   At this point, **conda-project** will create a new directory, and write environment, lock, and project files to the new
+   directory. This example passes the `osx-arm64` and `linux-64` platform architectures. This has the effect of speeding up
+   the package resolution and lock file generation.  If the `--platform` argument is omitted, package resolution will be 
+   calculated across **conda-project**'s default list of platform architectures.
 
    ```{note}
    This tutorial issues the `create` action for a new project.  As noted in the [User Guide](user_guide), it is also possible
    to create a project from an existing environment file.
+
+   If using windows, change the `--platform` argument to point to the correct architecture (win-64).
    ```
 
 3. Navigate the newly created project directory:
    ```shell
-   $ cd cp-tutorial
+   cd cp-tutorial
    ```
 
 4. Investigate the contents of the newly created environment file:
    ```shell
    $ cat environment.yml
-     name:
-     channels:
+   channels:
+     - defaults
      - conda-forge
-     - r
-     dependencies:
+   dependencies:
      - python=3.10
      - notebook
-     - hvplot
-     - panel
-     - xarray
-     - pooch
-     - netCDF4
      - r-essentials
      - r-plotly
      - r-shiny
-     variables:
-     prefix:
-     platforms:
-     - linux-64
-     - osx-64
-     - win-64
+   platforms:
      - osx-arm64
+     - linux-64
    ```
 
    ```{note}
-   It's possible to stipulate additional environment information, such as `channels` and
-   `platforms` in the create command.  Refer to [conda-project create](user_guide) for a detailed list of options.
+   Refer to [conda-project create](user_guide) for a detailed list of options.
    ```
 
 5. Investigate the contents of the newly created conda project file:
