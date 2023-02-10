@@ -1,7 +1,8 @@
 # Tutorial
 
-This tutorial explores using conda project to create a [Panel](https://panel.holoviz.org) app.
-After completing this tutorial, you will be able to:
+One of the main things that conda apart from other python packaging tool solutions is its ability to work with other languages and toolchains.  Conda
+is happy to mix Python with packages from R, Java, C, etc. This tutorial explores using **conda-project** to create a [Shiny](https://shiny.rstudio.com/)
+app using both **Jupyter notebook** on the Python side, and **shiny** on the R side.  After completing this tutorial, you will be able to:
 
  * Understand the relationship between conda-project commands and their corresponding actions.
  * Add a custom command to a project.
@@ -17,7 +18,8 @@ This section of the tutorial explores the `create` and `activate` subcommands of
 
 2. Initialize the project in a new directory:
    ```shell
-   $ conda-project -n learn-cp --directory cp-tutorial python=3.10 notebook hvplot panel xarray pooch netCDF4
+   $ conda-project create -n learn-cp --directory cp-tutorial -c conda-forge -c r \
+        python=3.10 notebook hvplot panel xarray pooch netCDF4 r-essentials r-plotly r-shiny
    ```
 
    ```{note}
@@ -33,10 +35,11 @@ This section of the tutorial explores the `create` and `activate` subcommands of
 4. Investigate the contents of the newly created environment file:
    ```shell
    $ cat environment.yml
-   name:
-   channels:
-     - defaults
-   dependencies:
+     name:
+     channels:
+     - conda-forge
+     - r
+     dependencies:
      - python=3.10
      - notebook
      - hvplot
@@ -44,13 +47,16 @@ This section of the tutorial explores the `create` and `activate` subcommands of
      - xarray
      - pooch
      - netCDF4
-   variables:
-   prefix:
-   platforms:
-     - osx-64
+     - r-essentials
+     - r-plotly
+     - r-shiny
+     variables:
+     prefix:
+     platforms:
      - linux-64
-     - osx-arm64
+     - osx-64
      - win-64
+     - osx-arm64
    ```
 
    ```{note}
@@ -69,18 +75,13 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    commands: {}
    ```
 
-   Note that the `name` key is populated with the value supplied in the `create` action.
+   Note that the `name` key is populated with the value supplied in the `create` action. 
 
-   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also
+   An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also 
    possible to define variables using the `variables` key.  These key varlue pairs are loaded as overrides
    to the inherited execution environment when a `run` action is issued.
 
-6. Activate the projects' default environment by calling the `activate` action:
-   ```shell
-   $ anaconda-project activate
-   ```
-
-7. Initiate the `prepare` action on the project:
+6. Initiate the `prepare` action on the project:
    ```shell
    $ conda-project prepare
    ```
@@ -90,66 +91,82 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    for the active environment.
    ```
 
-## Create an example notebook-based Panel app
+7. Activate the project's default environment by calling the `activate` action:
+   ```shell
+   $ conda-project activate
+   ```
 
-In this section, first create a new notebook called ``Interactive.ipynb`` by using one of the following methods:
+## Create an example notebook-based shiny app
 
- * Download this [quickstart](https://raw.githubusercontent.com/Anaconda-Platform/anaconda-project/master/examples/quickstart/Interactive.ipynb) example:
+In this section of the tutorial, Jupyter notebook will be used to develop and refine the shiny app.
 
-   * Right-click the link and "*Save As*", naming the file ``Interactive.ipynb`` and saving it into your new *cp-tutorial* folder, or
-
-   * Use the ``curl`` command below. *This can be used on a unix-like platform.*
-     ```shell
-     $ curl https://raw.githubusercontent.com/Anaconda-Platform/anaconda-project/master/examples/quickstart/Interactive.ipynb -o Interactive.ipynb
-     ```
-
-     ```{note}
-     This example is taken from a larger, more full-featured [hvPlot interactive](https://raw.githubusercontent.com/holoviz/hvplot/master/examples/user_guide/Interactive.ipynb).
-     The larger example will also work in this tutorial.
-     ```
-
- * Alternatively, a Jupyter notebook session can be launched using the following shell command:
-
+1. Use `conda-project` to launch Jupyer notebook.
    ```shell
    $ conda-project run jupyter notebook
    ```
 
-   Click the New button and choose the Python3 option. Paste the following contents into a cell and click File|Save as..., naming the file ``Interactive``.
+2. Start a `R` kernel by clicking *New* and select the option labeled **R**.
 
-     ```python
-     import xarray as xr, hvplot.xarray, hvplot.pandas, panel as pn, panel.widgets as pnw
+3. Paste the following content into the first cell of the notebook and then run the cell.
+   ```r
+   library(shiny)
+   library(data.table)
+   library(ggplot2)
 
-     ds     = xr.tutorial.load_dataset('air_temperature')
-     diff   = ds.air.interactive.sel(time=pnw.DiscreteSlider) - ds.air.mean('time')
-     kind   = pnw.Select(options=['contourf', 'contour', 'image'], value='image')
-     plot   = diff.hvplot(cmap='RdBu_r', clim=(-20, 20), kind=kind)
+   ui <- fluidPage(
+       titlePanel('Auto MPG'),
+       sidebarPanel(
+           radioButtons("origin", h3("Origin"),
+                       choices = list("Asia" = "Asia"),
+                       selected = "Asia")
+       ),
+       mainPanel(plotOutput(outputId = "distPlot"))
+   )
 
-     hvlogo = pn.panel("https://hvplot.holoviz.org/assets/hvplot-wm.png", width=100)
-     pnlogo = pn.panel("https://panel.holoviz.org/_static/logo_stacked.png", width=100)
-     text   = pn.panel("## Select a time and type of plot", width=400)
+   server <- function(input, output) {
+       df = fread('http://bit.ly/autompg-csv')
+       output$distPlot <- renderPlot({
+           ggplot(data = df[origin==input$origin], mapping = aes(mpg)) + geom_density()
+       })
+   }
 
-     pn.Column(
-         pn.Row(hvlogo, pn.Spacer(width=20), pn.Column(text, plot.widgets()), pnlogo),
-         plot.panel()).servable()
-     ```
+   shinyApp(ui = ui, server = server)
+   ```
 
-  To exit the running Jupyter Notebook program press CTRL+C in the terminal or command line application.
+4. A link will appear at the bottom of the cell once the shiny app is being served.  Click the link and
+   verify the output.
 
+5. With the first cell selected, click the Stop button to stop the server.
+
+6. Modify the content in the first cell by adding the US and Europe to the choices list in the UI:
+
+   ```R
+        choices = list("Asia" = "Asia", "Europe" = "Europe", "US" = "US"),
+   ```
+
+7. Run the cell again. When the server link appears, navigate to the shiny App and verify the code update is
+   reflected in the UI.
+
+8. Finally, save the verified R code to a file called `app.R` in the project directory.
+
+```{note}
+To exit the running Jupyter Notebook program press CTRL+C in the terminal or command line application.
+```
 
 ## Add and run a project command
 
-1. Register a new command to launch the notebook as a [Panel](https://panel.holoviz.org) app:
+1. Register a new command to launch the [Shiny](https://shiny.rstudio.com/) app:
 
    Using a preferred editor, modify conda-project.yml by replacing the line `comands: {}` with the following:
    ```yaml
    commands:
-     panel: panel serve Interactive.ipynb
+     shiny: Rscript -e "shiny::runApp('.', port=8086, host='0.0.0.0')"
    ```
 
-2. Run the newly added command using the `run` action:
+2. Use `conda-project` to run the newly added command using the `run` action:
    ```shell
-   $ anaconda-project run panel
+   $ conda-project run shiny
    ```
 
-   The application should now be running and available at http://localhost:5006/Interactive. To  close the running program,
+   The application should now be running and available at http://localhost:8086/. To  close the running program,
    press CTRL+C in your terminal or command line.
