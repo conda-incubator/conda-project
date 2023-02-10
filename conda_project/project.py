@@ -69,7 +69,9 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
     try:
         pip_freeze = call_conda(["run", "-p", prefix, "pip", "freeze"])
     except CondaProjectError as e:  # pragma: no cover
-        if ("pip: command not found" in str(e)) or ("'pip' is not recognized" in str(e)):
+        if ("pip: command not found" in str(e)) or (
+            "'pip' is not recognized" in str(e)
+        ):
             return {}
         else:
             raise e
