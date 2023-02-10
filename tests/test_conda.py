@@ -76,7 +76,11 @@ def test_conda_run_without_variables(mocked_execvped, empty_conda_environment):
 
     assert mocked_execvped.call_count == 1
     assert mocked_execvped.call_args.kwargs["env"] == {}
-    assert mocked_execvped.call_args.kwargs["args"][0] == "-c"
+
+    if not is_windows():
+        assert mocked_execvped.call_args.kwargs["args"][0] == "-c"
+    else:
+        assert mocked_execvped.call_args.kwargs["args"][0] == "/d"
 
 
 def test_conda_run_with_variables(mocked_execvped, empty_conda_environment):
@@ -90,7 +94,10 @@ def test_conda_run_with_variables(mocked_execvped, empty_conda_environment):
 
     assert mocked_execvped.call_count == 1
     assert mocked_execvped.call_args.kwargs["env"] == variables
-    assert mocked_execvped.call_args.kwargs["args"][0] == "-c"
+    if not is_windows():
+        assert mocked_execvped.call_args.kwargs["args"][0] == "-c"
+    else:
+        assert mocked_execvped.call_args.kwargs["args"][0] == "/d"
 
 
 def test_conda_run_extra_args(mocker, mocked_execvped, empty_conda_environment):
