@@ -86,13 +86,7 @@ def conda_run(
     extra_args: Optional[List[str]] = None,
 ) -> NoReturn:
     extra_args = [] if extra_args is None else extra_args
-
-    if is_windows():
-        arguments = shlex.split(cmd + " " + " ".join(extra_args))
-    else:
-        arguments = shlex.split(cmd) + extra_args
-
-    print(arguments)
+    arguments = shlex.split(cmd) + extra_args
 
     _, (shell, *args) = wrap_subprocess_call(
         root_prefix=CONDA_ROOT,
