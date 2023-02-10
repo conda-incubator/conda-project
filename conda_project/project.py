@@ -117,7 +117,7 @@ class CondaProject:
             )
             if environment_yaml_path is None:
                 options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
-                raise CondaProjectError(f"No Conda {options} file was found.")
+                raise CondaProjectError(f"No conda {options} file was found.")
 
             self._project_file = CondaProjectYaml(
                 name=self.directory.name,
@@ -158,7 +158,7 @@ class CondaProject:
             platforms:         List of platforms over which to lock the dependencies. The default is
                                osx-64, linux-64, win-64 and your current platform if it is not already
                                included.
-            conda_configs:     List of Conda configuration parameters to include in the .condarc file
+            conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
             lock_dependencies: Create the conda-lock.yml file for the requested dependencies.
                                Default is True.
@@ -384,7 +384,7 @@ class Environment(BaseModel):
     @property
     def is_prepared(self) -> bool:
         """
-        bool: Returns True if the Conda environment exists and is consistent with
+        bool: Returns True if the conda environment exists and is consistent with
               the environment source and lock files, False otherwise. If is_locked is
               False is_prepared is False.
         """

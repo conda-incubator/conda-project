@@ -28,7 +28,7 @@ def cli() -> ArgumentParser:
     )
 
     p = ArgumentParser(
-        description="Tool for encapsulating, running, and reproducing projects with Conda environments",
+        description="Tool for encapsulating, running, and reproducing projects with conda environments",
         conflict_handler="resolve",
     )
     p.add_argument(
@@ -91,7 +91,7 @@ def _create_create_parser(
     p.add_argument(
         "--conda-configs",
         help=(
-            "Comma separated list of Conda configuration parameters to write into the "
+            "Comma separated list of conda configuration parameters to write into the "
             ".condarc file in the project directory. The format for each config is key=value. "
             "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"
         ),
@@ -103,7 +103,7 @@ def _create_create_parser(
     )
     p.add_argument(
         "--prepare",
-        help="Create the local Conda environment for the current platform.",
+        help="Create the local conda environment for the current platform.",
         action="store_true",
     )
     p.add_argument(
@@ -130,7 +130,7 @@ def _create_lock_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Lock all Conda environments or a specific one by creating .conda-lock.yml files."
+    desc = "Lock all conda environments or a specific one by creating .conda-lock.yml files."
 
     p = subparsers.add_parser(
         "lock", description=desc, help=desc, parents=[parent_parser]
@@ -184,7 +184,7 @@ def _create_prepare_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Prepare the Conda environments"
+    desc = "Prepare the conda environments"
 
     p = subparsers.add_parser(
         "prepare", description=desc, help=desc, parents=[parent_parser]
@@ -207,7 +207,7 @@ def _create_prepare_parser(
     )
     p.add_argument(
         "--check-only",
-        help="Check that the prepared Conda environment exists and is up-to-date with the "
+        help="Check that the prepared conda environment exists and is up-to-date with the "
         "source environment and files and lockfile and then exit. If the environment is up-to-date "
         "nothing is printed and the command exists with 0. If the environment is missing or out-of-date "
         "details are printed to stderr and the command exits with 1.",
@@ -232,7 +232,7 @@ def _create_clean_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Clean the Conda environments"
+    desc = "Clean the conda environments"
 
     p = subparsers.add_parser(
         "clean", description=desc, help=desc, parents=[parent_parser]
