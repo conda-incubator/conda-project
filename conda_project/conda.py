@@ -128,7 +128,7 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
         if os.name == "posix":
             shell_name = shell_path = os.environ.get("SHELL", "/bin/sh")
         elif os.name == "nt":
-            shell_name, shell_path = os.environ.get("COMSPEC", "cmd.exe")
+            shell_name = shell_path = os.environ.get("COMSPEC", "cmd.exe")
         else:
             raise RuntimeError("Could not determine an appropriate shell to activate.")
 
@@ -150,7 +150,7 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
             activate_bat = str(Path(CONDA_ROOT) / "Scripts" / "activate.bat")
             args = ["/K", activate_bat, str(prefix)]
     else:
-        args = ["-il"]
+        args = ["-i"]
 
     activate_message = (
         f"## Project environment {prefix.name} activated in a new shell.\n"

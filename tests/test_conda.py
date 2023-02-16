@@ -138,7 +138,7 @@ def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
     assert "activated in a new shell" in capsys.readouterr().out
 
     assert mocked_spawn.call_args == mocker.call(
-        command="/bin/sh", args=["-il"], cwd=empty_conda_environment, env={}, echo=False
+        command="/bin/sh", args=["-i"], cwd=empty_conda_environment, env={}, echo=False
     )
 
 
