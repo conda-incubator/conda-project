@@ -161,7 +161,7 @@ def test_conda_activate_pexpect_with_variables(mocker, empty_conda_environment, 
 
     assert mocked_spawn.call_args == mocker.call(
         command="/bin/sh",
-        args=["-il"],
+        args=["-i"],
         cwd=empty_conda_environment,
         env={"FOO": "set-in-project"},
         echo=False,
