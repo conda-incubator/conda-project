@@ -662,13 +662,15 @@ class Environment(BaseModel):
             logger=logger,
         )
 
-    def activate(self, directory, variables=None, verbose=False) -> None:
+    def activate(self, verbose=False) -> None:
         if not self.is_prepared:
             self.prepare(verbose=verbose)
 
-        env = prepare_variables(directory, variables)
+        env = prepare_variables(
+            self.project.directory, self.project._project_file.variables
+        )
 
-        conda_activate(self.prefix, directory, env)
+        conda_activate(prefix=self.prefix, working_dir=self.project.directory, env=env)
 
 
 Environment.update_forward_refs()

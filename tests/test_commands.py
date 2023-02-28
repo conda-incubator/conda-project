@@ -364,3 +364,27 @@ def test_run_with_extra_args(
         env=os.environ,
         extra_args=["--flag", "a", "b"],
     )
+
+
+def test_activate_prepares_env(one_env_no_commands: CondaProject, mocker):
+    mocker.patch("conda_project.project.conda_activate")
+
+    project = one_env_no_commands
+
+    assert not project.default_environment.is_prepared
+
+    project.default_environment.activate()
+
+    assert project.default_environment.is_prepared
+
+
+def test_activate_with_env_vars(
+    one_env_one_command_project_variable: CondaProject, mocker
+):
+    mocked_activate = mocker.patch("conda_project.project.conda_activate")
+
+    project = one_env_one_command_project_variable
+
+    project.default_environment.activate()
+
+    assert mocked_activate.args.kwargs["env"].get("FOO") == "set-in-project"

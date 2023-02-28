@@ -133,6 +133,6 @@ def activate(args: Namespace) -> bool:
     else:
         env = project.default_environment
 
-    env.activate(project.directory, project._project_file.variables, verbose=True)
+    env.activate(verbose=True)
 
     return True
