@@ -493,7 +493,13 @@ class Environment(BaseModel):
                         )
                         shutil.copy(lockfile, self.lockfile)
                     except SubprocessError as e:
-                        output = json.loads(e.output)
+                        try:
+                            output = json.loads(e.output)
+                        except json.decoder.JSONDecodeError:
+                            # A bug in conda-libmamba-solver causes # serialization
+                            # errors so we'll just print the full stack trace on error.
+                            raise CondaProjectError(e.stderr)
+
                         msg = output["message"].replace(
                             "target environment",
                             f"supplied channels: {channel_overrides or specified_channels}",

@@ -1127,9 +1127,7 @@ def test_failed_to_solve_libmamba(project_directory_factory):
     with pytest.raises(CondaProjectError) as exinfo:
         project.default_environment.lock()
 
-    assert "The following packages are missing from the supplied channels" in str(
-        exinfo.value
-    )
+    assert "The following packages" in str(exinfo.value)
 
 
 @pytest.mark.skipif(
