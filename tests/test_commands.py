@@ -387,4 +387,4 @@ def test_activate_with_env_vars(
 
     project.default_environment.activate()
 
-    assert mocked_activate.args.kwargs["env"].get("FOO") == "set-in-project"
+    assert mocked_activate.call_args.kwargs["env"].get("FOO") == "set-in-project"
