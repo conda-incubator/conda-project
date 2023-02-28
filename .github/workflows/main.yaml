@@ -49,10 +49,10 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: [3.8, 3.9, "3.10"]
-        conda-version: [4.9, "4.10", "4.11", "4.12", "4.13"]
+        conda-version: ["4.9", "4.10", "4.11", "4.12", "4.13", "4.14", "22.9", "22.11", "23.1"]
         exclude:
           # Python 3.10
-          - conda-version: 4.9
+          - conda-version: "4.9"
             python-version: "3.10"
           - conda-version: "4.11"
             python-version: "3.10"
@@ -87,7 +87,7 @@ jobs:
       - name: Install Libmamba
         shell: bash
         run: |
-          if [ ${{ matrix.conda-version }} == "4.12" ] || [ ${{ matrix.conda-version }} == "4.13" ]; then
+          if [ ${{ matrix.conda-version }} != "4.9" ] || [ ${{ matrix.conda-version }} != "4.10" ] || [ ${{ matrix.conda-version }} != "4.11" ]; then
             if [ $RUNNER_OS == 'Windows' ]; then
               source $HOME/miniconda/Scripts/activate root && \
               conda install conda-libmamba-solver -p $HOME/miniconda
