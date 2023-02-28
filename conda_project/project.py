@@ -439,10 +439,10 @@ class Environment(BaseModel):
     ) -> None:
         """Generate locked package lists for the supplied or default platforms
 
-        Utilizes conda-lock to build the .conda-lock.yml file.
+        Utilizes conda-lock to build the conda-lock.<env>.yml file(s).
 
         Args:
-            force:       Rebuild the .conda-lock.yml file even if no changes were made
+            force:       Rebuild the conda-lock.<env>.yml file even if no changes were made
                          to the dependencies.
             verbose:     A verbose flag passed into the `conda lock` command.
 
@@ -522,8 +522,8 @@ class Environment(BaseModel):
         """Prepare the conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
-        Environments are always created from the conda-lock.yml file. The conda-lock.yml
-        will be created if it does not already exist.
+        Environments are always created from the conda-lock.<env>.yml file(s). The conda-lock.<env>.yml file(s)
+        will be created if they do not already exist.
 
         Args:
             force: If True, will force creation of a new conda environment.

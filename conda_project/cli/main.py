@@ -99,7 +99,9 @@ def _create_create_parser(
         default=None,
     )
     p.add_argument(
-        "--no-lock", help="Do not create the conda-lock.yml file", action="store_true"
+        "--no-lock",
+        help="Do not create the conda-lock.<env>.yml file(s)",
+        action="store_true",
     )
     p.add_argument(
         "--prepare",
@@ -130,7 +132,7 @@ def _create_lock_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Lock all conda environments or a specific one by creating .conda-lock.yml files."
+    desc = "Lock all conda environments or a specific one by creating conda-lock.<env>.yml file(s)."
 
     p = subparsers.add_parser(
         "lock", description=desc, help=desc, parents=[parent_parser]
@@ -143,7 +145,7 @@ def _create_lock_parser(
     )
     p.add_argument(
         "--force",
-        help="Remove and recreate existing .conda-lock.yml files.",
+        help="Remove and recreate existing conda-lock.<env>.yml file(s).",
         action="store_true",
     )
 
@@ -161,7 +163,7 @@ def _create_check_parser(
 
     """
     desc = (
-        "Check the project for inconsistencies or errors. This will check that .conda-lock.yml files "
+        "Check the project for inconsistencies or errors. This will check that conda-lock.<env>.yml file(s) "
         "have been created for each environment and are up-to-date with the source environment specifications. "
         "If the project is fully locked this command will not print anything and return status code 0. If any "
         "environment is not fully locked details are printed to stderr and the command returns status code 1."
