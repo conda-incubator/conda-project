@@ -87,7 +87,7 @@ jobs:
       - name: Install Libmamba
         shell: bash
         run: |
-          if [ ${{ matrix.conda-version }} != "4.9" ] || [ ${{ matrix.conda-version }} != "4.10" ] || [ ${{ matrix.conda-version }} != "4.11" ]; then
+          if [ "${{ matrix.conda-version }}" != "4.9" ] || [ "${{ matrix.conda-version }}" != "4.10" ] || [ "${{ matrix.conda-version }}" != "4.11" ]; then
             if [ $RUNNER_OS == 'Windows' ]; then
               source $HOME/miniconda/Scripts/activate root && \
               conda install conda-libmamba-solver -p $HOME/miniconda
