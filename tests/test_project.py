@@ -11,7 +11,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
-from conda_project.exceptions import CondaProjectError
+from conda_project.exceptions import CondaProjectError, CondaProjectLockFailed
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
 
 
@@ -1124,10 +1124,8 @@ def test_failed_to_solve_libmamba(project_directory_factory):
     )
     project = CondaProject(project_path)
 
-    with pytest.raises(CondaProjectError) as exinfo:
+    with pytest.raises(CondaProjectLockFailed):
         project.default_environment.lock()
-
-    assert "The following packages" in str(exinfo.value)
 
 
 @pytest.mark.skipif(

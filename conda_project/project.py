@@ -31,7 +31,7 @@ from conda_lock.conda_lock import (
 from pydantic import BaseModel, create_model
 
 from .conda import CONDA_EXE, call_conda, conda_activate, conda_run, current_platform
-from .exceptions import CommandNotFoundError, CondaProjectError
+from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
     ENVIRONMENT_YAML_FILENAMES,
     PROJECT_YAML_FILENAMES,
@@ -498,14 +498,14 @@ class Environment(BaseModel):
                         except json.decoder.JSONDecodeError:
                             # A bug in conda-libmamba-solver causes # serialization
                             # errors so we'll just print the full stack trace on error.
-                            raise CondaProjectError(e.stderr)
+                            raise CondaProjectLockFailed(e.stderr)
 
                         msg = output["message"].replace(
                             "target environment",
                             f"supplied channels: {channel_overrides or specified_channels}",
                         )
                         msg = "Project failed to lock\n" + msg
-                        raise CondaProjectError(msg)
+                        raise CondaProjectLockFailed(msg)
                     finally:
                         shutil.rmtree(tempdir)
 
