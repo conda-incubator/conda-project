@@ -260,7 +260,7 @@ def _create_run_parser(
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Run commands defined in the conda-project.yml file."
+    desc = "Run commands in project environments."
 
     p = subparsers.add_parser(
         "run", description=desc, help=desc, parents=[parent_parser]
@@ -274,8 +274,9 @@ def _create_run_parser(
     )
     p.add_argument(
         "command",
-        help="Optional: Run the specified command by name. If no environment name is selected "
-        "the first command in the conda-project.yml file is run.",
+        help="Optional: Run a command in the conda environment. The full command can be provided on the CLI "
+        "or the name of a command defined in the conda-project.yml file. If no command is provided "
+        "the first command in the conda-project.yml file is run if there is one.",
         nargs="?",
     )
     p.add_argument(
