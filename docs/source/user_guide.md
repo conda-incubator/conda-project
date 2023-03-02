@@ -131,7 +131,7 @@ platform, similar to how `conda lock install` works.
 If no environment name is supplied the first environment is activated. The `activate` command will
 force updating the lock and prepare the environment if it has not already been completed. Unlike
 `conda activate`, which is capable of adjusting your current shell process, `conda project activate`
-starts a new shell so it preferrable to exit the shell back to the parent rather than running `conda deactivate`.
+starts a new shell so it preferable to exit the shell back to the parent rather than running `conda deactivate`.
 
 ## Minimal example
 
