@@ -35,7 +35,7 @@ install the conda environment, and launch Jupyter. The commands below will work 
 For Windows you can use either `cmd.exe` or Powershell.
 
 ```
-> conda project create --directory my-project python=3.9 notebook pandas
+(base) > conda project create --directory my-project python=3.9 notebook pandas
 Locking dependencies for default: done
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 ```
@@ -45,18 +45,20 @@ You'll see that this directory contains it's own `environment.yml` file a [Conda
 file. You can learn more about these files in the [User Guide](https://conda-incubator.github.io/conda-project/user_guide.html)
 
 ```
-> tree ./
+(base) > tree ./
 ├── conda-project.yml
 ├── default.conda-lock.yml
 ├── environment.yml
 ```
 
-You can activate the environment, which will install packages locally to this project according to the lock file
+You can activate the environment, which will install packages locally to this project according to the lock file.
+Notice that after running `conda project activate` the shell prompt switches to `(default)`, which is the name
+of the local environment for this project.
 
 
 ```
-> cd my-project
-> conda project activate
+(base) > cd my-project
+(base) > conda project activate
 
 Downloading and Extracting Packages
 
@@ -74,7 +76,7 @@ environment created at /Users/adefusco/Development/conda-incubator/conda-project
 And in the activated environment you can launch editors or run commands.
 
 ```
-> jupyter notebook
+(default) > jupyter notebook
 [I 12:23:03.632 NotebookApp] Serving notebooks from local directory: /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 [I 12:23:03.632 NotebookApp] Jupyter Notebook 6.5.2 is running at:
 [I 12:23:03.632 NotebookApp] http://localhost:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
