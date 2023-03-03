@@ -24,7 +24,7 @@ This section of the tutorial explores the `create` and `activate` subcommands of
 
    At this point, **conda-project** will create a new directory, and write environment, lock, and project files to the new
    directory. This example passes the `osx-arm64` and `linux-64` platform architectures. This has the effect of speeding up
-   the package resolution and lock file generation.  If the `--platform` argument is omitted, package resolution will be 
+   the package resolution and lock file generation.  If the `--platform` argument is omitted, package resolution will be
    calculated across **conda-project**'s default list of platform architectures.
 
    ```{note}
