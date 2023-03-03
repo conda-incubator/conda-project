@@ -38,6 +38,7 @@ For Windows you can use either `cmd.exe` or Powershell.
 > conda project create --directory my-project python=3.9 notebook pandas
 Locking dependencies for default: done
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
+```
 
 ```
 > cd my-project
