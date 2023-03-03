@@ -40,10 +40,23 @@ Locking dependencies for default: done
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 ```
 
+The goal of Conda Project is to maintain a conda enviroment specifically for the new `my-project` directory.
+You'll see that this directory contains it's own `environment.yml` file a [Conda Lock](https://conda.github.io/conda-lock/) file and a `conda-project.yml`
+file. You can learn more about these files in the [User Guide](https://conda-incubator.github.io/conda-project/user_guide.html)
+
+```
+> tree ./
+├── conda-project.yml
+├── default.conda-lock.yml
+├── environment.yml
+```
+
+You can activate the environment, which will install packages locally to this project according to the lock file
+
+
 ```
 > cd my-project
-> conda project run jupyter notebook
-Retrieving notices: ...working... done
+> conda project activate
 
 Downloading and Extracting Packages
 
@@ -54,6 +67,14 @@ Preparing transaction: done
 Verifying transaction: done
 Executing transaction: done
 environment created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project/envs/default
+## Project environment default activated in a new shell.
+## Exit this shell to de-activate.
+```
+
+And in the activated environment you can launch editors or run commands.
+
+```
+> jupyter notebook
 [I 12:23:03.632 NotebookApp] Serving notebooks from local directory: /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 [I 12:23:03.632 NotebookApp] Jupyter Notebook 6.5.2 is running at:
 [I 12:23:03.632 NotebookApp] http://localhost:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
