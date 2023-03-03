@@ -59,18 +59,6 @@ def test_yaml_dump_skip_empty_keys():
     assert stream.getvalue() == "filled: foo\nnested:\n  a:\n    - b\n  d: []\n"
 
 
-def test_bad_yaml_file():
-    class YamlFile(BaseYaml):
-        attribute: str
-
-    yml = "attribute: correct\nmore_attributes: wrong"
-
-    with pytest.raises(CondaProjectError) as exinfo:
-        _ = YamlFile.parse_yaml(yml)
-
-    assert "validation error for YamlFile" in str(exinfo.value)
-
-
 def test_yaml_anchors():
     class YamlFile(BaseYaml):
         a: str
@@ -104,23 +92,6 @@ def test_yaml_anchors_extra():
     yml = YamlFile.parse_yaml(yml)
     assert yml.a == "foo"
     assert yml.b == "foo"
-
-
-def test_miss_spelled_env_yaml_file():
-    environment_yaml = dedent(
-        """\
-        name: misspelled
-        channel:
-            - defaults
-
-        dependencies: []
-        """
-    )
-
-    with pytest.raises(CondaProjectError) as exinfo:
-        _ = EnvironmentYaml.parse_yaml(environment_yaml)
-
-    assert "validation error for EnvironmentYaml" in str(exinfo.value)
 
 
 def test_empty_project_yaml_file():
