@@ -71,6 +71,41 @@ def test_bad_yaml_file():
     assert "validation error for YamlFile" in str(exinfo.value)
 
 
+def test_yaml_anchors():
+    class YamlFile(BaseYaml):
+        a: str
+        b: str
+
+    yml = dedent(
+        """\
+        a: &a foo
+        b: *a
+        """
+    )
+
+    yml = YamlFile.parse_yaml(yml)
+    assert yml.a == "foo"
+    assert yml.b == "foo"
+
+
+def test_yaml_anchors_extra():
+    class YamlFile(BaseYaml):
+        a: str
+        b: str
+
+    yml = dedent(
+        """\
+        _hidden: &a foo
+        a: *a
+        b: *a
+        """
+    )
+
+    yml = YamlFile.parse_yaml(yml)
+    assert yml.a == "foo"
+    assert yml.b == "foo"
+
+
 def test_miss_spelled_env_yaml_file():
     environment_yaml = dedent(
         """\

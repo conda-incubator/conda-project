@@ -48,7 +48,6 @@ class BaseYaml(BaseModel):
 
     class Config:
         json_encoders = {Path: lambda v: v.as_posix()}
-        extra = "forbid"
 
 
 class Command(BaseModel):
