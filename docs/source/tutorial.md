@@ -65,7 +65,7 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    $ cat conda-project.yml
    name: learn-cp
      environments:
-   default:
+     default:
      - environment.yml
    variables: {}
    commands: {}
