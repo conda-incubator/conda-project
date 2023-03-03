@@ -3,77 +3,62 @@
 [![codecov](https://codecov.io/gh/conda-incubator/conda-project/branch/main/graph/badge.svg?token=XNRS8JKT75)](https://codecov.io/gh/conda-incubator/conda-project)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
 
-Tool for encapsulating, running, and reproducing projects with conda environments
+
+Tool for encapsulating, running, and reproducing projects with conda environments.
 
 This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
-Please continue to use Anaconda Project until it has been declared deprecated and conda-project has
-stabilized.
 
-## Setup for development
+## Why?
 
-To setup conda-project for development, first install [Miniconda](https://docs.conda.io/en/latest/miniconda.html),
-then
+Sharing your work is more than sharing the script file or notebook with your code. To help your fellow users it is
+necessary to include the list of required third-party dependencies, specifications for how to run your code, and
+any other files that it may need.
 
-1. Clone this repository.
-1. Create a development environment using the `environment.yml` file in this repository
-    ```
-    conda env create -p ./env
-1. Install `conda-project` as editable in the env by activating the environment first
-    ```
-    conda activate ./env
-    pip install -e .
-    ```
+See [8 Levels of Reproduciblity](https://www.anaconda.com/blog/8-levels-of-reproducibility) for an in-depth
+discussion of the differences between "It works fo me." to "I've made sure that anyone can reliably execute my work."
+Conda Project provides a framework that guides you to ensuring a high degree of reproducibility in the projects you
+create.
 
-### Tests
 
-To run tests you can either activate the env and run pytest
+## Installation
+
+You can install conda-project using the conda package manager
 
 ```
-conda activate ./env
-pytest
+conda install -c defusco conda-project
 ```
 
-or use `conda run`
+## Quick start
 
- ```
- conda run --no-capture-output -p ./env pytest
- ```
-
-### Linting
-
-This project uses [pre-commit](https://pre-commit.com/) to aid with linting.
-Pre-Commit is configured to run
-* [isort](https://pycqa.github.io/isort/)
-* [black](https://black.readthedocs.io/en/stable/)
-* [flake8](https://flake8.pycqa.org/en/latest/)
-
-This repository is configured with [Pre-Commit.ci](https://pre-commit.ci/), which
-will automatically fix Pull Requests to comply with the above linters.
-
-The pre-commit conda package is included in the development environment.yml file.
-To install the hooks in your local clone run
+Let's start a new project using Python, Pandas, and Jupyter Notebooks. First, create the project directory,
+install the conda environment, and launch Jupyter. The commands below will work on terminals in Mac, Linux, and Window.
+For Windows you can use either `cmd.exe` or Powershell.
 
 ```
-conda run --no-capture-output -p ./env pre-commit install
-```
-
-Once configured the pre-commit hooks are run automatically, but you can run
-them manually with
+> conda project create --directory my-project python=3.9 notebook pandas
+Locking dependencies for default: done
+Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 
 ```
-conda run --no-capture-output -p ./env pre-commit run --all-files
+> cd my-project
+> conda project run jupyter notebook
+Retrieving notices: ...working... done
+
+Downloading and Extracting Packages
+
+
+Downloading and Extracting Packages
+
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+environment created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project/envs/default
+[I 12:23:03.632 NotebookApp] Serving notebooks from local directory: /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
+[I 12:23:03.632 NotebookApp] Jupyter Notebook 6.5.2 is running at:
+[I 12:23:03.632 NotebookApp] http://localhost:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
+[I 12:23:03.632 NotebookApp]  or http://127.0.0.1:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
+[I 12:23:03.632 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:23:03.635 NotebookApp
 ```
 
-### Documentation
-
-To develop the documentation, you can run the following command from the project root:
-
-```shell
-make -C docs html
-```
-
-To develop with live-updating documentation, run:
-
-```shell
-make -C docs live
-```
+Continue reading the [User Guide](https://conda-incubator.github.io/conda-project/user_guide.html) to learn more.
