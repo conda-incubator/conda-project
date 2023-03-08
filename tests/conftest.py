@@ -8,6 +8,8 @@ from typing import Optional
 
 import pytest
 
+from conda_project.conda import call_conda
+
 
 @pytest.fixture()
 def project_directory_factory(tmp_path, request):
@@ -63,3 +65,15 @@ def project_directory_factory(tmp_path, request):
     create_project_directory._suffix = suffix
 
     return create_project_directory
+
+
+@pytest.fixture
+def empty_conda_environment(tmp_path):
+    args = ["create", "-p", str(tmp_path), "--yes"]
+    call_conda(args)
+    yield tmp_path
+
+
+@pytest.fixture
+def mocked_execvped(mocker):
+    return mocker.patch("conda_project.conda.execvped")

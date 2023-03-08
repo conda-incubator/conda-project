@@ -3,14 +3,19 @@
 
 import itertools
 import os
+import platform
 import sys
 import threading
 import time
+from collections import ChainMap
 from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
 from pathlib import Path
-from typing import Optional, Type
+from subprocess import Popen
+from typing import Dict, List, NoReturn, Optional, Type, Union
+
+from dotenv import dotenv_values
 
 from .exceptions import CondaProjectError
 
@@ -104,3 +109,59 @@ def find_file(directory: Path, options: tuple) -> Optional[Path]:
         )
     else:
         return None
+
+
+def merge_dicts(*dicts):
+    return dict(ChainMap(*reversed(dicts)))
+
+
+def prepare_variables(project_directory: Path, *variable_dicts) -> Dict[str, str]:
+    variables = [{} if vars is None else vars for vars in variable_dicts]
+
+    dotenv = dotenv_values(project_directory / ".env")
+
+    env = merge_dicts(*variables, dotenv, os.environ)
+
+    missing_vars = [k for k, v in env.items() if v is None]
+    if missing_vars:
+        errs = "\n".join(missing_vars)
+        msg = (
+            "The following variables do not have a default value and values\n"
+            "were not provided in the .env file or set on the command line"
+            f" when executing 'conda project run':\n{errs}"
+        )
+        raise CondaProjectError(msg)
+
+    return env
+
+
+def is_windows():
+    return platform.system() == "Windows"
+
+
+def execvped(
+    file: Union[Path, str], args: List[str], env: Dict[str, str], cwd: Union[Path, str]
+) -> NoReturn:
+    """A cross-platform os.execvpe - like executor
+
+    The goal is the be able to launch a command in a working directory,
+    with environment variables and exit to the shell with the return code
+    of the command and ensure that on error the previous working directory
+    is restored.
+
+    The "d" in the function name refers to the requirement that
+    the working directory (cwd) flag be used.
+    """
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    if is_windows():
+        sys.exit(Popen(args=[file, *args], env=env, cwd=cwd).wait())
+    else:
+        old_dir = Path.cwd()
+        try:
+            os.chdir(cwd)
+            os.execvpe(file, args, env)
+        finally:
+            os.chdir(old_dir)

@@ -4,10 +4,10 @@
 import sys
 from argparse import Namespace
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, NoReturn
 
-from ..exceptions import CondaProjectError
-from ..project import CondaProject
+from ..exceptions import CommandNotFoundError, CondaProjectError
+from ..project import Command, CondaProject
 
 
 def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
@@ -81,7 +81,7 @@ def prepare(args: Namespace) -> bool:
             if args.environment
             else project.default_environment
         )
-        env.prepare(force=args.force, verbose=True)
+        env.prepare(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
 
@@ -100,5 +100,39 @@ def clean(args: Namespace) -> bool:
             else project.default_environment
         )
         env.clean(verbose=True)
+
+    return True
+
+
+@handle_errors
+def run(args: Namespace) -> NoReturn:
+    project = CondaProject(args.directory)
+
+    if args.command:
+        try:
+            to_run = project.commands[args.command]
+        except CommandNotFoundError:
+            to_run = Command(
+                name=str(args.command),
+                cmd=args.command,
+                environment=project.default_environment,
+                project=project,
+            )
+    else:
+        to_run = project.default_command
+
+    to_run.run(environment=args.environment, extra_args=args.extra_args, verbose=True)
+
+
+@handle_errors
+def activate(args: Namespace) -> bool:
+    project = CondaProject(args.directory)
+
+    if args.environment:
+        env = project.environments[args.environment]
+    else:
+        env = project.default_environment
+
+    env.activate(verbose=True)
 
     return True

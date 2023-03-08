@@ -11,8 +11,11 @@ with open("README.md", "r") as fh:
 requirements = [
     "conda-lock>=1.2",
     "lockfile",
+    "pexpect",
     "ruamel.yaml",
     "pydantic",
+    "shellingham",
+    "python-dotenv",
 ]
 docs_requirements = [
     "Sphinx>=5.1.1",

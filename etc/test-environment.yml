@@ -4,8 +4,12 @@ channels:
   - conda-forge
 dependencies:
   - conda-lock>=1.2
+  - pexpect
   - lockfile
   - ruamel.yaml
   - pydantic
   - pytest
   - pytest-cov
+  - pytest-mock
+  - shellingham
+  - python-dotenv

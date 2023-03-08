@@ -8,6 +8,7 @@ dependencies:
   - pytest
   - pylint
   - pytest-cov
+  - pytest-mock
   - pre-commit
   - conda-lock>=1.2
   - pydantic

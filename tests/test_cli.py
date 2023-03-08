@@ -1,24 +1,76 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
-from functools import partial
 from textwrap import dedent
 
 import pytest
 
 from conda_project.cli.main import cli, main, parse_and_run
+from conda_project.project import CondaProject
 
-PROJECT_COMMANDS = ("create", "check")
-ENVIRONMENT_COMMANDS = ("clean", "prepare", "lock")
-ALL_COMMANDS = PROJECT_COMMANDS + ENVIRONMENT_COMMANDS
+PROJECT_ACTIONS = ("create", "check")
+ENVIRONMENT_ACTIONS = ("clean", "prepare", "lock", "activate")
+COMMAND_ACTIONS = ("run",)
+ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
 
 
-def test_known_commands():
+@pytest.fixture
+def multi_env(project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = dedent(
+        f"""\
+        name: multi-envs
+        environments:
+          env1: [env1{project_directory_factory._suffix}]
+          env2: [env2{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    return project_path
+
+
+@pytest.fixture
+def multi_env_multi_command(project_directory_factory):
+    env1 = env2 = "dependencies: []\n"
+    project_yaml = dedent(
+        f"""\
+        name: multi-envs
+        environments:
+          env1: [env1{project_directory_factory._suffix}]
+          env2: [env2{project_directory_factory._suffix}]
+        commands:
+          cmd1:
+            cmd: ''
+            environment: env1
+          cmd2:
+            cmd: ''
+            environment: env2
+        """
+    )
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env1,
+            f"env2{project_directory_factory._suffix}": env2,
+        },
+    )
+
+    return project_path
+
+
+def test_known_actions():
     parser = cli()
-    assert parser._positionals._actions[2].choices.keys() == set(ALL_COMMANDS)
+    assert parser._positionals._actions[2].choices.keys() == set(ALL_ACTIONS)
 
 
-def test_no_command(capsys, monkeypatch):
+def test_no_action(capsys, monkeypatch):
     monkeypatch.setattr("sys.argv", ["conda-project"])
     with pytest.raises(SystemExit):
         assert main() is None
@@ -37,7 +89,7 @@ def test_no_env_yaml(tmp_path, monkeypatch, capsys):
     assert "No conda environment.yml or environment.yaml file was found" in err
 
 
-def test_unknown_command(capsys):
+def test_unknown_action(capsys):
     with pytest.raises(SystemExit):
         assert parse_and_run(["__nope__"]) is None
 
@@ -45,205 +97,220 @@ def test_unknown_command(capsys):
     assert "invalid choice: '__nope__'" in err
 
 
-@pytest.mark.parametrize("command", ALL_COMMANDS)
-def test_command_args(command, monkeypatch, capsys):
-    def mocked_command(command, args):
-        print(f"I am {command}")
-        assert args.directory == "project-dir"
-        return 42
-
-    monkeypatch.setattr(
-        f"conda_project.cli.commands.{command}", partial(mocked_command, command)
+@pytest.mark.parametrize("action", ALL_ACTIONS)
+def test_cli_directory_argument(action, mocker, capsys):
+    mocked_action = mocker.patch(
+        f"conda_project.cli.commands.{action}",
+        return_value=42,
+        side_effect=print(f"I am {action}"),
     )
 
-    ret = parse_and_run([command, "--directory", "project-dir"])
+    ret = parse_and_run([action, "--directory", "project-dir"])
     assert ret == 42
 
+    assert mocked_action.call_count == 1
+    assert "directory" in mocked_action.call_args.args[0]
+
     out, err = capsys.readouterr()
-    assert f"I am {command}\n" == out
+    assert f"I am {action}\n" == out
     assert "" == err
 
 
-@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
-@pytest.mark.parametrize("project_directory_factory", [".yml", ".yaml"], indirect=True)
-def test_cli_verbose_env(command, monkeypatch, project_directory_factory):
-    if command == "create":
+@pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
+def test_environment_actions_verbose_true(action, mocker, project_directory_factory):
+    mocked_action = mocker.patch(f"conda_project.project.Environment.{action}")
+
+    if action == "create":
         project_path = project_directory_factory()
     else:
         env_yaml = "dependencies: []\n"
         project_path = project_directory_factory(env_yaml=env_yaml)
 
-    def mocked_action(*_, **kwargs):
-        assert kwargs.get("verbose", False)
-
-    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
-
-    ret = parse_and_run([command, "--directory", str(project_path)])
+    ret = parse_and_run([action, "--directory", str(project_path)])
     assert ret == 0
 
+    assert mocked_action.call_count == 1
+    assert mocked_action.call_args.kwargs["verbose"]
 
-@pytest.mark.parametrize("command", PROJECT_COMMANDS)
-def test_cli_verbose_project(command, monkeypatch, project_directory_factory):
-    if command == "create":
+
+@pytest.mark.parametrize("action", PROJECT_ACTIONS)
+def test_project_actions_verbose_true(action, mocker, project_directory_factory):
+    mocked_action = mocker.patch(f"conda_project.project.CondaProject.{action}")
+    if action == "create":
         project_path = project_directory_factory()
     else:
         env_yaml = "dependencies: []\n"
         project_path = project_directory_factory(env_yaml=env_yaml)
 
-    def mocked_action(*_, **kwargs):
-        assert kwargs.get("verbose", False)
-
-    monkeypatch.setattr(f"conda_project.project.CondaProject.{command}", mocked_action)
-
-    _ = parse_and_run([command, "--directory", str(project_path)])
-
-
-def test_create_with_prepare(tmp_path):
-    ret = parse_and_run(["create", "--directory", str(tmp_path), "--prepare"])
-
+    ret = parse_and_run([action, "--directory", str(project_path)])
     assert ret == 0
 
-    assert (tmp_path / "envs" / "default" / "conda-meta" / "history").exists()
+    assert mocked_action.call_count == 1
+    assert mocked_action.call_args.kwargs["verbose"]
 
 
-@pytest.mark.parametrize("command", ENVIRONMENT_COMMANDS)
-def test_command_with_environment_name(command, monkeypatch, project_directory_factory):
-    env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
-        name: multi-envs
-        environments:
-          env1: [env1{project_directory_factory._suffix}]
-          env2: [env2{project_directory_factory._suffix}]
-        """
-    )
-    project_path = project_directory_factory(
-        project_yaml=project_yaml,
-        files={
-            f"env1{project_directory_factory._suffix}": env1,
-            f"env2{project_directory_factory._suffix}": env2,
-        },
-    )
+def test_create_with_prepare(mocker):
+    default_environment = mocker.spy(CondaProject, "default_environment")
 
-    def mocked_action(self, *args, **kwargs):
-        assert self.name == "env1"
-
-    monkeypatch.setattr(f"conda_project.project.Environment.{command}", mocked_action)
-
-    ret = parse_and_run([command, "--directory", str(project_path), "env1"])
+    ret = parse_and_run(["create", "--directory", "project-dir", "--prepare"])
     assert ret == 0
 
+    assert default_environment.prepare.call_count == 1
 
-def test_prepare_and_clean_all_environments(monkeypatch, project_directory_factory):
-    env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
-        name: multi-envs
-        environments:
-          env1: [env1{project_directory_factory._suffix}]
-          env2: [env2{project_directory_factory._suffix}]
-        """
-    )
-    project_path = project_directory_factory(
-        project_yaml=project_yaml,
-        files={
-            f"env1{project_directory_factory._suffix}": env1,
-            f"env2{project_directory_factory._suffix}": env2,
-        },
-    )
 
-    def mocked_action(self, *args, **kwargs):
-        assert self.name in ["env1", "env2"]
+@pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
+def test_action_with_environment_name(action, multi_env, mocker):
+    environments = mocker.spy(CondaProject, "environments")
+    default_environment = mocker.spy(CondaProject, "default_environment")
 
-    monkeypatch.setattr("conda_project.project.Environment.prepare", mocked_action)
-    monkeypatch.setattr("conda_project.project.Environment.clean", mocked_action)
-
-    ret = parse_and_run(["prepare", "--directory", str(project_path), "--all"])
+    ret = parse_and_run([action, "--directory", str(multi_env), "env1"])
     assert ret == 0
 
-    ret = parse_and_run(["clean", "--directory", str(project_path), "--all"])
+    assert getattr(default_environment, action).call_count == 0
+
+    assert environments.mock_calls[0] == mocker.call.__getitem__("env1")
+    assert getattr(environments["env1"], action).call_count == 1
+
+
+@pytest.mark.parametrize("action", ["prepare", "clean"])
+def test_action_all_environments(action, mocker, multi_env):
+    mocked_action = mocker.patch(f"conda_project.project.Environment.{action}")
+
+    ret = parse_and_run([action, "--directory", str(multi_env), "--all"])
     assert ret == 0
 
+    assert mocked_action.call_count == 2
 
-def test_lock_all_environments(monkeypatch, project_directory_factory):
-    env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
-        name: multi-envs
-        environments:
-          env1: [env1{project_directory_factory._suffix}]
-          env2: [env2{project_directory_factory._suffix}]
-        """
-    )
-    project_path = project_directory_factory(
-        project_yaml=project_yaml,
-        files={
-            f"env1{project_directory_factory._suffix}": env1,
-            f"env2{project_directory_factory._suffix}": env2,
-        },
-    )
 
-    def mocked_action(self, *args, **kwargs):
-        assert self.name in ["env1", "env2"]
+def test_lock_all_environments(mocker, multi_env):
+    mocked_lock = mocker.patch("conda_project.project.Environment.lock")
 
-    monkeypatch.setattr("conda_project.project.Environment.lock", mocked_action)
-
-    ret = parse_and_run(["lock", "--directory", str(project_path)])
+    ret = parse_and_run(["lock", "--directory", str(multi_env)])
     assert ret == 0
 
+    assert mocked_lock.call_count == 2
 
-@pytest.mark.slow
-def test_check_multi_env(project_directory_factory, capsys):
-    env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
-        name: multi-envs
-        environments:
-          env1: [env1{project_directory_factory._suffix}]
-          env2: [env2{project_directory_factory._suffix}]
-        """
+
+def test_run_no_commands_fail(multi_env, capsys):
+    return_code = parse_and_run(["run", "--directory", str(multi_env)])
+
+    assert return_code == 1
+    assert "no defined commands" in capsys.readouterr().err
+
+
+def test_run_default_command(mocker, multi_env_multi_command):
+    default_command = mocker.spy(CondaProject, "default_command")
+
+    _ = parse_and_run(["run", "--directory", str(multi_env_multi_command)])
+
+    assert default_command.run.call_args == mocker.call(
+        environment=None, extra_args=[], verbose=True
     )
-    project_path = project_directory_factory(
-        project_yaml=project_yaml,
-        files={
-            f"env1{project_directory_factory._suffix}": env1,
-            f"env2{project_directory_factory._suffix}": env2,
-        },
+
+
+def test_run_default_command_with_env(mocker, multi_env_multi_command):
+    default_command = mocker.spy(CondaProject, "default_command")
+
+    _ = parse_and_run(
+        ["run", "--directory", str(multi_env_multi_command), "--environment", "env2"]
     )
 
-    ret = parse_and_run(["check", "--directory", str(project_path)])
-    assert ret == 1
+    assert default_command.run.call_args == mocker.call(
+        environment="env2", extra_args=[], verbose=True
+    )
 
-    stderr = capsys.readouterr().err
-    assert "The environment env1 is not locked" in stderr
-    assert "The environment env2 is not locked" in stderr
 
-    ret = parse_and_run(["lock", "--directory", str(project_path)])
-    assert ret == 0
+def test_run_named_command(mocker, multi_env_multi_command):
+    default_command = mocker.spy(CondaProject, "default_command")
+    commands = mocker.spy(CondaProject, "commands")
 
-    ret = parse_and_run(["check", "--directory", str(project_path)])
-    assert ret == 0
+    _ = parse_and_run(["run", "--directory", str(multi_env_multi_command), "cmd1"])
 
-    env1 = "dependencies: [python=3.8]\n"
-    with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
-        f.write(env1)
+    assert default_command.run.call_count == 0
 
-    ret = parse_and_run(["check", "--directory", str(project_path)])
-    assert ret == 1
+    assert commands.mock_calls[0] == mocker.call.__getitem__("cmd1")
+    assert commands["cmd1"].run.call_count == 1
 
-    stderr = capsys.readouterr().err
-    assert stderr
-    assert "The lockfile for environment env1 is out-of-date" in stderr
-    assert "The lockfile for environment env2" not in stderr
 
-    env2 = "dependencies: [python=3.8]\n"
-    with (project_path / f"env2{project_directory_factory._suffix}").open("w") as f:
-        f.write(env2)
+def test_run_unnamed_command(mocker, multi_env_multi_command):
+    from conda_project.cli import commands as commands_module
 
-    ret = parse_and_run(["check", "--directory", str(project_path)])
-    assert ret == 1
+    command = mocker.spy(commands_module, "Command")
+    project = mocker.spy(commands_module, "CondaProject")
 
-    stderr = capsys.readouterr().err
-    assert stderr
-    assert "The lockfile for environment env1 is out-of-date" in stderr
-    assert "The lockfile for environment env2 is out-of-date" in stderr
+    mocked_run = mocker.patch("conda_project.project.Command.run")
+
+    _ = parse_and_run(["run", "--directory", str(multi_env_multi_command), "cmd3"])
+
+    assert command.call_args == mocker.call(
+        name="cmd3",
+        cmd="cmd3",
+        environment=project.spy_return.default_environment,
+        project=project.spy_return,
+    )
+    assert mocked_run.call_args == mocker.call(
+        environment=None, extra_args=[], verbose=True
+    )
+
+
+def test_run_unnamed_command_with_env(mocker, multi_env_multi_command):
+    from conda_project.cli import commands as commands_module
+
+    command = mocker.spy(commands_module, "Command")
+    project = mocker.spy(commands_module, "CondaProject")
+
+    mocked_run = mocker.patch("conda_project.project.Command.run")
+
+    _ = parse_and_run(
+        [
+            "run",
+            "--directory",
+            str(multi_env_multi_command),
+            "--environment",
+            "env2",
+            "cmd3",
+        ]
+    )
+
+    assert command.call_args == mocker.call(
+        name="cmd3",
+        cmd="cmd3",
+        environment=project.spy_return.default_environment,
+        project=project.spy_return,
+    )
+    assert mocked_run.call_args == mocker.call(
+        environment="env2", extra_args=[], verbose=True
+    )
+
+
+def test_run_unnamed_command_with_extra_args(mocker, multi_env_multi_command):
+    from conda_project.cli import commands as commands_module
+
+    command = mocker.spy(commands_module, "Command")
+    project = mocker.spy(commands_module, "CondaProject")
+
+    mocked_run = mocker.patch("conda_project.project.Command.run")
+
+    _ = parse_and_run(
+        [
+            "run",
+            "--directory",
+            str(multi_env_multi_command),
+            "--environment",
+            "env2",
+            "cmd3",
+            "--flag",
+            "value",
+            "arg1",
+        ]
+    )
+
+    assert command.call_args == mocker.call(
+        name="cmd3",
+        cmd="cmd3",
+        environment=project.spy_return.default_environment,
+        project=project.spy_return,
+    )
+    assert mocked_run.call_args == mocker.call(
+        environment="env2", extra_args=["--flag", "value", "arg1"], verbose=True
+    )

@@ -42,6 +42,7 @@ test:
   requires:
     - pytest
     - pytest-cov
+    - pytest-mock
   commands:
     - pytest
 

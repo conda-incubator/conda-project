@@ -81,6 +81,9 @@ environments:
   development:
     - environment.yml
     - ../dev-extras.yml
+
+variables: {}
+commands: {}
 ```
 
 ```{note}
@@ -112,6 +115,7 @@ When you run `conda project lock` multiple times, the lock file will only be upd
 To force a re-lock use `conda project lock --force`.
 
 ## Preparing your environments
+
 `conda project prepare` enforces the use of `conda-lock`.
 If a `.conda-lock.yml` file is not present it will be created by prepare with the above
 assumptions  if necessary.
@@ -121,7 +125,15 @@ it will raise an exception.
 The live conda environment is built from a rendered lockfile (explicit type) for your current
 platform, similar to how `conda lock install` works.
 
-## Minimal full example
+## Activating environments in the shell
+
+`conda project activate [environment]` will launch a shell and activate the named conda environment.
+If no environment name is supplied the first environment is activated. The `activate` command will
+force updating the lock and prepare the environment if it has not already been completed. Unlike
+`conda activate`, which is capable of adjusting your current shell process, `conda project activate`
+starts a new shell so it preferable to exit the shell back to the parent rather than running `conda deactivate`.
+
+## Minimal example
 
 ```
 ❯ conda project create python=3.8
@@ -153,7 +165,189 @@ name: new-project
 environments:
   default:
     - environment.yml
+variables: {}
+commands: {}
 ```
+
+## Environment variables
+
+Conda Project supports defining environment variables in the `conda-project.yml` file that will
+be set upon environment activation or when running commands. Variables are defined in the
+`variables:` key and can have an optional default value. Starting from the minimal example above
+I'll add a variable `FOO` with the default value `has-default-value` and the variable `BAR` with
+no default value.
+
+```yaml
+name: new-project
+environments:
+  default:
+    - environment.yml
+
+variables:
+  FOO: has-default-value
+  BAR:
+
+commands: {}
+```
+
+The values of the variables can be set or overridden by the use of a `.env` file (see the
+[python-dotenv documentation](https://saurabh-kumar.com/python-dotenv/#file-format) for more details) or
+by setting the variable in your shell.
+
+In this example the `BAR` environment variable is unset so `conda project activate` will not start
+unless a value is provided by the shell or in a `.env` file.
+
+```
+❯ conda project activate
+CondaProjectError: The following variables do not have a default value and values
+were not provided in the .env file or set on the command line when executing 'conda project run':
+BAR
+```
+
+On Unix you can do the following
+
+```
+❯ BAR=set-on-cli conda project activate
+## Project environment default activated in a new shell.
+## Exit this shell to de-activate.
+❯ conda activate /Users/adefusco/Development/conda-incubator/conda-project/examples/p/envs/default
+```
+
+On Windows in either `cmd.exe` you can use `set variable=value`
+
+```
+> set BAR=set-in-shell
+> conda project activate
+```
+
+and finally, in Powershell you would use `$env`
+
+```
+> $env:BAR = 'set-in-shell'
+> conda project activate
+```
+
+## Defining and running commands
+
+Conda Project supports running commands as if the desired environment were activated, similar
+to [conda run](https://docs.conda.io/projects/conda/en/latest/commands/run.html).
+
+In Conda Project the `run` command can be used to execute ad-hoc commands or those defined
+in the `conda-project.yml` file. Note that `conda project run` should not be utilized after
+`conda project activate`. The `run` command will not work from within an activated environment.
+
+Let's start with a simple python script called `vars.py`, that prints environment variables
+and optionally takes an argument `--version` to also print the Python version.
+
+```python
+import os
+import sys
+
+if len(sys.argv) > 1 and sys.argv[1] == '--version':
+    print("0.0.1")
+    sys.exit(1)
+else:
+    print(f"The value of FOO is {os.environ.get('FOO')}")
+    print(f"The value of BAR is {os.environ.get('BAR')}")
+    print(f"The value of BAZ is {os.environ.get('BAZ')}")
+```
+
+Note that when the `--version` flag is provided the return code for this script is 1, meaning
+a failure.
+
+We can execute this script with the `default` environment as an ad-hoc command using the Python
+interpreter provided by the default environment. Here a `.env` file is utilized to provide the
+value of the BAR variable.
+
+```
+> BAR=set-on-cli conda project run python vars.py
+The value of FOO is has-default-value
+The value of BAR is set-on-cli
+The value of BAZ is None
+```
+
+On Linux, Mac, and Windows the return code of the `conda project run` is set to the
+return code of the command it is executing. For example the above invocation returns
+0, known as a successful execution. The `--version` flag, however exits with code 1, typically
+meaning a failed execution.
+
+```
+> BAR=set-on-cli conda project run python vars.py --version
+0.0.1
+> echo $?
+1
+```
+
+On Windows `cmd.exe` we can echo the `%ERRORLEVEL% variable.
+
+```
+> set BAR=set-on-cli
+> conda project run python vars.py --version
+> echo %ERRORLEVEL%
+1
+```
+
+And in Powershell we print the `$LASTEXITCODE` variable
+
+```
+> $env:BAR = 'set-on-cli'
+> conda project run python vars.py --version
+0.0.1
+> $LASTEXITCODE
+1
+```
+
+Defined commands in the conda-project.yml are placed under the `commands:` key. Commands
+written in one line are set to execute over the default (first) environment.
+
+```yaml
+commands:
+  print-vars: python vars.py
+```
+
+Now you can use `conda project run` without arguments and it will execute the first
+named command in the `conda-project.yml` file.
+
+```
+> BAR=set-on-cli conda project run
+The value of FOO is has-default-value
+The value of BAR is set-on-cli
+The value of BAZ is None
+```
+
+Defined commands also support extra arguments, but the name of the command must be supplied.
+
+```
+> BAR=set-on-cli conda project run print-vars --version
+0.0.1
+```
+
+Here is an example of a full specified named command that declares the environment
+from which it will run, and variables. Command variables can override project-level variables
+or define new variables. Note that even though command-level-variables override project-level
+variables the final value of the variable can still be override by the `.env` file and that
+can be overridden by the shell.
+
+```yaml
+commands:
+  print-vars:
+    cmd: python vars.py
+    environment: default
+    variables:
+      BAR: set-in-cmd
+      BAZ: a-new-var
+```
+
+Here the command is run by name without any extra variables. This is the same as
+`conda project run`
+
+```
+> conda project run print-vars
+The value of FOO is bar
+The value of BAR is set-on-cli
+The value of BAZ is a-new-var
+```
+
 
 ## Python API
 

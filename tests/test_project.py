@@ -11,7 +11,7 @@ import pytest
 from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
-from conda_project.exceptions import CondaProjectError
+from conda_project.exceptions import CondaProjectError, CondaProjectLockFailed
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
 
 
@@ -105,11 +105,10 @@ def test_project_create_conda_configs(tmp_path):
         lock_dependencies=False,
     )
 
-    for path in [p.condarc, p.default_environment.condarc]:
-        with path.open() as f:
-            condarc = YAML().load(f)
+    with p.condarc.open() as f:
+        condarc = YAML().load(f)
 
-        assert condarc["experimental_solver"] == "libmamba"
+    assert condarc["experimental_solver"] == "libmamba"
 
 
 @pytest.mark.slow
@@ -506,6 +505,36 @@ def test_lock_wrong_platform(project_directory_factory):
     assert "not in the supported locked platforms" in str(e.value)
 
 
+def test_prepare_as_platform(project_directory_factory):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        platforms: [dummy-platform]
+        """
+    )
+
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock()
+    assert project.default_environment.is_locked
+
+    project.default_environment.prepare(as_platform="dummy-platform")
+
+    with project.default_environment.prefix / "condarc" as f:
+        env_condarc = YAML().load(f)
+
+    assert env_condarc["subdir"] == "dummy-platform"
+
+    project.default_environment.prepare(force=True)
+
+    with project.default_environment.prefix / "condarc" as f:
+        env_condarc = YAML().load(f)
+
+    assert env_condarc["subdir"] == "dummy-platform"
+
+
 def test_force_relock(project_directory_factory, capsys):
     env_yaml = dedent(
         """\
@@ -670,7 +699,7 @@ def test_relock_failed(project_directory_factory):
         name: test
         dependencies:
           - python=3.8
-          - __bad-package
+          - _bad-package-8933
         """
     )
     with project.default_environment.sources[0].open("w") as f:
@@ -683,9 +712,37 @@ def test_relock_failed(project_directory_factory):
         lock = YAML().load(f)
     assert "python" in [p["name"] for p in lock["package"]]
     assert "requests" in [p["name"] for p in lock["package"]]
-    assert "__bad-package" not in [p["name"] for p in lock["package"]]
+    assert "_bad-package-8933" not in [p["name"] for p in lock["package"]]
 
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
+
+
+def test_prepare_relocks(project_directory_factory, capsys):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+    assert project.default_environment.is_locked
+
+    updated_env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.8
+        """
+    )
+    with (project.default_environment.sources[0]).open("wt") as f:
+        f.write(updated_env_yaml)
+
+    project.default_environment.prepare(verbose=True, force=True)
+
+    assert "is out-of-date, re-locking" in capsys.readouterr().out
 
 
 def test_project_named_environment(project_directory_factory):
@@ -1067,12 +1124,8 @@ def test_failed_to_solve_libmamba(project_directory_factory):
     )
     project = CondaProject(project_path)
 
-    with pytest.raises(CondaProjectError) as exinfo:
+    with pytest.raises(CondaProjectLockFailed):
         project.default_environment.lock()
-
-    assert "The following packages are missing from the supplied channels" in str(
-        exinfo.value
-    )
 
 
 @pytest.mark.skipif(
@@ -1105,7 +1158,7 @@ def test_failed_to_solve_classic(project_directory_factory):
     )
 
 
-def test_check_multi_env(project_directory_factory):
+def test_check_multi_env(project_directory_factory, capsys):
     env1 = env2 = "dependencies: []\n"
     project_yaml = dedent(
         f"""\
@@ -1124,7 +1177,9 @@ def test_check_multi_env(project_directory_factory):
     )
 
     project = CondaProject(project_path)
-    assert not project.check()
+    assert not project.check(verbose=True)
+
+    assert "is not locked" in capsys.readouterr().err
 
     project.environments["env1"].lock()
     assert not project.check()
@@ -1136,4 +1191,6 @@ def test_check_multi_env(project_directory_factory):
     with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
         f.write(env1)
 
-    assert not project.check()
+    assert not project.check(verbose=True)
+
+    assert "is out-of-date" in capsys.readouterr().err
