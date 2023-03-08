@@ -162,7 +162,7 @@ class CondaProject:
                                included.
             conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
-            lock_dependencies: Create the conda-lock.yml file for the requested dependencies.
+            lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
                                Default is True.
             force:             Force creation of project and environment files if they already
                                exist. The default value is False.
@@ -228,7 +228,7 @@ class CondaProject:
                 name=env_name,
                 sources=tuple([self.directory / str(s) for s in sources]),
                 prefix=self.directory / "envs" / env_name,
-                lockfile=self.directory / f"{env_name}.conda-lock.yml",
+                lockfile=self.directory / f"conda-lock.{env_name}.yml",
                 project=weakref.proxy(self),
             )
         Environments = create_model(
@@ -283,7 +283,7 @@ class CondaProject:
     def check(self, verbose=False) -> bool:
         """Check the project for inconsistencies or errors.
 
-        This will check that .conda-lock.yml files exist for each environment
+        This will check that conda-lock.<env>.yml file(s) exist for each environment
         and that they are up-to-date against the environment specification.
 
         Returns:
