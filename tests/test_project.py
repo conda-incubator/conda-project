@@ -117,7 +117,7 @@ def test_project_create_and_lock(tmp_path):
         tmp_path, dependencies=["python=3.8"], lock_dependencies=True
     )
     assert p.default_environment.lockfile.exists()
-    assert p.default_environment.lockfile == tmp_path / "default.conda-lock.yml"
+    assert p.default_environment.lockfile == tmp_path / "conda-lock.default.yml"
 
 
 def test_conda_project_init_empty_dir(tmp_path, caplog):
@@ -146,7 +146,7 @@ def test_conda_project_init_with_env_yaml(project_directory_factory):
 
     assert (
         project.default_environment.lockfile
-        == project.directory / "default.conda-lock.yml"
+        == project.directory / "conda-lock.default.yml"
     )
     assert project.default_environment.sources == (
         (project.directory / "environment").with_suffix(
@@ -399,7 +399,7 @@ def test_lock(project_directory_factory):
     project = CondaProject(project_path)
     project.default_environment.lock()
 
-    lockfile = project_path / "default.conda-lock.yml"
+    lockfile = project_path / "conda-lock.default.yml"
     assert lockfile == project.default_environment.lockfile
     assert lockfile.exists()
     assert project.default_environment.is_locked
@@ -553,7 +553,7 @@ def test_force_relock(project_directory_factory, capsys):
     project.default_environment.lock(verbose=True)
     stdout = capsys.readouterr().out
     assert (
-        "The lockfile default.conda-lock.yml already exists and is up-to-date."
+        "The lockfile conda-lock.default.yml already exists and is up-to-date."
         in stdout
     )
     assert lockfile_mtime == os.path.getmtime(project.default_environment.lockfile)
@@ -822,7 +822,7 @@ def test_prepare_named_environment(project_directory_factory):
     env_dir = project.default_environment.prepare()
 
     assert project.environments["standard"].lockfile.samefile(
-        project_path / "standard.conda-lock.yml"
+        project_path / "conda-lock.standard.yml"
     )
     assert project.environments["standard"].prefix.samefile(
         project_path / "envs" / "standard"
@@ -913,7 +913,7 @@ def test_lock_prepare_clean_default_with_multiple_envs(project_directory_factory
     project.default_environment.prepare()
 
     assert project.default_environment.lockfile.samefile(
-        project_path / "bbb.conda-lock.yml"
+        project_path / "conda-lock.bbb.yml"
     )
     assert project.default_environment.lockfile.exists()
 
@@ -948,7 +948,7 @@ def test_lock_prepare_clean_named_with_multiple_envs(project_directory_factory):
     project.environments["default"].prepare()
 
     assert project.environments["default"].lockfile.samefile(
-        project_path / "default.conda-lock.yml"
+        project_path / "conda-lock.default.yml"
     )
     assert project.environments["default"].lockfile.exists()
 
@@ -986,7 +986,7 @@ def test_lock_prepare_clean_multiple_envs(project_directory_factory):
     project.environments["bbb"].prepare()
 
     assert project.environments["bbb"].lockfile.samefile(
-        project_path / "bbb.conda-lock.yml"
+        project_path / "conda-lock.bbb.yml"
     )
     assert project.environments["bbb"].lockfile.exists()
 
@@ -997,7 +997,7 @@ def test_lock_prepare_clean_multiple_envs(project_directory_factory):
     project.environments["default"].prepare()
 
     assert project.environments["default"].lockfile.samefile(
-        project_path / "default.conda-lock.yml"
+        project_path / "conda-lock.default.yml"
     )
     assert project.environments["default"].lockfile.exists()
 

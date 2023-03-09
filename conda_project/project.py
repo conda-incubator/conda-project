@@ -162,7 +162,7 @@ class CondaProject:
                                included.
             conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
-            lock_dependencies: Create the conda-lock.yml file for the requested dependencies.
+            lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
                                Default is True.
             force:             Force creation of project and environment files if they already
                                exist. The default value is False.
@@ -228,7 +228,7 @@ class CondaProject:
                 name=env_name,
                 sources=tuple([self.directory / str(s) for s in sources]),
                 prefix=self.directory / "envs" / env_name,
-                lockfile=self.directory / f"{env_name}.conda-lock.yml",
+                lockfile=self.directory / f"conda-lock.{env_name}.yml",
                 project=weakref.proxy(self),
             )
         Environments = create_model(
@@ -283,7 +283,7 @@ class CondaProject:
     def check(self, verbose=False) -> bool:
         """Check the project for inconsistencies or errors.
 
-        This will check that .conda-lock.yml files exist for each environment
+        This will check that conda-lock.<env>.yml file(s) exist for each environment
         and that they are up-to-date against the environment specification.
 
         Returns:
@@ -439,10 +439,10 @@ class Environment(BaseModel):
     ) -> None:
         """Generate locked package lists for the supplied or default platforms
 
-        Utilizes conda-lock to build the .conda-lock.yml file.
+        Utilizes conda-lock to build the conda-lock.<env>.yml file(s).
 
         Args:
-            force:       Rebuild the .conda-lock.yml file even if no changes were made
+            force:       Rebuild the conda-lock.<env>.yml file even if no changes were made
                          to the dependencies.
             verbose:     A verbose flag passed into the `conda lock` command.
 
@@ -522,8 +522,8 @@ class Environment(BaseModel):
         """Prepare the conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
-        Environments are always created from the conda-lock.yml file. The conda-lock.yml
-        will be created if it does not already exist.
+        Environments are always created from the conda-lock.<env>.yml file(s). The conda-lock.<env>.yml file(s)
+        will be created if they do not already exist.
 
         Args:
             force: If True, will force creation of a new conda environment.

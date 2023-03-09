@@ -3,7 +3,7 @@
 ## Creating a new project
 
 The purpose of `conda project create` is to provide a command like `conda create` that creates the
-`environment.yml`, `conda-project.yml` and `default.conda-lock.yml` files before installing the
+`environment.yml`, `conda-project.yml` and `conda-lock.default.yml` files before installing the
 environment.
 The `--prepare` flag can be used to build the files and then install the environment.
 
@@ -50,7 +50,7 @@ optional arguments:
   --conda-configs CONDA_CONFIGS
                         Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
                         format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
-  --no-lock             Do no create the conda-lock.yml file
+  --no-lock             Do no create the conda-lock.<env>.yml file(s)
   --prepare             Create the local conda environment for the current platform.
 ```
 
@@ -117,9 +117,9 @@ To force a re-lock use `conda project lock --force`.
 ## Preparing your environments
 
 `conda project prepare` enforces the use of `conda-lock`.
-If a `.conda-lock.yml` file is not present it will be created by prepare with the above
+If a `conda-lock.<env>.yml` file is not present it will be created by prepare with the above
 assumptions  if necessary.
-If a `.conda-lock.yml` file is found but the locked platforms do not match your current platform
+If a `conda-lock.<env>.yml` file is found but the locked platforms do not match your current platform
 it will raise an exception.
 
 The live conda environment is built from a rendered lockfile (explicit type) for your current
@@ -145,7 +145,7 @@ Project created at /Users/adefusco/Development/conda-incubator/conda-project/exa
 ./
 ├── .condarc
 ├── conda-project.yml
-├── default.conda-lock.yml
+├── conda-lock.default.yml
 └── environment.yml
 
 ❯ cat environment.yml
