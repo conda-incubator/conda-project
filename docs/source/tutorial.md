@@ -87,9 +87,9 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    for the active environment.
    ```
 
-7. Activate the project's default environment by calling the `activate` action:
-   ```shell
-   $ conda-project activate
+   ```{note}
+   Running the prepare step is not strictly required. Calling the `run` command such as the one included
+   in the next section, will result in `prepare` being called automatically.
    ```
 
 ## Create an example notebook-based shiny app
