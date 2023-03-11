@@ -6,5 +6,6 @@
 :caption: Contents
 
 user_guide
+tutorial
 api/modules
 ```
