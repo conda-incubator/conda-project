@@ -10,7 +10,8 @@ This package is intended as a successor to [Anaconda Project](https://github.com
 
 ## Why?
 
-Sharing your work is more than sharing the script file or notebook with your code. To help your fellow users it is
+Sharing your work is more than sharing your code in a script file or notebook. To make your work properly reproducible, it is necessary to include the list of required third-party dependencies, specifications for how to run your code, and
+any other files that it may need.
 necessary to include the list of required third-party dependencies, specifications for how to run your code, and
 any other files that it may need.
 
