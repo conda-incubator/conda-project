@@ -15,7 +15,7 @@ any other files that it may need.
 
 See [8 Levels of Reproduciblity](https://www.anaconda.com/blog/8-levels-of-reproducibility) for an in-depth
 discussion of the differences between "It works for me." to "I've made sure that anyone can reliably execute my work."
-Conda Project provides a framework that guides you to ensuring a high degree of reproducibility in the projects you
+Conda Project is a framework that aims to help you to ensure a high degree of reproducibility in the projects you
 create.
 
 
