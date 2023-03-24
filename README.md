@@ -21,7 +21,7 @@ create.
 
 ## Installation
 
-You can install conda-project using the conda package manager
+You can install conda-project using the conda package manager:
 
 ```
 conda install -c defusco conda-project
