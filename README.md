@@ -29,8 +29,8 @@ conda install -c defusco conda-project
 
 ## Quick start
 
-Let's start a new project using Python, Pandas, and Jupyter Notebooks. First, create the project directory,
-install the conda environment, and launch Jupyter. The commands below will work on terminals in Mac, Linux, and Window.
+Let's start a new project using Python, Pandas, and Jupyter Notebooks. 
+The commands below will work on terminals in Mac, Linux, and Windows.
 For Windows you can use either `cmd.exe` or Powershell.
 
 ```
