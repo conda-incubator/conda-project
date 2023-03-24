@@ -12,7 +12,6 @@ This package is intended as a successor to [Anaconda Project](https://github.com
 
 Sharing your work is more than sharing your code in a script file or notebook. To make your work properly reproducible, it is necessary to include the list of required third-party dependencies, specifications for how to run your code, and
 any other files that it may need.
-any other files that it may need.
 
 See [8 Levels of Reproduciblity](https://www.anaconda.com/blog/8-levels-of-reproducibility) for an in-depth
 discussion of the differences between "It works for me." to "I've made sure that anyone can reliably execute my work."
