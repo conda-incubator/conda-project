@@ -33,7 +33,8 @@ Let's start a new project using Python, Pandas, and Jupyter Notebooks.
 The commands below will work on terminals in Mac, Linux, and Windows.
 For Windows you can use either `cmd.exe` or Powershell.
 
-```
+We first create a directory and initialize a new project, which will create a new conda environment and lock the dependencies:
+
 (base) > conda project create --directory my-project python=3.9 notebook pandas
 Locking dependencies for default: done
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
