@@ -73,7 +73,7 @@ environment created at /Users/adefusco/Development/conda-incubator/conda-project
 ## Exit this shell to de-activate.
 ```
 
-And in the activated environment you can launch editors or run commands.
+And in the activated environment you can launch editors or run commands:
 
 ```
 (default) > jupyter notebook
