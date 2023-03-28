@@ -27,7 +27,7 @@ This will initialize your project with a new `conda-project.yml`, `environment.y
 
 The following is the output of `conda project create --help`:
 
-```
+```text
 usage: conda-project create [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
                             [--no-lock] [--prepare]
                             [dependencies [dependencies ...]]
@@ -54,11 +54,11 @@ optional arguments:
   --prepare             Create the local conda environment for the current platform.
 ```
 
-
 ### If I already have an `environment.yml`
 
 If the user writes a minimal `environment.yml` file as shown below, `conda-project` will make two
 assumptions:
+
 1. all packages come from the `defaults` channel, and
 1. the dependencies will be locked for `win-64, linux-64, mac-64` and your current platform if
    it is not one of those three.
@@ -135,7 +135,7 @@ starts a new shell so it preferable to exit the shell back to the parent rather 
 
 ## Minimal example
 
-```
+```text
 ❯ conda project create python=3.8
 Locking dependencies for default: done
 Locked dependencies for win-64, osx-64, osx-arm64, linux-64 platforms
