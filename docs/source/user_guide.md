@@ -354,7 +354,7 @@ The value of BAZ is a-new-var
 The Python API provides full support for the above workflows by creating a `CondaProject` object.
 `CondaProject` takes a single optional argument to supply the path to the project.
 The default value is the current working directory, `.` Every CondaProject has at least one
-conda  environment.
+conda environment.
 
 A project directory containing only an `environment.yml` file will create a single environment
 of the name `default`, which can be locked or prepared.
