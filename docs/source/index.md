@@ -7,5 +7,6 @@
 
 user_guide
 tutorial
+setup_for_development
 api/modules
 ```

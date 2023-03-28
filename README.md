@@ -3,77 +3,85 @@
 [![codecov](https://codecov.io/gh/conda-incubator/conda-project/branch/main/graph/badge.svg?token=XNRS8JKT75)](https://codecov.io/gh/conda-incubator/conda-project)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
 
-Tool for encapsulating, running, and reproducing projects with conda environments
+Tool for encapsulating, running, and reproducing projects with conda environments.
 
 This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
-Please continue to use Anaconda Project until it has been declared deprecated and conda-project has
-stabilized.
 
-## Setup for development
+## Why?
 
-To setup conda-project for development, first install [Miniconda](https://docs.conda.io/en/latest/miniconda.html),
-then
+Sharing your work is more than sharing your code in a script file or notebook. To make your work properly reproducible, it is necessary to include the list of required third-party dependencies, specifications for how to run your code, and
+any other files that it may need.
 
-1. Clone this repository.
-1. Create a development environment using the `environment.yml` file in this repository
-    ```
-    conda env create -p ./env
-1. Install `conda-project` as editable in the env by activating the environment first
-    ```
-    conda activate ./env
-    pip install -e .
-    ```
+See [8 Levels of Reproduciblity](https://www.anaconda.com/blog/8-levels-of-reproducibility) for an in-depth
+discussion of the differences between "It works for me." to "I've made sure that anyone can reliably execute my work."
+Conda Project is a framework that aims to help you to ensure a high degree of reproducibility in the projects you
+create.
 
-### Tests
+## Installation
 
-To run tests you can either activate the env and run pytest
+You can install conda-project using the conda package manager:
 
-```
-conda activate ./env
-pytest
+```text
+conda install -c defusco conda-project
 ```
 
-or use `conda run`
+## Quick start
 
- ```
- conda run --no-capture-output -p ./env pytest
- ```
+Let's start a new project using Python, Pandas, and Jupyter Notebooks.
+The commands below will work on terminals in Mac, Linux, and Windows.
+For Windows you can use either `cmd.exe` or Powershell.
 
-### Linting
+We first create a directory and initialize a new project, which will create a new conda environment and lock the dependencies:
 
-This project uses [pre-commit](https://pre-commit.com/) to aid with linting.
-Pre-Commit is configured to run
-* [isort](https://pycqa.github.io/isort/)
-* [black](https://black.readthedocs.io/en/stable/)
-* [flake8](https://flake8.pycqa.org/en/latest/)
+(base) > conda project create --directory my-project python=3.9 notebook pandas
+Locking dependencies for default: done
+Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 
-This repository is configured with [Pre-Commit.ci](https://pre-commit.ci/), which
-will automatically fix Pull Requests to comply with the above linters.
+```text
 
-The pre-commit conda package is included in the development environment.yml file.
-To install the hooks in your local clone run
+The goal of Conda Project is to maintain a conda enviroment specifically for the new `my-project` directory.
+You'll see that this directory contains it's own `environment.yml` file a [Conda Lock](https://conda.github.io/conda-lock/) file and a `conda-project.yml`
+file. You can learn more about these files in the [User Guide](https://conda-incubator.github.io/conda-project/user_guide.html)
 
-```
-conda run --no-capture-output -p ./env pre-commit install
-```
-
-Once configured the pre-commit hooks are run automatically, but you can run
-them manually with
-
-```
-conda run --no-capture-output -p ./env pre-commit run --all-files
+```text
+(base) > tree ./
+├── conda-project.yml
+├── default.conda-lock.yml
+├── environment.yml
 ```
 
-### Documentation
+You can activate the environment, which will install packages locally to this project according to the lock file.
+Notice that after running `conda project activate` the shell prompt switches to `(default)`, which is the name
+of the local environment for this project.
 
-To develop the documentation, you can run the following command from the project root:
+```text
+(base) > cd my-project
+(base) > conda project activate
 
-```shell
-make -C docs html
+Downloading and Extracting Packages
+
+
+Downloading and Extracting Packages
+
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+environment created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project/envs/default
+## Project environment default activated in a new shell.
+## Exit this shell to de-activate.
 ```
 
-To develop with live-updating documentation, run:
+And in the activated environment you can launch editors or run commands. For example, since we included
+the `notebook` package we can launch Jupyter Notebook from the activated environment:
 
-```shell
-make -C docs live
+```text
+(default) > jupyter notebook
+[I 12:23:03.632 NotebookApp] Serving notebooks from local directory: /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
+[I 12:23:03.632 NotebookApp] Jupyter Notebook 6.5.2 is running at:
+[I 12:23:03.632 NotebookApp] http://localhost:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
+[I 12:23:03.632 NotebookApp]  or http://127.0.0.1:8888/?token=1208a3441039526c03b44c233f07436321ad4fd3cced443d
+[I 12:23:03.632 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:23:03.635 NotebookApp]
 ```
+
+Continue reading the [User Guide](https://conda-incubator.github.io/conda-project/user_guide.html) to learn more.
