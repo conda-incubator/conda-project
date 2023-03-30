@@ -82,7 +82,7 @@ def test_no_action(capsys, monkeypatch):
 def test_no_env_yaml(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
 
-    monkeypatch.setattr("sys.argv", ["conda-project", "prepare"])
+    monkeypatch.setattr("sys.argv", ["conda-project", "install"])
     assert main() == 1
 
     err = capsys.readouterr().err

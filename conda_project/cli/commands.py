@@ -44,7 +44,7 @@ def init(args: Namespace) -> bool:
         verbose=True,
     )
 
-    if args.prepare:
+    if args.install:
         project.default_environment.prepare(verbose=True)
 
     return True
