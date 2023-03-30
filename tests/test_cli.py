@@ -141,8 +141,8 @@ def test_environment_actions_verbose_true(action, mocker, project_directory_fact
 
 @pytest.mark.parametrize("action", PROJECT_ACTIONS)
 def test_project_actions_verbose_true(action, mocker, project_directory_factory):
-    if action == "init":
-        method_to_patch = "create"
+    if action == "create":
+        method_to_patch = "init"
     elif action == "install":
         method_to_patch = "prepare"
     else:

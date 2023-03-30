@@ -384,8 +384,8 @@ See the docstring for `.create()` for more details.
 ```python
 from conda_project import CondaProject
 
-project = CondaProject.create(
-  directory='new-project',
-  dependencies=['python=3.8'],
+project = CondaProject.init(
+   directory='new-project',
+   dependencies=['python=3.8'],
 )
 ```

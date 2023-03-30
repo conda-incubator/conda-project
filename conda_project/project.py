@@ -131,7 +131,7 @@ class CondaProject:
         self.condarc = self.directory / ".condarc"
 
     @classmethod
-    def create(
+    def init(
         cls,
         directory: Union[Path, str] = ".",
         name: Optional[str] = None,
@@ -142,7 +142,7 @@ class CondaProject:
         lock_dependencies: bool = True,
         verbose: bool = False,
     ) -> CondaProject:
-        """Create a new project
+        """Initialize a new project.
 
         Creates the environment.yml file from the specified dependencies,
         channels, and platforms. Further a local .condarc can also be
@@ -164,8 +164,6 @@ class CondaProject:
                                written to the project directory.
             lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
                                Default is True.
-            force:             Force creation of project and environment files if they already
-                               exist. The default value is False.
             verbose:           Print information to stdout. The default value is False.
 
         Returns:

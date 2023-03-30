@@ -33,14 +33,16 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 @handle_errors
 def init(args: Namespace) -> bool:
-    project = CondaProject.create(
-        args.directory,
-        args.name,
-        args.dependencies,
-        args.channel,
-        args.platforms.split(","),
-        [] if args.conda_configs is None else args.conda_configs.split(","),
-        not args.no_lock,
+    project = CondaProject.init(
+        directory=args.directory,
+        name=args.name,
+        dependencies=args.dependencies,
+        channels=args.channel,
+        platforms=args.platforms.split(","),
+        conda_configs=[]
+        if args.conda_configs is None
+        else args.conda_configs.split(","),
+        lock_dependencies=not args.no_lock,
         verbose=True,
     )
 
