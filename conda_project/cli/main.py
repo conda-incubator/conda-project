@@ -106,7 +106,7 @@ def _create_init_parser(
             action="store_true",
         )
         p.add_argument(
-            "--prepare",
+            "--install",
             help="Create the local conda environment for the current platform.",
             action="store_true",
         )

@@ -164,10 +164,10 @@ def test_project_actions_verbose_true(action, mocker, project_directory_factory)
     assert mocked_action.call_args.kwargs["verbose"]
 
 
-def test_create_with_prepare(mocker):
+def test_init_with_install(mocker):
     default_environment = mocker.spy(CondaProject, "default_environment")
 
-    ret = parse_and_run(["create", "--directory", "project-dir", "--prepare"])
+    ret = parse_and_run(["init", "--directory", "project-dir", "--install"])
     assert ret == 0
 
     assert default_environment.prepare.call_count == 1
