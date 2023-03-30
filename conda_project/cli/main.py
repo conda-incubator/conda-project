@@ -121,14 +121,7 @@ def _create_init_parser(
             metavar="PACKAGE_SPECIFICATION",
         )
 
-        if subcommand_name == "init":
-            p.set_defaults(func=commands.init)
-        elif subcommand_name == "create":
-            p.set_defaults(func=commands.create)
-        else:
-            raise ValueError(
-                f"Unknown subcommand: {subcommand_name} (this should be unreachable)"
-            )
+        p.set_defaults(func=getattr(commands, subcommand_name))
 
 
 def _create_lock_parser(
@@ -233,14 +226,7 @@ def _create_install_parser(
             action="store_true",
         )
 
-        if subcommand_name == "install":
-            p.set_defaults(func=commands.install)
-        elif subcommand_name == "prepare":
-            p.set_defaults(func=commands.prepare)
-        else:
-            raise ValueError(
-                f"Unknown subcommand: {subcommand_name} (this should be unreachable)"
-            )
+        p.set_defaults(func=getattr(commands, subcommand_name))
 
 
 def _create_clean_parser(
