@@ -368,12 +368,12 @@ from conda_project import CondaProject
 
 project = CondaProject()
 project.default_environment.lock()
-prefix = project.default_environment.prepare()
+prefix = project.default_environment.install()
 
 ## alternative, use the name 'default'
 
 project.environments['default'].lock()
-prefix = project.environments['default'].prepare()
+prefix = project.environments['default'].install()
 ```
 
 To create a new project directory the `CondaProject.create()` method follows the CLI arguments

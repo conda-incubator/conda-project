@@ -511,13 +511,13 @@ class Environment(BaseModel):
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         logger.info(msg)
 
-    def prepare(
+    def install(
         self,
         force: bool = False,
         as_platform: Optional[str] = None,
         verbose: bool = False,
     ) -> Path:
-        """Prepare the conda environment.
+        """Install all dependencies into the conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
         Environments are always created from the conda-lock.<env>.yml file(s). The conda-lock.<env>.yml file(s)
@@ -525,6 +525,8 @@ class Environment(BaseModel):
 
         Args:
             force: If True, will force creation of a new conda environment.
+            as_platform: Install dependencies as an explicit platform. By default, the
+                platform will be identified for the system.
             verbose: A verbose flag passed into the `conda create` command.
 
         Raises:
@@ -668,7 +670,7 @@ class Environment(BaseModel):
 
     def activate(self, verbose=False) -> None:
         if not self.is_prepared:
-            self.prepare(verbose=verbose)
+            self.install(verbose=verbose)
 
         env = prepare_variables(
             self.project.directory, self.project._project_file.variables
@@ -709,7 +711,7 @@ class Command(BaseModel):
                 environment = self.project.environments[environment]
 
         if not environment.is_prepared:
-            environment.prepare(verbose=verbose)
+            environment.install(verbose=verbose)
 
         env = prepare_variables(
             self.project.directory,

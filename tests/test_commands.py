@@ -177,7 +177,7 @@ def test_raise_command_not_found(one_env_no_commands: CondaProject):
         project.commands["the-command"].run()
 
 
-def test_run_default_command_after_lock_and_prepare(
+def test_run_default_command_after_lock_and_install(
     one_env_one_command: CondaProject, mocked_execvped, mocker
 ):
     from conda_project import project as project_module

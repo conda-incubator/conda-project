@@ -47,7 +47,7 @@ def init(args: Namespace) -> bool:
     )
 
     if args.install:
-        project.default_environment.prepare(verbose=True)
+        project.default_environment.install(verbose=True)
 
     return True
 
@@ -86,14 +86,14 @@ def install(args: Namespace) -> bool:
 
     if args.all:
         for _, env in project.environments:
-            env.prepare(force=args.force, verbose=True)
+            env.install(force=args.force, verbose=True)
     else:
         env = (
             project.environments[args.environment]
             if args.environment
             else project.default_environment
         )
-        env.prepare(force=args.force, as_platform=args.as_platform, verbose=True)
+        env.install(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
 
