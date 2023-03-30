@@ -79,7 +79,7 @@ def check(args: Namespace) -> bool:
 
 
 @handle_errors
-def prepare(args: Namespace) -> bool:
+def install(args: Namespace) -> bool:
     project = CondaProject(args.directory)
 
     if args.all:
@@ -94,6 +94,13 @@ def prepare(args: Namespace) -> bool:
         env.prepare(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
+
+
+def prepare(args: Namespace) -> int:
+    logger.warning(
+        "The 'prepare' subcommand is an alias for 'install' and may be removed in a future version."
+    )
+    return install(args)
 
 
 @handle_errors

@@ -9,7 +9,7 @@ from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
 PROJECT_ACTIONS = ("init", "create", "check")
-ENVIRONMENT_ACTIONS = ("clean", "prepare", "lock", "activate")
+ENVIRONMENT_ACTIONS = ("clean", "install", "prepare", "lock", "activate")
 COMMAND_ACTIONS = ("run",)
 ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
 
@@ -118,7 +118,13 @@ def test_cli_directory_argument(action, mocker, capsys):
 
 @pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
 def test_environment_actions_verbose_true(action, mocker, project_directory_factory):
-    mocked_action = mocker.patch(f"conda_project.project.Environment.{action}")
+    if action == "init":
+        method_to_patch = "create"
+    elif action == "install":
+        method_to_patch = "prepare"
+    else:
+        method_to_patch = action
+    mocked_action = mocker.patch(f"conda_project.project.Environment.{method_to_patch}")
 
     if action == "create":
         project_path = project_directory_factory()
@@ -137,6 +143,8 @@ def test_environment_actions_verbose_true(action, mocker, project_directory_fact
 def test_project_actions_verbose_true(action, mocker, project_directory_factory):
     if action == "init":
         method_to_patch = "create"
+    elif action == "install":
+        method_to_patch = "prepare"
     else:
         method_to_patch = action
 
@@ -173,10 +181,15 @@ def test_action_with_environment_name(action, multi_env, mocker):
     ret = parse_and_run([action, "--directory", str(multi_env), "env1"])
     assert ret == 0
 
-    assert getattr(default_environment, action).call_count == 0
+    if action == "install":
+        method_to_spy = "prepare"
+    else:
+        method_to_spy = action
+
+    assert getattr(default_environment, method_to_spy).call_count == 0
 
     assert environments.mock_calls[0] == mocker.call.__getitem__("env1")
-    assert getattr(environments["env1"], action).call_count == 1
+    assert getattr(environments["env1"], method_to_spy).call_count == 1
 
 
 @pytest.mark.parametrize("action", ["prepare", "clean"])

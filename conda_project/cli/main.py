@@ -44,7 +44,7 @@ def cli() -> ArgumentParser:
     _create_init_parser(subparsers, common)
     _create_lock_parser(subparsers, common)
     _create_check_parser(subparsers, common)
-    _create_prepare_parser(subparsers, common)
+    _create_install_parser(subparsers, common)
     _create_activate_parser(subparsers, common)
     _create_clean_parser(subparsers, common)
     _create_run_parser(subparsers, common)
@@ -126,7 +126,9 @@ def _create_init_parser(
         elif subcommand_name == "create":
             p.set_defaults(func=commands.create)
         else:
-            raise ValueError("Unknown subcommand (this should be unreachable)")
+            raise ValueError(
+                f"Unknown subcommand: {subcommand_name} (this should be unreachable)"
+            )
 
 
 def _create_lock_parser(
@@ -183,52 +185,62 @@ def _create_check_parser(
     p.set_defaults(func=commands.check)
 
 
-def _create_prepare_parser(
+def _create_install_parser(
     subparsers: "_SubParsersAction", parent_parser: ArgumentParser
 ) -> None:
-    """Add a subparser for the "prepare" subcommand.
+    """Add a subparser for the "install" and "prepare" subcommands.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Prepare the conda environments"
+    desc = "Install the packages into the conda environments"
 
-    p = subparsers.add_parser(
-        "prepare", description=desc, help=desc, parents=[parent_parser]
-    )
-    group = p.add_mutually_exclusive_group(required=False)
-    group.add_argument(
-        "environment",
-        help="Prepare the selected environment. If no environment name is selected "
-        "the first environment defined in the conda-project.yml file is prepared.",
-        nargs="?",
-    )
-    group.add_argument(
-        "--as-platform",
-        help="Prepare the conda environment assuming a different platform/subdir name.",
-        action="store",
-        metavar="PLATFORM",
-    )
-    group.add_argument(
-        "--all", help="Check or prepare all defined environments.", action="store_true"
-    )
-    p.add_argument(
-        "--check-only",
-        help="Check that the prepared conda environment exists and is up-to-date with the "
-        "source environment and files and lockfile and then exit. If the environment is up-to-date "
-        "nothing is printed and the command exists with 0. If the environment is missing or out-of-date "
-        "details are printed to stderr and the command exits with 1.",
-        action="store_true",
-    )
-    p.add_argument(
-        "--force",
-        help="Remove and recreate an existing environment.",
-        action="store_true",
-    )
+    for subcommand_name in ["install", "prepare"]:
+        p = subparsers.add_parser(
+            subcommand_name, description=desc, help=desc, parents=[parent_parser]
+        )
+        group = p.add_mutually_exclusive_group(required=False)
+        group.add_argument(
+            "environment",
+            help="Prepare the selected environment. If no environment name is selected "
+            "the first environment defined in the conda-project.yml file is prepared.",
+            nargs="?",
+        )
+        group.add_argument(
+            "--as-platform",
+            help="Prepare the conda environment assuming a different platform/subdir name.",
+            action="store",
+            metavar="PLATFORM",
+        )
+        group.add_argument(
+            "--all",
+            help="Check or prepare all defined environments.",
+            action="store_true",
+        )
+        p.add_argument(
+            "--check-only",
+            help="Check that the prepared conda environment exists and is up-to-date with the "
+            "source environment and files and lockfile and then exit. If the environment is up-to-date "
+            "nothing is printed and the command exists with 0. If the environment is missing or out-of-date "
+            "details are printed to stderr and the command exits with 1.",
+            action="store_true",
+        )
+        p.add_argument(
+            "--force",
+            help="Remove and recreate an existing environment.",
+            action="store_true",
+        )
 
-    p.set_defaults(func=commands.prepare)
+        if subcommand_name == "install":
+            p.set_defaults(func=commands.install)
+        elif subcommand_name == "prepare":
+            p.set_defaults(func=commands.prepare)
+        else:
+            raise ValueError(
+                f"Unknown subcommand: {subcommand_name} (this should be unreachable)"
+            )
 
 
 def _create_clean_parser(
