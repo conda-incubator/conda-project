@@ -186,12 +186,12 @@ def test_run_default_command_after_lock_and_install(
 
     project = one_env_one_command
     assert not project.default_environment.is_locked
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     project.default_command.run()
 
     assert project.default_environment.is_locked
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
     assert mocked_execvped.call_count == 1
     assert conda_run.call_args == mocker.call(
@@ -371,11 +371,11 @@ def test_activate_prepares_env(one_env_no_commands: CondaProject, mocker):
 
     project = one_env_no_commands
 
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     project.default_environment.activate()
 
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
 
 def test_activate_with_env_vars(

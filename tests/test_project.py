@@ -200,7 +200,7 @@ def test_prepare_no_dependencies(project_directory_factory):
 
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
 
 @pytest.mark.slow
@@ -215,7 +215,7 @@ def test_is_prepared(project_directory_factory):
     project = CondaProject(project_path)
 
     _ = project.default_environment.install()
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
     updated_yaml = dedent(
         """\
@@ -230,14 +230,14 @@ def test_is_prepared(project_directory_factory):
         f.write(updated_yaml)
 
     assert not project.default_environment.is_locked
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     _ = project.default_environment.install(force=False)
     assert project.default_environment.is_locked
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     _ = project.default_environment.install(force=True)
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
 
 @pytest.mark.slow
@@ -259,7 +259,7 @@ def test_is_prepared_with_pip_package(project_directory_factory):
     _ = project.default_environment.install()
 
     # This assertion won't pass if there are pip packages
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
     args = [
         "run",
@@ -284,17 +284,17 @@ def test_is_prepared_live_env_changed(project_directory_factory, capsys):
 
     _ = project.default_environment.install()
     assert project.default_environment.is_locked
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
     _ = call_conda(
         ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
     )
 
     assert project.default_environment.is_locked
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     _ = project.default_environment.install(force=False, verbose=True)
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     stdout = capsys.readouterr().out
     assert "The environment exists but does not match the locked dependencies" in stdout
@@ -313,17 +313,17 @@ def test_is_prepared_source_changed(project_directory_factory, capsys):
 
     _ = project.default_environment.install()
     assert project.default_environment.is_locked
-    assert project.default_environment.is_prepared
+    assert project.default_environment.is_consistent
 
     _ = call_conda(
         ["install", "-p", str(project.default_environment.prefix), "requests", "-y"]
     )
 
     assert project.default_environment.is_locked
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     _ = project.default_environment.install(force=False, verbose=True)
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
     stdout = capsys.readouterr().out
     assert "The environment exists but does not match the locked dependencies" in stdout
@@ -380,7 +380,7 @@ def test_install_and_clean(project_directory_factory):
 
     project.default_environment.clean()
     assert not conda_history.exists()
-    assert not project.default_environment.is_prepared
+    assert not project.default_environment.is_consistent
 
 
 @pytest.mark.slow

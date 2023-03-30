@@ -382,7 +382,7 @@ class Environment(BaseModel):
             return False
 
     @property
-    def is_prepared(self) -> bool:
+    def is_consistent(self) -> bool:
         """
         bool: Returns True if the conda environment exists and is consistent with
               the environment source and lock files, False otherwise. If is_locked is
@@ -541,7 +541,7 @@ class Environment(BaseModel):
                 print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
 
-        if self.is_prepared:
+        if self.is_consistent:
             if not force:
                 logger.info(f"environment already exists at {self.prefix}")
                 if verbose:
@@ -550,7 +550,9 @@ class Environment(BaseModel):
                         f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
                     )
                 return self.prefix
-        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
+        elif (
+            self.prefix / "conda-meta" / "history"
+        ).exists() and not self.is_consistent:
             if not force:
                 if verbose:
                     print(
@@ -669,7 +671,7 @@ class Environment(BaseModel):
         )
 
     def activate(self, verbose=False) -> None:
-        if not self.is_prepared:
+        if not self.is_consistent:
             self.install(verbose=verbose)
 
         env = prepare_variables(
@@ -710,7 +712,7 @@ class Command(BaseModel):
             if isinstance(environment, str):
                 environment = self.project.environments[environment]
 
-        if not environment.is_prepared:
+        if not environment.is_consistent:
             environment.install(verbose=verbose)
 
         env = prepare_variables(
