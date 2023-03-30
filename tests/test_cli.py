@@ -8,7 +8,7 @@ import pytest
 from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
-PROJECT_ACTIONS = ("create", "check")
+PROJECT_ACTIONS = ("init", "create", "check")
 ENVIRONMENT_ACTIONS = ("clean", "prepare", "lock", "activate")
 COMMAND_ACTIONS = ("run",)
 ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
@@ -135,8 +135,15 @@ def test_environment_actions_verbose_true(action, mocker, project_directory_fact
 
 @pytest.mark.parametrize("action", PROJECT_ACTIONS)
 def test_project_actions_verbose_true(action, mocker, project_directory_factory):
-    mocked_action = mocker.patch(f"conda_project.project.CondaProject.{action}")
-    if action == "create":
+    if action == "init":
+        method_to_patch = "create"
+    else:
+        method_to_patch = action
+
+    mocked_action = mocker.patch(
+        f"conda_project.project.CondaProject.{method_to_patch}"
+    )
+    if action in {"init", "create"}:
         project_path = project_directory_factory()
     else:
         env_yaml = "dependencies: []\n"

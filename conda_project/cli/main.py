@@ -41,7 +41,7 @@ def cli() -> ArgumentParser:
 
     subparsers = p.add_subparsers(metavar="command", required=True)
 
-    _create_create_parser(subparsers, common)
+    _create_init_parser(subparsers, common)
     _create_lock_parser(subparsers, common)
     _create_check_parser(subparsers, common)
     _create_prepare_parser(subparsers, common)
@@ -52,74 +52,81 @@ def cli() -> ArgumentParser:
     return p
 
 
-def _create_create_parser(
+def _create_init_parser(
     subparsers: "_SubParsersAction", parent_parser: ArgumentParser
 ) -> None:
-    """Add a subparser for the "create" subcommand.
+    """Add a subparser for the "init" and "create" subcommands.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
         parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
 
     """
-    desc = "Create a new project"
+    desc = "Initialize a new project"
 
-    p = subparsers.add_parser(
-        "create", description=desc, help=desc, parents=[parent_parser]
-    )
-    p.add_argument(
-        "-n", "--name", help="Name for the project.", action="store", default=None
-    )
-    p.add_argument(
-        "-c",
-        "--channel",
-        help=(
-            "Additional channel to search for packages. The default channel is 'defaults'. "
-            "Multiple channels are added with repeated use of this argument."
-        ),
-        action="append",
-    )
-    p.add_argument(
-        "--platforms",
-        help=(
-            f"Comma separated list of platforms for which to lock dependencies. "
-            f"The default is {','.join(DEFAULT_PLATFORMS)}"
-        ),
-        action="store",
-        default=",".join(DEFAULT_PLATFORMS),
-    )
-    p.add_argument(
-        "--conda-configs",
-        help=(
-            "Comma separated list of conda configuration parameters to write into the "
-            ".condarc file in the project directory. The format for each config is key=value. "
-            "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"
-        ),
-        action="store",
-        default=None,
-    )
-    p.add_argument(
-        "--no-lock",
-        help="Do not create the conda-lock.<env>.yml file(s)",
-        action="store_true",
-    )
-    p.add_argument(
-        "--prepare",
-        help="Create the local conda environment for the current platform.",
-        action="store_true",
-    )
-    p.add_argument(
-        "dependencies",
-        help=(
-            "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
-            "where <op> can be =, <, >, <=, or >=."
-        ),
-        action="store",
-        nargs="*",
-        metavar="PACKAGE_SPECIFICATION",
-    )
+    # TODO: If we deprecate "create", this loop can go away.
+    for subcommand_name in ["init", "create"]:
+        p = subparsers.add_parser(
+            subcommand_name, description=desc, help=desc, parents=[parent_parser]
+        )
+        p.add_argument(
+            "-n", "--name", help="Name for the project.", action="store", default=None
+        )
+        p.add_argument(
+            "-c",
+            "--channel",
+            help=(
+                "Additional channel to search for packages. The default channel is 'defaults'. "
+                "Multiple channels are added with repeated use of this argument."
+            ),
+            action="append",
+        )
+        p.add_argument(
+            "--platforms",
+            help=(
+                f"Comma separated list of platforms for which to lock dependencies. "
+                f"The default is {','.join(DEFAULT_PLATFORMS)}"
+            ),
+            action="store",
+            default=",".join(DEFAULT_PLATFORMS),
+        )
+        p.add_argument(
+            "--conda-configs",
+            help=(
+                "Comma separated list of conda configuration parameters to write into the "
+                ".condarc file in the project directory. The format for each config is key=value. "
+                "For example --conda-configs experimental_solver=libmamba,channel_priority=strict"
+            ),
+            action="store",
+            default=None,
+        )
+        p.add_argument(
+            "--no-lock",
+            help="Do not create the conda-lock.<env>.yml file(s)",
+            action="store_true",
+        )
+        p.add_argument(
+            "--prepare",
+            help="Create the local conda environment for the current platform.",
+            action="store_true",
+        )
+        p.add_argument(
+            "dependencies",
+            help=(
+                "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
+                "where <op> can be =, <, >, <=, or >=."
+            ),
+            action="store",
+            nargs="*",
+            metavar="PACKAGE_SPECIFICATION",
+        )
 
-    p.set_defaults(func=commands.create)
+        if subcommand_name == "init":
+            p.set_defaults(func=commands.init)
+        elif subcommand_name == "create":
+            p.set_defaults(func=commands.create)
+        else:
+            raise ValueError("Unknown subcommand (this should be unreachable)")
 
 
 def _create_lock_parser(

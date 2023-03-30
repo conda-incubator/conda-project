@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+import logging
 import sys
 from argparse import Namespace
 from functools import wraps
@@ -8,6 +9,8 @@ from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
 from ..project import Command, CondaProject
+
+logger = logging.getLogger(__name__)
 
 
 def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
@@ -29,7 +32,7 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 
 @handle_errors
-def create(args: Namespace) -> bool:
+def init(args: Namespace) -> bool:
     project = CondaProject.create(
         args.directory,
         args.name,
@@ -45,6 +48,13 @@ def create(args: Namespace) -> bool:
         project.default_environment.prepare(verbose=True)
 
     return True
+
+
+def create(args: Namespace) -> int:
+    logger.warning(
+        "The 'create' subcommand is an alias for 'init' and may be removed in a future version."
+    )
+    return init(args)
 
 
 @handle_errors
