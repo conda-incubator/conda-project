@@ -131,7 +131,7 @@ class CondaProject:
         self.condarc = self.directory / ".condarc"
 
     @classmethod
-    def create(
+    def init(
         cls,
         directory: Union[Path, str] = ".",
         name: Optional[str] = None,
@@ -142,7 +142,7 @@ class CondaProject:
         lock_dependencies: bool = True,
         verbose: bool = False,
     ) -> CondaProject:
-        """Create a new project
+        """Initialize a new project.
 
         Creates the environment.yml file from the specified dependencies,
         channels, and platforms. Further a local .condarc can also be
@@ -164,8 +164,6 @@ class CondaProject:
                                written to the project directory.
             lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
                                Default is True.
-            force:             Force creation of project and environment files if they already
-                               exist. The default value is False.
             verbose:           Print information to stdout. The default value is False.
 
         Returns:
@@ -384,7 +382,7 @@ class Environment(BaseModel):
             return False
 
     @property
-    def is_prepared(self) -> bool:
+    def is_consistent(self) -> bool:
         """
         bool: Returns True if the conda environment exists and is consistent with
               the environment source and lock files, False otherwise. If is_locked is
@@ -513,13 +511,13 @@ class Environment(BaseModel):
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         logger.info(msg)
 
-    def prepare(
+    def install(
         self,
         force: bool = False,
         as_platform: Optional[str] = None,
         verbose: bool = False,
     ) -> Path:
-        """Prepare the conda environment.
+        """Install all dependencies into the conda environment.
 
         Creates a new conda environment and installs the packages from the environment.yaml file.
         Environments are always created from the conda-lock.<env>.yml file(s). The conda-lock.<env>.yml file(s)
@@ -527,6 +525,8 @@ class Environment(BaseModel):
 
         Args:
             force: If True, will force creation of a new conda environment.
+            as_platform: Install dependencies as an explicit platform. By default, the
+                platform will be identified for the system.
             verbose: A verbose flag passed into the `conda create` command.
 
         Raises:
@@ -541,7 +541,7 @@ class Environment(BaseModel):
                 print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
 
-        if self.is_prepared:
+        if self.is_consistent:
             if not force:
                 logger.info(f"environment already exists at {self.prefix}")
                 if verbose:
@@ -550,7 +550,9 @@ class Environment(BaseModel):
                         f"run 'conda project prepare --force {self.name} to recreate it from the locked dependencies."
                     )
                 return self.prefix
-        elif (self.prefix / "conda-meta" / "history").exists() and not self.is_prepared:
+        elif (
+            self.prefix / "conda-meta" / "history"
+        ).exists() and not self.is_consistent:
             if not force:
                 if verbose:
                     print(
@@ -669,8 +671,8 @@ class Environment(BaseModel):
         )
 
     def activate(self, verbose=False) -> None:
-        if not self.is_prepared:
-            self.prepare(verbose=verbose)
+        if not self.is_consistent:
+            self.install(verbose=verbose)
 
         env = prepare_variables(
             self.project.directory, self.project._project_file.variables
@@ -710,8 +712,8 @@ class Command(BaseModel):
             if isinstance(environment, str):
                 environment = self.project.environments[environment]
 
-        if not environment.is_prepared:
-            environment.prepare(verbose=verbose)
+        if not environment.is_consistent:
+            environment.install(verbose=verbose)
 
         env = prepare_variables(
             self.project.directory,

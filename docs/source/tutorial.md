@@ -12,13 +12,13 @@ If `conda-project` is not yet installed and started Project, follow the [Install
 
 ## Create a new project
 
-This section of the tutorial explores the `create` and `activate` subcommands of conda-project.
+This section of the tutorial explores the `init` and `activate` subcommands of conda-project.
 
 1. Open a Command Prompt or terminal window.
 
 2. Initialize the project in a new directory:
    ```shell
-   conda-project create -n learn-cp --directory cp-tutorial --platform osx-arm64,linux-64 -c defaults -c conda-forge \
+   conda-project init -n learn-cp --directory cp-tutorial --platform osx-arm64,linux-64 -c defaults -c conda-forge \
        python=3.10 notebook r-essentials r-plotly r-shiny
    ```
 
@@ -28,7 +28,7 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    calculated across **conda-project**'s default list of platform architectures.
 
    ```{note}
-   This tutorial issues the `create` action for a new project.  As noted in the [User Guide](user_guide), it is also possible
+   This tutorial issues the `init` action for a new project.  As noted in the [User Guide](user_guide), it is also possible
    to create a project from an existing environment file.
 
    If using windows, change the `--platform` argument to point to the correct architecture (win-64).
@@ -71,25 +71,25 @@ This section of the tutorial explores the `create` and `activate` subcommands of
    commands: {}
    ```
 
-   Note that the `name` key is populated with the value supplied in the `create` action.
+   Note that the `name` key is populated with the value supplied in the `init` action.
 
    An upcoming section of the tutorial will involve adding a custom command to the `commands` key. It's also
    possible to define variables using the `variables` key.  These key varlue pairs are loaded as overrides
    to the inherited execution environment when a `run` action is issued.
 
-6. Initiate the `prepare` action on the project:
+6. Initiate the `install` action on the project:
    ```shell
-   $ conda-project prepare
+   $ conda-project install
    ```
 
    ```{note}
-   As noted in a [preceding section](user_guide), the `prepare` action will initiate conda install
+   As noted in a [preceding section](user_guide), the `install` action will initiate conda install
    for the active environment.
    ```
 
    ```{note}
-   Running the prepare step is not strictly required. Calling the `run` command such as the one included
-   in the next section, will result in `prepare` being called automatically.
+   Running the install step is not strictly required. Calling the `run` command such as the one included
+   in the next section, will result in `install` being called automatically.
    ```
 
 ## Create an example notebook-based shiny app

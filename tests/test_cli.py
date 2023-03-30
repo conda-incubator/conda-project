@@ -8,8 +8,8 @@ import pytest
 from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
-PROJECT_ACTIONS = ("create", "check")
-ENVIRONMENT_ACTIONS = ("clean", "prepare", "lock", "activate")
+PROJECT_ACTIONS = ("init", "create", "check")
+ENVIRONMENT_ACTIONS = ("clean", "install", "prepare", "lock", "activate")
 COMMAND_ACTIONS = ("run",)
 ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
 
@@ -82,7 +82,7 @@ def test_no_action(capsys, monkeypatch):
 def test_no_env_yaml(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
 
-    monkeypatch.setattr("sys.argv", ["conda-project", "prepare"])
+    monkeypatch.setattr("sys.argv", ["conda-project", "install"])
     assert main() == 1
 
     err = capsys.readouterr().err
@@ -118,7 +118,13 @@ def test_cli_directory_argument(action, mocker, capsys):
 
 @pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
 def test_environment_actions_verbose_true(action, mocker, project_directory_factory):
-    mocked_action = mocker.patch(f"conda_project.project.Environment.{action}")
+    if action == "init":
+        method_to_patch = "create"
+    elif action == "prepare":
+        method_to_patch = "install"
+    else:
+        method_to_patch = action
+    mocked_action = mocker.patch(f"conda_project.project.Environment.{method_to_patch}")
 
     if action == "create":
         project_path = project_directory_factory()
@@ -135,8 +141,17 @@ def test_environment_actions_verbose_true(action, mocker, project_directory_fact
 
 @pytest.mark.parametrize("action", PROJECT_ACTIONS)
 def test_project_actions_verbose_true(action, mocker, project_directory_factory):
-    mocked_action = mocker.patch(f"conda_project.project.CondaProject.{action}")
     if action == "create":
+        method_to_patch = "init"
+    elif action == "prepare":
+        method_to_patch = "install"
+    else:
+        method_to_patch = action
+
+    mocked_action = mocker.patch(
+        f"conda_project.project.CondaProject.{method_to_patch}"
+    )
+    if action in {"init", "create"}:
         project_path = project_directory_factory()
     else:
         env_yaml = "dependencies: []\n"
@@ -149,13 +164,13 @@ def test_project_actions_verbose_true(action, mocker, project_directory_factory)
     assert mocked_action.call_args.kwargs["verbose"]
 
 
-def test_create_with_prepare(mocker):
+def test_init_with_install(mocker):
     default_environment = mocker.spy(CondaProject, "default_environment")
 
-    ret = parse_and_run(["create", "--directory", "project-dir", "--prepare"])
+    ret = parse_and_run(["init", "--directory", "project-dir", "--install"])
     assert ret == 0
 
-    assert default_environment.prepare.call_count == 1
+    assert default_environment.install.call_count == 1
 
 
 @pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
@@ -166,13 +181,18 @@ def test_action_with_environment_name(action, multi_env, mocker):
     ret = parse_and_run([action, "--directory", str(multi_env), "env1"])
     assert ret == 0
 
-    assert getattr(default_environment, action).call_count == 0
+    if action == "prepare":
+        method_to_spy = "install"
+    else:
+        method_to_spy = action
+
+    assert getattr(default_environment, method_to_spy).call_count == 0
 
     assert environments.mock_calls[0] == mocker.call.__getitem__("env1")
-    assert getattr(environments["env1"], action).call_count == 1
+    assert getattr(environments["env1"], method_to_spy).call_count == 1
 
 
-@pytest.mark.parametrize("action", ["prepare", "clean"])
+@pytest.mark.parametrize("action", ["install", "clean"])
 def test_action_all_environments(action, mocker, multi_env):
     mocked_action = mocker.patch(f"conda_project.project.Environment.{action}")
 

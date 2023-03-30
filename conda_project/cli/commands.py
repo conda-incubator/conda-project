@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+import logging
 import sys
 from argparse import Namespace
 from functools import wraps
@@ -8,6 +9,8 @@ from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
 from ..project import Command, CondaProject
+
+logger = logging.getLogger(__name__)
 
 
 def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
@@ -29,22 +32,31 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 
 @handle_errors
-def create(args: Namespace) -> bool:
-    project = CondaProject.create(
-        args.directory,
-        args.name,
-        args.dependencies,
-        args.channel,
-        args.platforms.split(","),
-        [] if args.conda_configs is None else args.conda_configs.split(","),
-        not args.no_lock,
+def init(args: Namespace) -> bool:
+    project = CondaProject.init(
+        directory=args.directory,
+        name=args.name,
+        dependencies=args.dependencies,
+        channels=args.channel,
+        platforms=args.platforms.split(","),
+        conda_configs=[]
+        if args.conda_configs is None
+        else args.conda_configs.split(","),
+        lock_dependencies=not args.no_lock,
         verbose=True,
     )
 
-    if args.prepare:
-        project.default_environment.prepare(verbose=True)
+    if args.install:
+        project.default_environment.install(verbose=True)
 
     return True
+
+
+def create(args: Namespace) -> int:
+    logger.warning(
+        "The 'create' subcommand is an alias for 'init' and may be removed in a future version."
+    )
+    return init(args)
 
 
 @handle_errors
@@ -69,21 +81,28 @@ def check(args: Namespace) -> bool:
 
 
 @handle_errors
-def prepare(args: Namespace) -> bool:
+def install(args: Namespace) -> bool:
     project = CondaProject(args.directory)
 
     if args.all:
         for _, env in project.environments:
-            env.prepare(force=args.force, verbose=True)
+            env.install(force=args.force, verbose=True)
     else:
         env = (
             project.environments[args.environment]
             if args.environment
             else project.default_environment
         )
-        env.prepare(force=args.force, as_platform=args.as_platform, verbose=True)
+        env.install(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
+
+
+def prepare(args: Namespace) -> int:
+    logger.warning(
+        "The 'prepare' subcommand is an alias for 'install' and may be removed in a future version."
+    )
+    return install(args)
 
 
 @handle_errors

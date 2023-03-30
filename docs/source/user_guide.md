@@ -1,38 +1,38 @@
 # User Guide
 
-## Creating a new project
+## Initializing a new project
 
-The purpose of `conda project create` is to provide a command like `conda create` that creates the
+The purpose of `conda project init` is to provide a command like `conda create` that creates the
 `environment.yml`, `conda-project.yml` and `conda-lock.default.yml` files before installing the
 environment.
-The `--prepare` flag can be used to build the files and then install the environment.
+The `--install` flag can be used to build the files and then install the environment.
 
-The create command will always write `channels` and `platforms` into the environment.yml file.
+The init command will always write `channels` and `platforms` into the environment.yml file.
 
 From within an existing project directory, run:
 
 ```shell
-conda project create
+conda project init
 ```
 
 Packages can also be specified when creating a project:
 
 ```shell
-conda project create python=3.10
+conda project init python=3.10
 ```
 
 This will initialize your project with a new `conda-project.yml`, `environment.yml`, and local `.condarc` file.
 
 ### CLI help
 
-The following is the output of `conda project create --help`:
+The following is the output of `conda project init --help`:
 
 ```text
-usage: conda-project create [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
-                            [--no-lock] [--prepare]
+usage: conda-project init [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
+                            [--no-lock] [--install]
                             [dependencies [dependencies ...]]
 
-Create a new project
+Initialize a new project
 
 positional arguments:
   dependencies          Packages to add to the environment.yml in MatchSpec format.
@@ -51,7 +51,7 @@ optional arguments:
                         Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
                         format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
   --no-lock             Do no create the conda-lock.<env>.yml file(s)
-  --prepare             Create the local conda environment for the current platform.
+  --install             Create the local conda environment for the current platform.
 ```
 
 ### If I already have an `environment.yml`
@@ -89,7 +89,7 @@ commands: {}
 ```{note}
 Environment YAML files are specified as relative to the location of the `conda-project.yml` file.
 Each key in `environments:` can be utilized in `conda project lock <env-name>` or
- `conda project prepare <env-name>`.
+ `conda project install <env-name>`.
  These commands also accept `--all` to lock and prepare each of the defined environments.
 ```
 
@@ -116,8 +116,8 @@ To force a re-lock use `conda project lock --force`.
 
 ## Preparing your environments
 
-`conda project prepare` enforces the use of `conda-lock`.
-If a `conda-lock.<env>.yml` file is not present it will be created by prepare with the above
+`conda project install` enforces the use of `conda-lock`.
+If a `conda-lock.<env>.yml` file is not present it will be created by install with the above
 assumptions  if necessary.
 If a `conda-lock.<env>.yml` file is found but the locked platforms do not match your current platform
 it will raise an exception.
@@ -129,14 +129,14 @@ platform, similar to how `conda lock install` works.
 
 `conda project activate [environment]` will launch a shell and activate the named conda environment.
 If no environment name is supplied the first environment is activated. The `activate` command will
-force updating the lock and prepare the environment if it has not already been completed. Unlike
+force updating the lock and install the environment if it has not already been completed. Unlike
 `conda activate`, which is capable of adjusting your current shell process, `conda project activate`
 starts a new shell so it preferable to exit the shell back to the parent rather than running `conda deactivate`.
 
 ## Minimal example
 
 ```text
-❯ conda project create python=3.8
+❯ conda project init python=3.8
 Locking dependencies for default: done
 Locked dependencies for win-64, osx-64, osx-arm64, linux-64 platforms
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/new-project
@@ -357,7 +357,7 @@ The default value is the current working directory, `.` Every CondaProject has a
 conda environment.
 
 A project directory containing only an `environment.yml` file will create a single environment
-of the name `default`, which can be locked or prepared.
+of the name `default`, which can be locked or installed.
 If multiple environments are defined in a `conda-project.yml` the `.environments` attribute
 provides dictionary-style syntax for each named environment.
 The first defined conda environment in the `conda-project.yml` is accessible as
@@ -368,12 +368,12 @@ from conda_project import CondaProject
 
 project = CondaProject()
 project.default_environment.lock()
-prefix = project.default_environment.prepare()
+prefix = project.default_environment.install()
 
 ## alternative, use the name 'default'
 
 project.environments['default'].lock()
-prefix = project.environments['default'].prepare()
+prefix = project.environments['default'].install()
 ```
 
 To create a new project directory the `CondaProject.create()` method follows the CLI arguments
@@ -384,8 +384,8 @@ See the docstring for `.create()` for more details.
 ```python
 from conda_project import CondaProject
 
-project = CondaProject.create(
-  directory='new-project',
-  dependencies=['python=3.8'],
+project = CondaProject.init(
+   directory='new-project',
+   dependencies=['python=3.8'],
 )
 ```
