@@ -1,1 +1,3 @@
-envs/
+**/envs
+
+env-file-only/conda-lock.default.yml
