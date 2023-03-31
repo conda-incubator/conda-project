@@ -1,0 +1,5 @@
+dependencies:
+  - python=3.10
+
+channels:
+  - defaults

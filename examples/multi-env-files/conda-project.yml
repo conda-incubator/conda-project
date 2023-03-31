@@ -1,0 +1,8 @@
+name: mutli-env-files
+
+environments:
+  default:
+    - environment.yml
+  test:
+    - environment.yml
+    - extras.yml
