@@ -22,7 +22,7 @@ create.
 You can install conda-project using the conda package manager:
 
 ```text
-conda install -c defusco conda-project
+conda install -c conda-forge conda-project
 ```
 
 ## Quick start
@@ -33,11 +33,11 @@ For Windows you can use either `cmd.exe` or Powershell.
 
 We first create a directory and initialize a new project, which will create a new conda environment and lock the dependencies:
 
-(base) > conda project create --directory my-project python=3.9 notebook pandas
-Locking dependencies for default: done
-Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
-
 ```text
+(base) > conda project init --directory my-project python=3.9 notebook pandas
+Locking dependencies for environment default on platforms osx-64, osx-arm64, linux-64, win-64: done
+Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
+```
 
 The goal of Conda Project is to maintain a conda enviroment specifically for the new `my-project` directory.
 You'll see that this directory contains it's own `environment.yml` file a [Conda Lock](https://conda.github.io/conda-lock/) file and a `conda-project.yml`
