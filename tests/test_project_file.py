@@ -36,6 +36,20 @@ def test_unsupported_key_in_dependencies():
         _ = EnvironmentYaml(**env_dict)
 
 
+def test_yaml_parse_error():
+    class Yaml(BaseYaml):
+        foo: int
+
+    yml = dedent(
+        """\
+        foo: a
+        """
+    )
+
+    with pytest.raises(CondaProjectError):
+        _ = Yaml.parse_yaml(yml)
+
+
 def test_to_yaml_with_indent():
     class Yaml(BaseYaml):
         foo: str
