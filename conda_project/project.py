@@ -475,7 +475,10 @@ class Environment(BaseModel):
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.project.condarc)):
                 if verbose:
-                    context = Spinner(prefix=f"Locking dependencies for {self.name}")
+                    context = Spinner(
+                        prefix=f"Locking dependencies for environment {self.name} on "
+                        f"platforms {', '.join(platform_overrides)}"
+                    )
                 else:
                     context = nullcontext()
 
