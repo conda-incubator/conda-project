@@ -7,5 +7,6 @@
 - Automatic dependency locking
 - Multi-environment support
 - Environment activation
-- Defined and ad-hoc commands
-- Defined environment variables with `.env` support
+- Running commands defined in the `conda-project.yml` file and ad-hoc commands
+- Defined environment variables with `.env` support for commands and environment activation
+- Tested on Mac, Linux, and Windows
