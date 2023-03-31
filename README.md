@@ -22,7 +22,7 @@ create.
 You can install conda-project using the conda package manager:
 
 ```text
-conda install -c defusco conda-project
+conda install -c conda-forge conda-project
 ```
 
 ## Quick start
@@ -34,8 +34,8 @@ For Windows you can use either `cmd.exe` or Powershell.
 We first create a directory and initialize a new project, which will create a new conda environment and lock the dependencies:
 
 ```text
-(base) > conda project create --directory my-project python=3.9 notebook pandas
-Locking dependencies for default: done
+(base) > conda project init --directory my-project python=3.9 notebook pandas
+Locking dependencies for environment default on platforms osx-64, osx-arm64, linux-64, win-64: done
 Project created at /Users/adefusco/Development/conda-incubator/conda-project/examples/my-project
 ```
 
