@@ -1,0 +1,8 @@
+dependencies:
+  - python=3.9
+  - pandas
+  - fsspec=2022
+  - s3fs
+
+channels:
+  - conda-forge

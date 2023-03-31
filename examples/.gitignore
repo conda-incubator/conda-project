@@ -1,3 +1,6 @@
 **/envs
 
 env-file-only/conda-lock.default.yml
+condarc-settings/conda-lock.default.yml
+
+**/.env
