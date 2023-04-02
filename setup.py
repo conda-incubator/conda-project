@@ -41,8 +41,8 @@ setup(
     python_requires=">=3.7",
     install_requires=requirements,
     extras_require={
-        "docs":docs_requirements,
-      },
+        "docs": docs_requirements,
+    },
     keywords="conda-project",
     classifiers=[
         "Programming Language :: Python :: 3.7",
