@@ -9,6 +9,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 requirements = [
+    "setuptools",
     "conda-lock>=1.2",
     "lockfile",
     "pexpect",
@@ -17,10 +18,11 @@ requirements = [
     "shellingham",
     "python-dotenv",
 ]
+
 docs_requirements = [
-    "Sphinx>=5.1.1",
+    "sphinx>=5.1.1",
     "sphinx-autobuild>=2021.3.14",
-    "sphinx-autodoc-typehints>=^1.19.2",
+    "sphinx-autodoc-typehints>=1.19.2",
     "myst-parser>=0.18.0",
     "pydata-sphinx-theme>=0.9.0",
 ]
@@ -39,8 +41,8 @@ setup(
     python_requires=">=3.7",
     install_requires=requirements,
     extras_require={
-        "docs": docs_requirements,
-    },
+        "docs":docs_requirements,
+      },
     keywords="conda-project",
     classifiers=[
         "Programming Language :: Python :: 3.7",
