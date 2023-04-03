@@ -54,7 +54,7 @@ docs = [
 ]
 
 [project.scripts]
-"conda-project" = "conda_project.cli.main:main"
+conda-project = "conda_project.cli.main:main"
 
 [project.urls]
 repository = "https://github.com/conda-incubator/conda-project"
