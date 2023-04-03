@@ -45,7 +45,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-docs_requirements = [
+docs = [
     "Sphinx>=5.1.1",
     "sphinx-autobuild>=2021.3.14",
     "sphinx-autodoc-typehints>=1.19.2",
