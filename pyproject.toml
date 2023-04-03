@@ -8,6 +8,7 @@ dynamic = ["version"]
 description = "Tool for encapsulating, running, and reproducing projects with conda environments"
 authors = [
     { name = "Albert DeFusco", email = "adefusco@anaconda.com" },
+    { name = "Matt Kramer", email = "mkramer@anaconda.com" },
 ]
 license = "BSD-3-Clause"
 readme = "README.md"
