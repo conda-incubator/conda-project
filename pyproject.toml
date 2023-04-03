@@ -64,29 +64,29 @@ documentation = "https://conda-incubator.github.io/conda-project/user_guide.html
 #"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
 #"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
 
-[tool]
+#[tool]
 
-[tool.check-manifest]
-ignore = [
-    "*.yml",
-    ".coveragerc",
-    "Makefile",
-    "docs",
-    "docs/*",
-    "*.enc",
-    "tests",
-    "tests/*",
-]
-
-[tool.coverage.run]
-source = [
-    "conda_project/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    'if __name__ == "__main__":'
-]
+#[tool.check-manifest]
+#ignore = [
+#    "*.yml",
+#    ".coveragerc",
+#    "Makefile",
+#    "docs",
+#    "docs/*",
+#    "*.enc",
+#    "tests",
+#    "tests/*",
+#]
+#
+#[tool.coverage.run]
+#source = [
+#    "conda_project/*",
+#]
+#
+#[tool.coverage.report]
+#exclude_lines = [
+#    'if __name__ == "__main__":'
+#]
 
 #[tool.black]
 #line-length = 79
@@ -144,13 +144,13 @@ exclude_lines = [
 #strict_optional = false
 #exclude = ["scripts", "docs", "test"]
 
-[tool.pytest]
-collect_ignore = ['setup.py']
-doesnotexist = 42
-filterwarnings = "ignore::pytest.PytestConfigWarning"
-
-[tool.pytest.ini_options]
-testpaths = [
-    "tests"
-]
-addopts = "-p no:cacheprovider" # deactivating pytest caching.
+#[tool.pytest]
+#collect_ignore = ['setup.py']
+#doesnotexist = 42
+#filterwarnings = "ignore::pytest.PytestConfigWarning"
+#
+#[tool.pytest.ini_options]
+#testpaths = [
+#    "tests"
+#]
+#addopts = "-p no:cacheprovider" # deactivating pytest caching.
