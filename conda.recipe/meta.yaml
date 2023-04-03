@@ -1,8 +1,8 @@
-{% set data = load_setup_py_data() %}
+{% set pyproject = load_file_data('../pyproject.toml', from_recipe_dir=True) %}
 
 package:
   name: conda-project
-  version: {{ data['version'] }}
+  version: {{ VERSION }}
 
 source:
   path: ..
@@ -16,8 +16,8 @@ build:
   noarch: python
 
   entry_points:
-    {% for entry in data['entry_points']['console_scripts'] %}
-      - {{ entry.split('=')[0].strip() }} = {{ entry.split('=')[1].strip() }}
+    {% for script in pyproject['project']['scripts'] %}
+    - {{ script }}
     {% endfor %}
 
 
@@ -29,10 +29,10 @@ requirements:
   host:
     - python
     - pip
+    - setuptools
   run:
     - python
-    # dependencies are defined in setup.py
-    {% for dep in data['install_requires'] %}
+    {% for dep in pyproject['project']['dependencies'] %}
     - {{ dep.lower() }}
     {% endfor %}
 
@@ -48,6 +48,6 @@ test:
 
 about:
   home: https://github.com/conda-incubator/conda-project
-  summary: Tool for encapsulating, running, and reproducing projects with conda environments
-  license: {{ data.get('license') }}
+  summary: {{ pyproject['project']['description'] }}
+  license: {{ pyproject['project']['license']['text'] }}
   license_file: LICENSE
