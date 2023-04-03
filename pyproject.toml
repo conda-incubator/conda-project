@@ -67,9 +67,6 @@ universal = true
 [tool.isort]
 profile = "black"
 
-[tool.setuptools]
-packages = [ "conda_project" ]
-
 #[tool.coverage.run]
 #source = [
 #    "conda_project/*",
@@ -80,36 +77,11 @@ packages = [ "conda_project" ]
 #    'if __name__ == "__main__":'
 #]
 
-#[tool.mypy]
-## 3rd party import
-#ignore_missing_imports = true
-## dynamic typing
-#disallow_any_unimported = true
-#disallow_any_expr = false
-#disallow_any_decorated = false
-#disallow_any_explicit = true
-#disallow_any_generics = false
-#disallow_subclassing_any = true
-## platform
-#python_version = "3.8"
-## untyped
-#disallow_untyped_calls = true
-#disallow_untyped_defs = true
-#disallow_incomplete_defs = true
-#disallow_untyped_decorators = true
-## None and Optional
-#no_implicit_optional = true
-## Warnings
-#warn_return_any = false
-#warn_no_return = true
-#warn_unreachable = true
-#warn_unused_configs = true
-## Misc
-#pretty = true
-#follow_imports = "silent"
-#check_untyped_defs = false
-#strict_optional = false
-#exclude = ["scripts", "docs", "test"]
+[tool.mypy]
+files = [ "conda_project/**/*.py" ]
+python_version = "3.8"
+disallow_untyped_defs = true
+warn_no_return = true
 
 [tool.pytest.ini_options]
 norecursedirs = [".*", "*.egg*", "build", "dist", "conda.recipe", "examples", "env"]
@@ -118,3 +90,6 @@ markers = [
     "serial: execute test serially (to avoid race conditions)",
     "slow: tests can take a long time (deselect with '-m \"not slow\"')",
 ]
+
+[tool.setuptools]
+packages = [ "conda_project" ]
