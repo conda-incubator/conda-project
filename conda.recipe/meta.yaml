@@ -16,8 +16,8 @@ build:
   noarch: python
 
   entry_points:
-    {% for script in pyproject['project']['scripts'] %}
-    - {{ script }}
+    {% for name, reference in pyproject['project']['scripts'].items() %}
+    - {{ name }} = {{ reference }}
     {% endfor %}
 
 
