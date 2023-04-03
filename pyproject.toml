@@ -37,8 +37,11 @@ classifiers = [
 dependencies = [ 
     "conda-lock>=1.2",
     "lockfile",
+    "pexpect",
     "ruamel.yaml",
     "pydantic",
+    "shellingham",
+    "python-dotenv",
 ]
 
 [project.optional-dependencies]
