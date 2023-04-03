@@ -61,12 +61,6 @@ documentation = "https://conda-incubator.github.io/conda-project/user_guide.html
 #"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
 #"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
 
-[tool.distutils.bdist_wheel]
-universal = true
-
-[tool.isort]
-profile = "black"
-
 [tool.coverage.report]
 omit = [
     "setup.py",
@@ -81,6 +75,12 @@ exclude_lines = [
     "if\\s+(typing\\.)?TYPE_CHECKING:",
     'if __name__ == "__main__":'
 ]
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.isort]
+profile = "black"
 
 [tool.mypy]
 files = [ "conda_project/**/*.py" ]
