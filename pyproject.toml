@@ -16,7 +16,7 @@ requires-python = ">=3.7"
 packages = [
     { include = "conda_project" },
 ]
-keywords = [ "conda-project",]
+keywords = [ "conda-project" ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
