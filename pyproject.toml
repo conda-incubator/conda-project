@@ -67,15 +67,20 @@ universal = true
 [tool.isort]
 profile = "black"
 
-#[tool.coverage.run]
-#source = [
-#    "conda_project/*",
-#]
-#
-#[tool.coverage.report]
-#exclude_lines = [
-#    'if __name__ == "__main__":'
-#]
+[tool.coverage.report]
+omit = [
+    "setup.py",
+    "conda_project/__main__.py",
+    "conda_project/_version.py",
+    "versioneer.py",
+    "tests/*",
+]
+exclude_lines = [
+    "pragma: no cover",
+    # This covers both typing.TYPE_CHECKING and plain TYPE_CHECKING, with any amount of whitespace
+    "if\\s+(typing\\.)?TYPE_CHECKING:",
+    'if __name__ == "__main__":'
+]
 
 [tool.mypy]
 files = [ "conda_project/**/*.py" ]
