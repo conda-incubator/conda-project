@@ -34,7 +34,7 @@ classifiers = [
     "Topic :: System :: Archiving :: Packaging",
     "Topic :: Utilities",
 ]
-dependencies = [ 
+dependencies = [
     "conda-lock>=1.2",
     "lockfile",
     "pexpect",
