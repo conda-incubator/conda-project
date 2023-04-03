@@ -147,13 +147,10 @@ packages = [ "conda_project" ]
 #strict_optional = false
 #exclude = ["scripts", "docs", "test"]
 
-#[tool.pytest]
-#collect_ignore = ['setup.py']
-#doesnotexist = 42
-#filterwarnings = "ignore::pytest.PytestConfigWarning"
-#
-#[tool.pytest.ini_options]
-#testpaths = [
-#    "tests"
-#]
-#addopts = "-p no:cacheprovider" # deactivating pytest caching.
+[tool.pytest.ini_options]
+norecursedirs = [".*", "*.egg*", "build", "dist", "conda.recipe", "examples", "env"]
+addopts = "-vv --cov-report term-missing --cov conda_project --tb native --strict-markers --durations=20"
+markers = [
+    "serial: execute test serially (to avoid race conditions)",
+    "slow: tests can take a long time (deselect with '-m \"not slow\"')",
+]
