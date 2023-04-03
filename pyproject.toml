@@ -13,9 +13,6 @@ authors = [
 license = {text = "BSD-3-Clause"}
 readme = "README.md"
 requires-python = ">=3.7"
-packages = [
-    { include = "conda_project" },
-]
 keywords = [ "conda-project" ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -63,6 +60,9 @@ documentation = "https://conda-incubator.github.io/conda-project/user_guide.html
 "Issue Tracker" = "https://github.com/conda-incubator/conda-project/issues"
 #"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
 #"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
+
+[tool.setuptools]
+packages = [ "conda_project" ]
 
 #[tool]
 
