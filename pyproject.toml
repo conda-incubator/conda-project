@@ -95,5 +95,5 @@ markers = [
     "slow: tests can take a long time (deselect with '-m \"not slow\"')",
 ]
 
-[tool.setuptools]
-packages = [ "conda_project" ]
+[tool.setuptools.packages.find]
+include = ["conda_project*"]
