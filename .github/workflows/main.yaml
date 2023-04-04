@@ -102,6 +102,7 @@ jobs:
           if [ $RUNNER_OS == 'Windows' ]; then
             source $HOME/miniconda/Scripts/activate root && \
             conda --version && \
+            pip install --no-deps . && \
             py.test \
               -xv \
               --cov-report xml:./coverage.xml \
@@ -110,6 +111,7 @@ jobs:
           else
             source $HOME/miniconda/bin/activate root && \
             conda --version && \
+            pip install --no-deps . && \
             py.test \
               -xv \
               --cov-report xml:./coverage.xml \
