@@ -82,7 +82,7 @@ universal = true
 profile = "black"
 
 [tool.mypy]
-files = [ "conda_project/**/*.py" ]
+files = [ "src/conda_project/**/*.py" ]
 python_version = "3.8"
 disallow_untyped_defs = true
 warn_no_return = true
@@ -94,6 +94,3 @@ markers = [
     "serial: execute test serially (to avoid race conditions)",
     "slow: tests can take a long time (deselect with '-m \"not slow\"')",
 ]
-
-[tool.setuptools.packages.find]
-include = ["conda_project*"]
