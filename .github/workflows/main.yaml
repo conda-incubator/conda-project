@@ -21,7 +21,7 @@ jobs:
     name: Build package
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: conda-incubator/setup-miniconda@v2
@@ -37,7 +37,7 @@ jobs:
           conda build conda.recipe --no-test
           mv $CONDA_PREFIX/conda-bld .
       - name: Upload the build artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: package-${{ github.sha }}
           path: conda-bld
