@@ -19,11 +19,11 @@ build:
 
 requirements:
   host:
-    - python >=3.8,<3.12
+    - python {{ pyproject['project']['requires-python'] }}
     - pip
     - setuptools
   run:
-    - python >=3.8,<3.12
+    - python {{ pyproject['project']['requires-python'] }}
     {% for dep in pyproject['project']['dependencies'] %}
     - {{ dep.lower() }}
     {% endfor %}
