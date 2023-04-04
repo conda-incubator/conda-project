@@ -23,7 +23,7 @@ requirements:
     - pip
     - setuptools
   run:
-    - python
+    - python {{ pyproject['project']['requires-python'] }}
     {% for dep in pyproject['project']['dependencies'] %}
     - {{ dep.lower() }}
     {% endfor %}
