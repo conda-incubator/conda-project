@@ -80,9 +80,9 @@ jobs:
         run: |
           ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
           if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install .
+            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
           else
-            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install .
+            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
       - name: Install Libmamba
         shell: bash
