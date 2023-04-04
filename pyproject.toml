@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "conda-lock>=1.2",
+    "conda-lock >=1.2",
     "lockfile",
     "pexpect",
     "ruamel.yaml",
@@ -42,7 +42,7 @@ dependencies = [
 
 [project.optional-dependencies]
 docs = [
-    "Sphinx>=5.1.1",
+    "sphinx>=5.1.1",
     "sphinx-autobuild>=2021.3.14",
     "sphinx-autodoc-typehints>=1.19.2",
     "myst-parser>=0.18.0",
