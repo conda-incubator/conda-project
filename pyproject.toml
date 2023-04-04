@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=42", "wheel", "setuptools-scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,9 +40,12 @@ dependencies = [
     "python-dotenv",
 ]
 
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
 [project.optional-dependencies]
 docs = [
-    "Sphinx>=5.1.1",
+    "sphinx>=5.1.1",
     "sphinx-autobuild>=2021.3.14",
     "sphinx-autodoc-typehints>=1.19.2",
     "myst-parser>=0.18.0",
@@ -62,10 +65,7 @@ documentation = "https://conda-incubator.github.io/conda-project/user_guide.html
 
 [tool.coverage.report]
 omit = [
-    "setup.py",
     "conda_project/__main__.py",
-    "conda_project/_version.py",
-    "versioneer.py",
     "tests/*",
 ]
 exclude_lines = [

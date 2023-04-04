@@ -3,3 +3,4 @@ dependencies:
   - conda
   - conda-build
   - conda-verify
+  - setuptools-scm

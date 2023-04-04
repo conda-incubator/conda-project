@@ -33,9 +33,8 @@ jobs:
           auto-activate-base: false
       - name: conda Build
         shell: bash -l {0}
-        # TODO: Replace the versioneer command below with `python -m setuptools_scm` once we migrate
         run: |
-          VERSION=`python -c "from versioneer import get_version; print(get_version())"` conda build conda.recipe --no-test
+          VERSION=`python -c setuptools_scm` conda build conda.recipe --no-test
           mv $CONDA_PREFIX/conda-bld .
       - name: Upload the build artifact
         uses: actions/upload-artifact@v2
@@ -49,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [3.8, 3.9, "3.10"]
+        python-version: [3.8, 3.9, "3.10", "3.11"]
         conda-version: ["4.9", "4.10", "4.11", "4.12", "4.13", "4.14", "22.9", "22.11", "23.1"]
         exclude:
           # Python 3.10

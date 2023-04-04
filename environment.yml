@@ -13,3 +13,4 @@ dependencies:
   - conda-lock>=1.2
   - pydantic
   - ruamel.yaml
+  - setuptools-scm

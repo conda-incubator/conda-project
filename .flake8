@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 120
+ignore = E122,E123,E126,E127,E128,E731,E722,W503
+exclude = build,tests,conda.recipe,.git,benchmarks,.asv
