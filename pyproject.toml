@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conda-project"
+dynamic = ["version"]
+description = "Tool for encapsulating, running, and reproducing projects with conda environments"
+authors = [
+    { name = "Albert DeFusco", email = "adefusco@anaconda.com" },
+    { name = "Matt Kramer", email = "mkramer@anaconda.com" },
+]
+license = {text = "BSD-3-Clause"}
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = [ "conda-project" ]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Archiving :: Packaging",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "conda-lock >=1.2",
+    "lockfile",
+    "pexpect",
+    "ruamel.yaml",
+    "pydantic",
+    "shellingham",
+    "python-dotenv",
+]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=5.1.1",
+    "sphinx-autobuild>=2021.3.14",
+    "sphinx-autodoc-typehints>=1.19.2",
+    "myst-parser>=0.18.0",
+    "pydata-sphinx-theme>=0.9.0",
+]
+
+[project.scripts]
+conda-project = "conda_project.cli.main:main"
+
+[project.urls]
+repository = "https://github.com/conda-incubator/conda-project"
+homepage = "https://github.com/conda-incubator/conda-project"
+documentation = "https://conda-incubator.github.io/conda-project/user_guide.html"
+"Issue Tracker" = "https://github.com/conda-incubator/conda-project/issues"
+#"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
+#"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
+
+[tool.coverage.report]
+omit = [
+    "conda_project/__main__.py",
+    "tests/*",
+]
+exclude_lines = [
+    "pragma: no cover",
+    # This covers both typing.TYPE_CHECKING and plain TYPE_CHECKING, with any amount of whitespace
+    "if\\s+(typing\\.)?TYPE_CHECKING:",
+    'if __name__ == "__main__":'
+]
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+files = [ "conda_project/**/*.py" ]
+python_version = "3.8"
+disallow_untyped_defs = true
+warn_no_return = true
+
+[tool.pytest.ini_options]
+norecursedirs = [".*", "*.egg*", "build", "dist", "conda.recipe", "examples", "env"]
+addopts = "-vv --cov-report term-missing --cov conda_project --tb native --strict-markers --durations=20"
+markers = [
+    "serial: execute test serially (to avoid race conditions)",
+    "slow: tests can take a long time (deselect with '-m \"not slow\"')",
+]
+
+[tool.setuptools]
+packages = [ "conda_project" ]
