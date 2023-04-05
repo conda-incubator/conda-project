@@ -29,14 +29,10 @@ requirements:
     {% endfor %}
 
 test:
-  source_files:
-    - tests
-  requires:
-    - pytest
-    - pytest-cov
-    - pytest-mock
+  imports:
+    - conda_project
   commands:
-    - pytest
+    - conda-project --help
 
 about:
   home: {{ pyproject['project']['urls']['repository'] }}
