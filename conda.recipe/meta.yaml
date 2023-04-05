@@ -19,7 +19,6 @@ build:
     - {{ name }} = {{ reference }}
     {% endfor %}
 
-
 requirements:
   host:
     - python {{ project['requires-python'] }}
