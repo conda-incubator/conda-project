@@ -37,6 +37,7 @@ test:
   commands:
     - conda-project --help
     - conda-project --version
+    - python -c "import conda_project; ver = conda_project.__version__; assert ver != '0.0.0' and ver != 'unknown'"
 
 about:
   home: {{ project['urls']['repository'] }}
