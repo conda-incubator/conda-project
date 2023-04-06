@@ -42,6 +42,7 @@ dependencies = [
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
+write_to = "src/conda_project/_version.py"
 
 [project.optional-dependencies]
 docs = [
