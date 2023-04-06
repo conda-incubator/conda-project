@@ -15,7 +15,7 @@ SOURCEDIR     = source
 BUILDDIR      = _build
 APIDOCSDIR    = $(SOURCEDIR)/api
 
-SRC = ../conda_project
+SRC = ../src/conda_project
 
 # Internal variables.
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) $(SOURCEDIR)
