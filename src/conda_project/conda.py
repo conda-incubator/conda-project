@@ -75,7 +75,7 @@ def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
     if env is None:
         return Path(os.environ["CONDA_PREFIX"])
 
-    elif env == "base":
+    elif env in ("base", "root"):
         return Path(os.environ["CONDA_ROOT"])
 
     else:
