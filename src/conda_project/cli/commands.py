@@ -140,7 +140,12 @@ def run(args: Namespace) -> NoReturn:
     else:
         to_run = project.default_command
 
-    to_run.run(environment=args.environment, extra_args=args.extra_args, verbose=True)
+    to_run.run(
+        environment=args.environment,
+        external_environment=args.external_environment,
+        extra_args=args.extra_args,
+        verbose=True,
+    )
 
 
 @handle_errors

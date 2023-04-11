@@ -280,6 +280,9 @@ def _create_run_parser(
         ),
     )
     p.add_argument(
+        "--external-environment",
+    )
+    p.add_argument(
         "command",
         help="Optional: Run a command in the conda environment. The full command can be provided on the CLI "
         "or the name of a command defined in the conda-project.yml file. If no command is provided "

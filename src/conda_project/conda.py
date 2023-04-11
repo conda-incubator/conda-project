@@ -11,7 +11,7 @@ import subprocess
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, NoReturn, Optional
+from typing import Dict, List, NoReturn, Optional, Union
 
 import pexpect
 import shellingham
@@ -63,6 +63,29 @@ def call_conda(
         raise CondaProjectError(f"Failed to run:\n  {print_cmd}\n{proc.stderr.strip()}")
 
     return proc
+
+
+def is_conda_env(path: Path) -> bool:
+    return (path / "conda-meta" / "history").exists()
+
+
+def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
+    """Return the path to a conda environment"""
+
+    if (env is None) or (env == "base"):
+        return Path(os.environ["CONDA_PREFIX"])
+
+    else:
+        env = Path(env) if isinstance(env, str) else env
+
+        if is_conda_env(env):
+            return env
+
+        else:
+            for d in conda_info()["envs_dirs"]:
+                p = Path(d) / env
+                if is_conda_env(p):
+                    return p
 
 
 def conda_info():

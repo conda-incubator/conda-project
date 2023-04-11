@@ -30,7 +30,14 @@ from conda_lock.conda_lock import (
 )
 from pydantic import BaseModel, create_model
 
-from .conda import CONDA_EXE, call_conda, conda_activate, conda_run, current_platform
+from .conda import (
+    CONDA_EXE,
+    call_conda,
+    conda_activate,
+    conda_prefix,
+    conda_run,
+    current_platform,
+)
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
     ENVIRONMENT_YAML_FILENAMES,
@@ -118,14 +125,16 @@ class CondaProject:
                 self.directory, ENVIRONMENT_YAML_FILENAMES
             )
             if environment_yaml_path is None:
-                options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
-                raise CondaProjectError(f"No conda {options} file was found.")
+                environments = {}
+            else:
+                environments = OrderedDict(
+                    [("default", [environment_yaml_path.relative_to(self.directory)])]
+                )
+                # options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
+                # raise CondaProjectError(f"No conda {options} file was found.")
 
             self._project_file = CondaProjectYaml(
-                name=self.directory.name,
-                environments=OrderedDict(
-                    [("default", [environment_yaml_path.relative_to(self.directory)])]
-                ),
+                name=self.directory.name, environments=environments
             )
 
         self.condarc = self.directory / ".condarc"
@@ -238,8 +247,11 @@ class CondaProject:
 
     @property
     def default_environment(self) -> Environment:
-        name = next(iter(self._project_file.environments))
-        return self.environments[name]
+        try:
+            name = next(iter(self._project_file.environments))
+            return self.environments[name]
+        except StopIteration:
+            return None
 
     @property
     def commands(self) -> BaseCommands:
@@ -709,19 +721,30 @@ class BaseEnvironments(BaseModel):
 class Command(BaseModel):
     name: str
     cmd: str
-    environment: Environment
+    environment: Optional[Environment] = None
     command_variables: Optional[Dict[str, Optional[str]]] = None
     project: CondaProject
 
-    def run(self, environment=None, extra_args=None, verbose=False) -> NoReturn:
-        if environment is None:
-            environment = self.environment
+    def run(
+        self,
+        environment=None,
+        external_environment=None,
+        extra_args=None,
+        verbose=False,
+    ) -> NoReturn:
+        if external_environment is not None:
+            prefix = conda_prefix(external_environment)
         else:
-            if isinstance(environment, str):
-                environment = self.project.environments[environment]
+            if environment is None:
+                environment = self.environment
+            else:
+                if isinstance(environment, str):
+                    environment = self.project.environments[environment]
 
-        if not environment.is_consistent:
-            environment.install(verbose=verbose)
+            if not environment.is_consistent:
+                environment.install(verbose=verbose)
+
+            prefix = environment.prefix
 
         env = prepare_variables(
             self.project.directory,
@@ -731,7 +754,7 @@ class Command(BaseModel):
 
         conda_run(
             cmd=self.cmd,
-            prefix=environment.prefix,
+            prefix=prefix,
             working_dir=self.project.directory,
             env=env,
             extra_args=extra_args,
