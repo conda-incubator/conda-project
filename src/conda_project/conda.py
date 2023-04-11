@@ -72,8 +72,11 @@ def is_conda_env(path: Path) -> bool:
 def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
     """Return the path to a conda environment"""
 
-    if (env is None) or (env == "base"):
+    if env is None:
         return Path(os.environ["CONDA_PREFIX"])
+
+    elif env == "base":
+        return Path(os.environ["CONDA_ROOT"])
 
     else:
         env = Path(env) if isinstance(env, str) else env

@@ -732,7 +732,9 @@ class Command(BaseModel):
         extra_args=None,
         verbose=False,
     ) -> NoReturn:
-        if external_environment is not None:
+        if external_environment is None and self.environment is None:
+            prefix = conda_prefix()
+        elif external_environment is not None:
             prefix = conda_prefix(external_environment)
         else:
             if environment is None:
