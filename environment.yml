@@ -14,3 +14,5 @@ dependencies:
   - pydantic
   - ruamel.yaml
   - setuptools-scm
+  - fsspec
+  - python-libarchive-c

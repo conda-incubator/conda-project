@@ -5,6 +5,7 @@ import logging
 import sys
 from argparse import Namespace
 from functools import wraps
+from tempfile import mkdtemp
 from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
@@ -125,7 +126,13 @@ def clean(args: Namespace) -> bool:
 
 @handle_errors
 def run(args: Namespace) -> NoReturn:
-    project = CondaProject(args.directory)
+    if args.project_archive is not None:
+        directory = mkdtemp()
+        project = CondaProject.from_archive(
+            args.project_archive, output_directory=directory
+        )
+    else:
+        project = CondaProject(args.directory)
 
     if args.command:
         try:

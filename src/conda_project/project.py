@@ -19,6 +19,7 @@ from pathlib import Path
 from subprocess import SubprocessError
 from typing import Dict, List, NoReturn, Optional, Tuple, Union
 
+import fsspec
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
 from conda_lock.conda_lock import (
@@ -138,6 +139,23 @@ class CondaProject:
             )
 
         self.condarc = self.directory / ".condarc"
+
+    @classmethod
+    def from_archive(cls, fn: Path, output_directory: Union[Path, str] = "."):
+        """Extra a conda-project archive and load the project"""
+
+        if isinstance(output_directory, str):
+            output_directory = Path(output_directory)
+
+        for afile in fsspec.open_files(f"libarchive://**::{fn}"):
+            with afile as f:
+                dest = output_directory / afile.path
+                dest.parents[0].mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(f.read())
+                print(dest, file=sys.stderr)
+
+        project = CondaProject(output_directory)
+        return project
 
     @classmethod
     def init(

@@ -38,6 +38,8 @@ dependencies = [
     "pydantic",
     "shellingham",
     "python-dotenv",
+    "fsspec",
+    "python-libarchive-c"
 ]
 
 [tool.setuptools_scm]

@@ -283,6 +283,13 @@ def _create_run_parser(
         "--external-environment",
     )
     p.add_argument(
+        "--project-archive",
+        help=(
+            "Extract and run directly from a project archive. The archive can be a local file or a fsspec "
+            "compatible URL. You may need to install appropriate driver packages to work with remote archives."
+        ),
+    )
+    p.add_argument(
         "command",
         help="Optional: Run a command in the conda environment. The full command can be provided on the CLI "
         "or the name of a command defined in the conda-project.yml file. If no command is provided "
