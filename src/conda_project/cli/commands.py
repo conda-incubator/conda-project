@@ -5,13 +5,23 @@ import logging
 import sys
 from argparse import Namespace
 from functools import wraps
-from tempfile import mkdtemp
 from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
 from ..project import Command, CondaProject
 
 logger = logging.getLogger(__name__)
+
+
+def _load_project(args: Namespace):
+    if args.project_archive is not None:
+        project = CondaProject.from_archive(
+            args.project_archive, output_directory=args.directory
+        )
+    else:
+        project = CondaProject(args.directory)
+
+    return project
 
 
 def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
@@ -62,7 +72,7 @@ def create(args: Namespace) -> int:
 
 @handle_errors
 def lock(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.environment:
         to_lock = [project.environments[args.environment]]
@@ -77,13 +87,13 @@ def lock(args: Namespace) -> bool:
 
 @handle_errors
 def check(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
     return project.check(verbose=True)
 
 
 @handle_errors
 def install(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.all:
         for _, env in project.environments:
@@ -126,13 +136,7 @@ def clean(args: Namespace) -> bool:
 
 @handle_errors
 def run(args: Namespace) -> NoReturn:
-    if args.project_archive is not None:
-        directory = mkdtemp()
-        project = CondaProject.from_archive(
-            args.project_archive, output_directory=directory
-        )
-    else:
-        project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.command:
         try:
@@ -157,7 +161,7 @@ def run(args: Namespace) -> NoReturn:
 
 @handle_errors
 def activate(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.environment:
         env = project.environments[args.environment]

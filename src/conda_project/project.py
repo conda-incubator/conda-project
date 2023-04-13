@@ -141,20 +141,53 @@ class CondaProject:
         self.condarc = self.directory / ".condarc"
 
     @classmethod
-    def from_archive(cls, fn: Path, output_directory: Union[Path, str] = "."):
+    def from_archive(
+        cls, fn: Union[Path, str], output_directory: Union[Path, str] = "."
+    ):
         """Extra a conda-project archive and load the project"""
 
         if isinstance(output_directory, str):
             output_directory = Path(output_directory)
 
-        for afile in fsspec.open_files(f"libarchive://**::{fn}"):
+        files = fsspec.open_files(f"libarchive://**::{fn}")
+
+        first_parts = set(Path(p.path).parts[0] for p in files)
+        if ".." in first_parts:
+            raise CondaProjectError(
+                f"The archive {fn} contains relative paths, which are not allowed."
+            )
+
+        if len(first_parts) == 1:
+            if not output_directory.name:
+                project_directory = Path(list(first_parts)[0])
+            else:
+                project_directory = output_directory
+        else:
+            if not output_directory.name:
+                project_directory = Path(Path(fn).name.split(".", maxsplit=1)[0])
+            else:
+                project_directory = output_directory
+
+        for afile in files:
             with afile as f:
-                dest = output_directory / afile.path
+                if len(first_parts) > 1:
+                    if not output_directory.name:
+                        dest = (
+                            Path(Path(fn).name.split(".", maxsplit=1)[0]) / afile.path
+                        )
+                    else:
+                        dest = output_directory / afile.path
+                else:
+                    if not output_directory.name:
+                        dest = Path(afile.path)
+                    else:
+                        dest = output_directory / Path(*Path(afile.path).parts[1:])
+
                 dest.parents[0].mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(f.read())
                 print(dest, file=sys.stderr)
 
-        project = CondaProject(output_directory)
+        project = CondaProject(project_directory)
         return project
 
     @classmethod

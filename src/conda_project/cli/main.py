@@ -27,6 +27,17 @@ def cli() -> ArgumentParser:
         help="Project directory (defaults to current directory)",
     )
 
+    extras = ArgumentParser(add_help=False)
+    extras.add_argument(
+        "--project-archive",
+        metavar="PROJECT_ARCHIVE_FILE_OR_URL",
+        help=(
+            "Extract and run directly from a project archive. The archive can be a local file or a fsspec "
+            "compatible URL. You may need to install appropriate driver packages to work with remote archives. "
+            "Optionally, use --directory to set the destination directory of the extracted project."
+        ),
+    )
+
     p = ArgumentParser(
         description="Tool for encapsulating, running, and reproducing projects with conda environments",
         conflict_handler="resolve",
@@ -42,24 +53,24 @@ def cli() -> ArgumentParser:
     subparsers = p.add_subparsers(metavar="command", required=True)
 
     _create_init_parser(subparsers, common)
-    _create_lock_parser(subparsers, common)
-    _create_check_parser(subparsers, common)
-    _create_install_parser(subparsers, common)
-    _create_activate_parser(subparsers, common)
+    _create_lock_parser(subparsers, common, extras)
+    _create_check_parser(subparsers, common, extras)
+    _create_install_parser(subparsers, common, extras)
+    _create_activate_parser(subparsers, common, extras)
     _create_clean_parser(subparsers, common)
-    _create_run_parser(subparsers, common)
+    _create_run_parser(subparsers, common, extras)
 
     return p
 
 
 def _create_init_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "init" and "create" subcommands.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Initialize a new project"
@@ -67,7 +78,7 @@ def _create_init_parser(
     # TODO: If we deprecate "create", this loop can go away.
     for subcommand_name in ["init", "create"]:
         p = subparsers.add_parser(
-            subcommand_name, description=desc, help=desc, parents=[parent_parser]
+            subcommand_name, description=desc, help=desc, parents=parent_parsers
         )
         p.add_argument(
             "-n", "--name", help="Name for the project.", action="store", default=None
@@ -125,19 +136,19 @@ def _create_init_parser(
 
 
 def _create_lock_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "lock" subcommand.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Lock all conda environments or a specific one by creating conda-lock.<env>.yml file(s)."
 
     p = subparsers.add_parser(
-        "lock", description=desc, help=desc, parents=[parent_parser]
+        "lock", description=desc, help=desc, parents=parent_parsers
     )
     p.add_argument(
         "environment",
@@ -155,13 +166,13 @@ def _create_lock_parser(
 
 
 def _create_check_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "lock" subcommand.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = (
@@ -172,27 +183,27 @@ def _create_check_parser(
     )
 
     p = subparsers.add_parser(
-        "check", description=desc, help=desc, parents=[parent_parser]
+        "check", description=desc, help=desc, parents=parent_parsers
     )
 
     p.set_defaults(func=commands.check)
 
 
 def _create_install_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "install" and "prepare" subcommands.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Install the packages into the conda environments"
 
     for subcommand_name in ["install", "prepare"]:
         p = subparsers.add_parser(
-            subcommand_name, description=desc, help=desc, parents=[parent_parser]
+            subcommand_name, description=desc, help=desc, parents=parent_parsers
         )
         group = p.add_mutually_exclusive_group(required=False)
         group.add_argument(
@@ -230,19 +241,19 @@ def _create_install_parser(
 
 
 def _create_clean_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "clean" subcommand.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Clean the conda environments"
 
     p = subparsers.add_parser(
-        "clean", description=desc, help=desc, parents=[parent_parser]
+        "clean", description=desc, help=desc, parents=parent_parsers
     )
     p.add_argument(
         "environment",
@@ -258,19 +269,19 @@ def _create_clean_parser(
 
 
 def _create_run_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "run" subcommand.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Run commands in project environments."
 
     p = subparsers.add_parser(
-        "run", description=desc, help=desc, parents=[parent_parser]
+        "run", description=desc, help=desc, parents=parent_parsers
     )
     p.add_argument(
         "--environment",
@@ -281,12 +292,9 @@ def _create_run_parser(
     )
     p.add_argument(
         "--external-environment",
-    )
-    p.add_argument(
-        "--project-archive",
+        metavar="ENV_NAME_OR_PREFIX",
         help=(
-            "Extract and run directly from a project archive. The archive can be a local file or a fsspec "
-            "compatible URL. You may need to install appropriate driver packages to work with remote archives."
+            "Specify the name or prefix path to a conda environment not declared in this project."
         ),
     )
     p.add_argument(
@@ -307,19 +315,19 @@ def _create_run_parser(
 
 
 def _create_activate_parser(
-    subparsers: "_SubParsersAction", parent_parser: ArgumentParser
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
 ) -> None:
     """Add a subparser for the "run" subcommand.
 
     Args:
         subparsers: The existing subparsers corresponding to the "command" meta-variable.
-        parent_parser: The parent parser, which is used to pass common arguments into the subcommands.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
 
     """
     desc = "Activate a conda environment defined in the environment.yml or conda-project.yml files."
 
     p = subparsers.add_parser(
-        "activate", description=desc, help=desc, parents=[parent_parser]
+        "activate", description=desc, help=desc, parents=parent_parsers
     )
     p.add_argument(
         "environment",
