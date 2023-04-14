@@ -39,7 +39,7 @@ dependencies = [
     "shellingham",
     "python-dotenv",
     "fsspec",
-    "python-libarchive-c"
+    "libarchive-c"
 ]
 
 [tool.setuptools_scm]
