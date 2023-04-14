@@ -15,8 +15,14 @@ logger = logging.getLogger(__name__)
 
 def _load_project(args: Namespace):
     if args.project_archive is not None:
+        _storage_options = (
+            []
+            if args.archive_storage_options is None
+            else args.archive_storage_options.split(",")
+        )
+
         storage_options = {}
-        for option in args.archive_storage_options.split(",") or []:
+        for option in _storage_options:
             k, v = option.split("=")
             storage_options[k] = v
 

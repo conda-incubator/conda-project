@@ -29,6 +29,7 @@ from conda_lock.conda_lock import (
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
+from fsspec.core import split_protocol
 from pydantic import BaseModel, create_model
 
 from .conda import (
@@ -151,6 +152,12 @@ class CondaProject:
 
         if isinstance(output_directory, str):
             output_directory = Path(output_directory)
+
+        protocol, _ = split_protocol(fn)
+        if protocol is not None:
+            storage_options = {protocol: storage_options}
+        else:
+            storage_options = {}
 
         files = fsspec.open_files(f"libarchive://**::{fn}", **storage_options)
 
