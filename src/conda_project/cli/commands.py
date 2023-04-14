@@ -15,8 +15,15 @@ logger = logging.getLogger(__name__)
 
 def _load_project(args: Namespace):
     if args.project_archive is not None:
+        storage_options = {}
+        for option in args.archive_storage_options.split(",") or []:
+            k, v = option.split("=")
+            storage_options[k] = v
+
         project = CondaProject.from_archive(
-            args.project_archive, output_directory=args.directory
+            args.project_archive,
+            storage_options=storage_options,
+            output_directory=args.directory,
         )
     else:
         project = CondaProject(args.directory)

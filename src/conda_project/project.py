@@ -142,14 +142,17 @@ class CondaProject:
 
     @classmethod
     def from_archive(
-        cls, fn: Union[Path, str], output_directory: Union[Path, str] = "."
+        cls,
+        fn: Union[Path, str],
+        storage_options: Dict[str, str] = {},
+        output_directory: Union[Path, str] = ".",
     ):
         """Extra a conda-project archive and load the project"""
 
         if isinstance(output_directory, str):
             output_directory = Path(output_directory)
 
-        files = fsspec.open_files(f"libarchive://**::{fn}")
+        files = fsspec.open_files(f"libarchive://**::{fn}", **storage_options)
 
         first_parts = set(Path(p.path).parts[0] for p in files)
         if ".." in first_parts:

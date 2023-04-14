@@ -37,6 +37,15 @@ def cli() -> ArgumentParser:
             "Optionally, use --directory to set the destination directory of the extracted project."
         ),
     )
+    extras.add_argument(
+        "--archive-storage-options",
+        help=(
+            "Comma separated list of fsspec storage_options for accessing a remote archive "
+            "For example --archive-storage-options username=<user>,password=<pass>"
+        ),
+        action="store",
+        default=None,
+    )
 
     p = ArgumentParser(
         description="Tool for encapsulating, running, and reproducing projects with conda environments",
