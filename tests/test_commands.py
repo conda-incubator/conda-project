@@ -6,6 +6,7 @@ from textwrap import dedent
 
 import pytest
 
+from conda_project.conda import conda_prefix
 from conda_project.exceptions import CommandNotFoundError
 from conda_project.project import CondaProject
 
@@ -360,6 +361,30 @@ def test_run_with_extra_args(
     assert conda_run.call_args == mocker.call(
         cmd="run-me",
         prefix=project.default_environment.prefix,
+        working_dir=project.directory,
+        env=os.environ,
+        extra_args=["--flag", "a", "b"],
+    )
+
+
+def test_run_with_external_environment(
+    one_env_one_command: CondaProject, mocked_execvped, mocker
+):
+    from conda_project import project as project_module
+
+    conda_run = mocker.spy(project_module, "conda_run")
+
+    project = one_env_one_command
+
+    project.default_command.run(
+        extra_args=["--flag", "a", "b"], external_environment="base"
+    )
+
+    assert mocked_execvped.call_count == 1
+
+    assert conda_run.call_args == mocker.call(
+        cmd="run-me",
+        prefix=conda_prefix("base"),
         working_dir=project.directory,
         env=os.environ,
         extra_args=["--flag", "a", "b"],

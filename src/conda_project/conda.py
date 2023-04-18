@@ -73,22 +73,22 @@ def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
     """Return the path to a conda environment"""
 
     if env is None:
-        return Path(os.environ["CONDA_PREFIX"])
+        return Path(os.environ["CONDA_PREFIX"]).resolve()
 
     elif env in ("base", "root"):
-        return Path(os.environ["CONDA_ROOT"])
+        return Path(os.environ["CONDA_ROOT"]).resolve()
 
     else:
         env = Path(env) if isinstance(env, str) else env
 
         if is_conda_env(env):
-            return env
+            return env.resolve()
 
         else:
             for d in conda_info()["envs_dirs"]:
                 p = Path(d) / env
                 if is_conda_env(p):
-                    return p
+                    return p.resolve()
 
 
 def conda_info():

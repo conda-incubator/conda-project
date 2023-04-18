@@ -2,12 +2,16 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+from pathlib import Path
+
 import pytest
 
 from conda_project.conda import (
     call_conda,
     conda_activate,
     conda_info,
+    conda_prefix,
     conda_run,
     current_platform,
     is_windows,
@@ -138,7 +142,7 @@ def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
     assert "activated in a new shell" in capsys.readouterr().out
 
     assert mocked_spawn.call_args == mocker.call(
-        command="/bin/sh", args=["-i"], cwd=empty_conda_environment, env={}, echo=False
+        command="/bin/sh", args=["-i"], cwd=empty_conda_environment, env={}, echo=True
     )
 
 
@@ -164,5 +168,49 @@ def test_conda_activate_pexpect_with_variables(mocker, empty_conda_environment, 
         args=["-i"],
         cwd=empty_conda_environment,
         env={"FOO": "set-in-project"},
-        echo=False,
+        echo=True,
     )
+
+
+def test_conda_prefix_with_name(empty_conda_environment: Path, monkeypatch):
+    monkeypatch.setenv("CONDA_ENVS_DIRS", empty_conda_environment.parent)
+
+    prefix = conda_prefix(empty_conda_environment.name)
+    assert prefix == empty_conda_environment
+
+
+def test_conda_prefix_root():
+    for env in "root", "base":
+        prefix = conda_prefix(env)
+        assert str(prefix) == os.environ["CONDA_ROOT"]
+
+
+def test_conda_prefix_current_env():
+    prefix = conda_prefix()
+    assert str(prefix) == os.environ["CONDA_PREFIX"]
+
+
+def test_conda_prefix_with_path(empty_conda_environment):
+    prefix = conda_prefix(empty_conda_environment)
+    assert prefix == empty_conda_environment
+
+
+def test_conda_prefix_prefers_path(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CONDA_ENVS_DIRS", str(tmp_path / "global-envs"))
+
+    create = ["create", "-n", "my-env", "--yes"]
+    _ = call_conda(create)
+    envs = conda_info()["envs"]
+    assert str(tmp_path / "global-envs" / "my-env") in envs
+
+    prefix = conda_prefix("my-env")
+    assert prefix == tmp_path / "global-envs" / "my-env"
+
+    create = ["create", "-p", str(tmp_path / "my-env"), "--yes"]
+    _ = call_conda(create)
+
+    prefix = conda_prefix("my-env")
+    assert prefix == tmp_path / "my-env"
+
+    _ = call_conda(["env", "remove", "-n", "my-env"])

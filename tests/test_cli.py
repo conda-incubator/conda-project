@@ -224,7 +224,7 @@ def test_run_default_command(mocker, multi_env_multi_command):
     _ = parse_and_run(["run", "--directory", str(multi_env_multi_command)])
 
     assert default_command.run.call_args == mocker.call(
-        environment=None, extra_args=[], verbose=True
+        environment=None, extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -236,7 +236,7 @@ def test_run_default_command_with_env(mocker, multi_env_multi_command):
     )
 
     assert default_command.run.call_args == mocker.call(
-        environment="env2", extra_args=[], verbose=True
+        environment="env2", extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -269,7 +269,7 @@ def test_run_unnamed_command(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment=None, extra_args=[], verbose=True
+        environment=None, extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -299,7 +299,7 @@ def test_run_unnamed_command_with_env(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment="env2", extra_args=[], verbose=True
+        environment="env2", extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -332,5 +332,8 @@ def test_run_unnamed_command_with_extra_args(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment="env2", extra_args=["--flag", "value", "arg1"], verbose=True
+        environment="env2",
+        extra_args=["--flag", "value", "arg1"],
+        external_environment=None,
+        verbose=True,
     )
