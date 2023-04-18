@@ -32,15 +32,16 @@ def cli() -> ArgumentParser:
         "--project-archive",
         metavar="PROJECT_ARCHIVE_FILE_OR_URL",
         help=(
-            "Extract and run directly from a project archive. The archive can be a local file or a fsspec "
-            "compatible URL. You may need to install appropriate driver packages to work with remote archives. "
-            "Optionally, use --directory to set the destination directory of the extracted project."
+            "EXPERIMENTAL: Extract and run directly from a project archive. The archive can be a local file "
+            "or a fsspec compatible URL. You may need to install appropriate driver packages to work with "
+            "remote archives. Optionally, use --directory to set the destination directory of the extracted "
+            "project."
         ),
     )
     extras.add_argument(
         "--archive-storage-options",
         help=(
-            "Comma separated list of fsspec storage_options for accessing a remote archive "
+            "EXPERIMENTAL: Comma separated list of fsspec storage_options for accessing a remote archive "
             "For example --archive-storage-options username=<user>,password=<pass>"
         ),
         action="store",
@@ -303,7 +304,7 @@ def _create_run_parser(
         "--external-environment",
         metavar="ENV_NAME_OR_PREFIX",
         help=(
-            "Specify the name or prefix path to a conda environment not declared in this project."
+            "EXPERIMENTAL: Specify the name or prefix path to a conda environment not declared in this project."
         ),
     )
     p.add_argument(
