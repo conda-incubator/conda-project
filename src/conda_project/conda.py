@@ -131,7 +131,7 @@ def conda_run(
     execvped(file=shell, args=args, env=env, cwd=working_dir)
 
 
-def _send_activation(child_shell, prefix):
+def _send_activation(child_shell: pexpect.spawn, prefix):
     def sigwinch_passthrough(sig, data):
         if not child_shell.closed:
             t = os.get_terminal_size()
@@ -188,7 +188,7 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
         subprocess.run([shell_path, *args], cwd=working_dir, env=env)
     else:
         child_shell = pexpect.spawn(
-            command=shell_path, args=args, cwd=working_dir, env=env, echo=False
+            command=shell_path, args=args, cwd=working_dir, env=env, echo=True
         )
 
         _send_activation(child_shell, prefix)
