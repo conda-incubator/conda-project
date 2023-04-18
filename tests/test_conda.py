@@ -173,7 +173,7 @@ def test_conda_activate_pexpect_with_variables(mocker, empty_conda_environment, 
 
 
 def test_conda_prefix_with_name(empty_conda_environment: Path, monkeypatch):
-    monkeypatch.setenv("CONDA_ENVS_DIRS", empty_conda_environment.parent)
+    monkeypatch.setenv("CONDA_ENVS_DIRS", str(empty_conda_environment.parent))
 
     prefix = conda_prefix(empty_conda_environment.name)
     assert prefix == empty_conda_environment
