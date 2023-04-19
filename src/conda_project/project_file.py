@@ -61,7 +61,7 @@ class Command(BaseModel):
 
 class CondaProjectYaml(BaseYaml):
     name: str
-    environments: OrderedDict[str, List[Path]] = {}
+    environments: OrderedDict[str, List[Path]]
     variables: Dict[str, Optional[str]] = {}
     commands: OrderedDict[str, Union[Command, str]] = OrderedDict()
 

@@ -127,16 +127,14 @@ class CondaProject:
                 self.directory, ENVIRONMENT_YAML_FILENAMES
             )
             if environment_yaml_path is None:
-                environments = {}
-            else:
-                environments = OrderedDict(
-                    [("default", [environment_yaml_path.relative_to(self.directory)])]
-                )
-                # options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
-                # raise CondaProjectError(f"No conda {options} file was found.")
+                options = " or ".join(ENVIRONMENT_YAML_FILENAMES)
+                raise CondaProjectError(f"No conda {options} file was found.")
 
             self._project_file = CondaProjectYaml(
-                name=self.directory.name, environments=environments
+                name=self.directory.name,
+                environments=OrderedDict(
+                    [("default", [environment_yaml_path.relative_to(self.directory)])]
+                ),
             )
 
         self.condarc = self.directory / ".condarc"
