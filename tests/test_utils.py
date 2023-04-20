@@ -5,9 +5,11 @@ import os
 from pathlib import Path
 
 import pytest
+from shellingham import ShellDetectionFailure
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.utils import (
+    detect_shell,
     env_variable,
     execvped,
     find_file,
@@ -244,3 +246,30 @@ def test_popen_return_code(mocker, tmp_path):
 
     assert exinfo.value.code == 1
     assert mocked_popen.call_args.kwargs["args"] == ["invalid-cmd", "arg1", "arg2"]
+
+
+def test_detect_shell_from_env(mocker, monkeypatch):
+    if is_windows():
+        monkeypatch.setenv("COMPSPEC", "/fake/shell")
+    else:
+        monkeypatch.setenv("SHELL", "/fake/shell")
+
+    mocker.patch(
+        "conda_project.utils.shellingham.detect_shell",
+        side_effect=ShellDetectionFailure(),
+    )
+
+    shell_name, shell_path = detect_shell()
+
+    assert shell_name == shell_path == "/fake/shell"
+
+
+def test_detect_shell_failed(mocker):
+    mocker.patch(
+        "conda_project.utils.shellingham.detect_shell",
+        side_effect=ShellDetectionFailure(),
+    )
+    mocker.patch("os.name", return_value="nope")
+
+    with pytest.raises(RuntimeError):
+        _ = detect_shell()

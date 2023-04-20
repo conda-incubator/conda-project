@@ -14,11 +14,10 @@ from pathlib import Path
 from typing import Dict, List, NoReturn, Optional, Union
 
 import pexpect
-import shellingham
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
 
 from .exceptions import CondaProjectError
-from .utils import execvped, is_windows
+from .utils import detect_shell, execvped, is_windows
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 CONDA_ROOT = os.environ.get("CONDA_ROOT")
@@ -148,15 +147,7 @@ def _send_activation(child_shell: pexpect.spawn, prefix):
 def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     env = {} if env is None else env
 
-    try:
-        shell_name, shell_path = shellingham.detect_shell()
-    except shellingham.ShellDetectionFailure:
-        if os.name == "posix":
-            shell_name = shell_path = os.environ.get("SHELL", "/bin/sh")
-        elif os.name == "nt":
-            shell_name = shell_path = os.environ.get("COMSPEC", "cmd.exe")
-        else:
-            raise RuntimeError("Could not determine an appropriate shell to activate.")
+    shell_path, shell_name = detect_shell()
 
     args = []
     if is_windows():

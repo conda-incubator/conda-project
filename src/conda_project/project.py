@@ -143,7 +143,7 @@ class CondaProject:
     def from_archive(
         cls,
         fn: Union[Path, str],
-        storage_options: Dict[str, str] = {},
+        storage_options: Optional[Dict[str, str]] = None,
         output_directory: Union[Path, str] = ".",
     ):
         """Extra a conda-project archive and load the project"""
@@ -151,13 +151,15 @@ class CondaProject:
         if isinstance(output_directory, str):
             output_directory = Path(output_directory)
 
+        storage_options = {} if storage_options is None else storage_options
         protocol, _ = split_protocol(fn)
         if protocol is not None:
-            storage_options = {protocol: storage_options}
+            options = {protocol: storage_options}
         else:
-            storage_options = {}
+            options = {}
 
-        files = fsspec.open_files(f"libarchive://**::{fn}", **storage_options)
+        files = fsspec.open_files(f"libarchive://**::{fn}", **options)
+        archive_name = Path(Path(fn).name.split(".", maxsplit=1)[0])
 
         first_parts = set(Path(p.path).parts[0] for p in files)
         if ".." in first_parts:
@@ -166,30 +168,32 @@ class CondaProject:
             )
 
         if len(first_parts) == 1:
+            # This looks like a project archive with a directory
+            # at the top level
             if not output_directory.name:
                 project_directory = Path(list(first_parts)[0])
             else:
                 project_directory = output_directory
         else:
+            # This looks like a project archive without a directory
+            # at the top level
             if not output_directory.name:
-                project_directory = Path(Path(fn).name.split(".", maxsplit=1)[0])
+                project_directory = archive_name
             else:
                 project_directory = output_directory
 
         for afile in files:
             with afile as f:
-                if len(first_parts) > 1:
-                    if not output_directory.name:
-                        dest = (
-                            Path(Path(fn).name.split(".", maxsplit=1)[0]) / afile.path
-                        )
-                    else:
-                        dest = output_directory / afile.path
-                else:
+                if len(first_parts) == 1:
                     if not output_directory.name:
                         dest = Path(afile.path)
                     else:
                         dest = output_directory / Path(*Path(afile.path).parts[1:])
+                else:
+                    if not output_directory.name:
+                        dest = archive_name / afile.path
+                    else:
+                        dest = output_directory / afile.path
 
                 dest.parents[0].mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(f.read())

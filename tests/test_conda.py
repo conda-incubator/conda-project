@@ -130,7 +130,7 @@ def test_conda_run_extra_args(mocker, mocked_execvped, empty_conda_environment):
 def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
     mocked_spawn = mocker.patch("conda_project.conda.pexpect.spawn")
     mocker.patch(
-        "conda_project.conda.shellingham.detect_shell",
+        "conda_project.conda.detect_shell",
         return_value=("/bin/sh", "/bin/sh"),
     )
     mocker.patch("conda_project.conda._send_activation")
@@ -150,7 +150,7 @@ def test_conda_activate_pexpect(mocker, empty_conda_environment, capsys):
 def test_conda_activate_pexpect_with_variables(mocker, empty_conda_environment, capsys):
     mocked_spawn = mocker.patch("conda_project.conda.pexpect.spawn")
     mocker.patch(
-        "conda_project.conda.shellingham.detect_shell",
+        "conda_project.conda.detect_shell",
         return_value=("/bin/sh", "/bin/sh"),
     )
     mocker.patch("conda_project.conda._send_activation")
