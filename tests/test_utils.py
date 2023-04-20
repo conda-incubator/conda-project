@@ -250,7 +250,7 @@ def test_popen_return_code(mocker, tmp_path):
 
 def test_detect_shell_from_env(mocker, monkeypatch):
     if is_windows():
-        monkeypatch.setenv("COMPSPEC", "/fake/shell")
+        monkeypatch.setenv("COMSPEC", "/fake/shell")
     else:
         monkeypatch.setenv("SHELL", "/fake/shell")
 
