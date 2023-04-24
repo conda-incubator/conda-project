@@ -68,7 +68,7 @@ prefix.
                         EXPERIMENTAL: Specify the name or prefix path to a conda environment not declared in this project.
 ```
 
-As of now you will still need to define an `environment:` in the conda-project.yml file, but it can be empty.
+As of now you will still need to define an `environments:` in the conda-project.yml file, but it can be empty.
 
 ```yaml
 name: test-command
