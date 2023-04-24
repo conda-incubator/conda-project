@@ -5,7 +5,6 @@
 
 Tool for encapsulating, running, and reproducing projects with conda environments.
 
-This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
 
 ## Why?
 
@@ -16,6 +15,12 @@ See [8 Levels of Reproduciblity](https://www.anaconda.com/blog/8-levels-of-repro
 discussion of the differences between "It works for me." to "I've made sure that anyone can reliably execute my work."
 Conda Project is a framework that aims to help you to ensure a high degree of reproducibility in the projects you
 create.
+
+### How is this different from Anaconda Project?
+
+This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
+We chose to create Conda Project to foster community involvement, adopt newer standards like conda-lock, and provide
+a conda-native workflow. A [standalone conversion script](https://gist.github.com/AlbertDeFusco/e1bc5b960340e78ac9b563fc8de5c727) is provided.
 
 ## Installation
 
