@@ -32,7 +32,7 @@ installed with Conda Project. This will run the default command for the
 
 First the archive is downloaded and the contents are extracted to a local directory called `cmds-and-vars`. You
 can change the output directory with the optional `--directory` flag. Then the `run` action is performed, in
-this case on the default command. You'll see that it installs the local locked environment and executes the command.
+this case on the default command.
 
 ```text
 ❯ conda install -c conda-forge conda-project s3fs
