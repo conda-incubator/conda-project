@@ -11,14 +11,13 @@ import subprocess
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, NoReturn, Optional
+from typing import Dict, List, NoReturn, Optional, Union
 
 import pexpect
-import shellingham
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
 
 from .exceptions import CondaProjectError
-from .utils import execvped, is_windows
+from .utils import detect_shell, execvped, is_windows
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 CONDA_ROOT = os.environ.get("CONDA_ROOT")
@@ -65,6 +64,32 @@ def call_conda(
     return proc
 
 
+def is_conda_env(path: Path) -> bool:
+    return (path / "conda-meta" / "history").exists()
+
+
+def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
+    """Return the path to a conda environment"""
+
+    if env is None:
+        return Path(os.environ["CONDA_PREFIX"]).resolve()
+
+    elif env in ("base", "root"):
+        return Path(os.environ["CONDA_ROOT"]).resolve()
+
+    else:
+        env = Path(env) if isinstance(env, str) else env
+
+        if is_conda_env(env):
+            return env.resolve()
+
+        else:
+            for d in conda_info()["envs_dirs"]:
+                p = Path(d) / env
+                if is_conda_env(p):
+                    return p.resolve()
+
+
 def conda_info():
     proc = call_conda(["info", "--json"])
     parsed = json.loads(proc.stdout)
@@ -105,7 +130,7 @@ def conda_run(
     execvped(file=shell, args=args, env=env, cwd=working_dir)
 
 
-def _send_activation(child_shell, prefix):
+def _send_activation(child_shell: pexpect.spawn, prefix):
     def sigwinch_passthrough(sig, data):
         if not child_shell.closed:
             t = os.get_terminal_size()
@@ -122,15 +147,7 @@ def _send_activation(child_shell, prefix):
 def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
     env = {} if env is None else env
 
-    try:
-        shell_name, shell_path = shellingham.detect_shell()
-    except shellingham.ShellDetectionFailure:
-        if os.name == "posix":
-            shell_name = shell_path = os.environ.get("SHELL", "/bin/sh")
-        elif os.name == "nt":
-            shell_name = shell_path = os.environ.get("COMSPEC", "cmd.exe")
-        else:
-            raise RuntimeError("Could not determine an appropriate shell to activate.")
+    shell_path, shell_name = detect_shell()
 
     args = []
     if is_windows():
@@ -162,7 +179,7 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
         subprocess.run([shell_path, *args], cwd=working_dir, env=env)
     else:
         child_shell = pexpect.spawn(
-            command=shell_path, args=args, cwd=working_dir, env=env, echo=False
+            command=shell_path, args=args, cwd=working_dir, env=env, echo=True
         )
 
         _send_activation(child_shell, prefix)

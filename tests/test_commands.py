@@ -2,12 +2,32 @@
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 import os
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
 
+from conda_project.conda import conda_prefix
 from conda_project.exceptions import CommandNotFoundError
 from conda_project.project import CondaProject
+
+
+@pytest.fixture
+def no_env_one_command(project_directory_factory) -> CondaProject:
+    project_yaml = dedent(
+        """\
+        name: test
+        environments: {}
+        commands:
+          the-command: run-me
+        """
+    )
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+    )
+    project = CondaProject(project_path)
+    return project
 
 
 @pytest.fixture
@@ -360,6 +380,54 @@ def test_run_with_extra_args(
     assert conda_run.call_args == mocker.call(
         cmd="run-me",
         prefix=project.default_environment.prefix,
+        working_dir=project.directory,
+        env=os.environ,
+        extra_args=["--flag", "a", "b"],
+    )
+
+
+def test_run_with_external_environment(
+    one_env_one_command: CondaProject, mocked_execvped, mocker
+):
+    from conda_project import project as project_module
+
+    conda_run = mocker.spy(project_module, "conda_run")
+
+    project = one_env_one_command
+
+    project.default_command.run(
+        extra_args=["--flag", "a", "b"], external_environment="base"
+    )
+
+    assert mocked_execvped.call_count == 1
+
+    assert conda_run.call_args == mocker.call(
+        cmd="run-me",
+        prefix=conda_prefix("base"),
+        working_dir=project.directory,
+        env=os.environ,
+        extra_args=["--flag", "a", "b"],
+    )
+
+
+def test_run_no_project_environment(
+    no_env_one_command: CondaProject, mocked_execvped, mocker
+):
+    from conda_project import project as project_module
+
+    conda_run = mocker.spy(project_module, "conda_run")
+
+    project = no_env_one_command
+
+    project.default_command.run(
+        extra_args=["--flag", "a", "b"],
+    )
+
+    assert mocked_execvped.call_count == 1
+
+    assert conda_run.call_args == mocker.call(
+        cmd="run-me",
+        prefix=Path(os.environ["CONDA_PREFIX"]),
         working_dir=project.directory,
         env=os.environ,
         extra_args=["--flag", "a", "b"],

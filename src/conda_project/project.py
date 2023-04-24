@@ -19,6 +19,7 @@ from pathlib import Path
 from subprocess import SubprocessError
 from typing import Dict, List, NoReturn, Optional, Tuple, Union
 
+import fsspec
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
 from conda_lock.conda_lock import (
@@ -28,9 +29,17 @@ from conda_lock.conda_lock import (
     parse_conda_lock_file,
     render_lockfile_for_platform,
 )
+from fsspec.core import split_protocol
 from pydantic import BaseModel, create_model
 
-from .conda import CONDA_EXE, call_conda, conda_activate, conda_run, current_platform
+from .conda import (
+    CONDA_EXE,
+    call_conda,
+    conda_activate,
+    conda_prefix,
+    conda_run,
+    current_platform,
+)
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
     ENVIRONMENT_YAML_FILENAMES,
@@ -129,6 +138,69 @@ class CondaProject:
             )
 
         self.condarc = self.directory / ".condarc"
+
+    @classmethod
+    def from_archive(
+        cls,
+        fn: Union[Path, str],
+        storage_options: Optional[Dict[str, str]] = None,
+        output_directory: Union[Path, str] = ".",
+    ):
+        """Extra a conda-project archive and load the project"""
+
+        if isinstance(output_directory, str):
+            output_directory = Path(output_directory)
+
+        storage_options = {} if storage_options is None else storage_options
+        protocol, _ = split_protocol(fn)
+        if protocol is not None:
+            options = {protocol: storage_options}
+        else:
+            options = {}
+
+        files = fsspec.open_files(f"libarchive://**::{fn}", **options)
+        archive_name = Path(Path(fn).name.split(".", maxsplit=1)[0])
+
+        first_parts = set(Path(p.path).parts[0] for p in files)
+        if ".." in first_parts:
+            raise CondaProjectError(
+                f"The archive {fn} contains relative paths, which are not allowed."
+            )
+
+        if len(first_parts) == 1:
+            # This looks like a project archive with a directory
+            # at the top level
+            if not output_directory.name:
+                project_directory = Path(list(first_parts)[0])
+            else:
+                project_directory = output_directory
+        else:
+            # This looks like a project archive without a directory
+            # at the top level
+            if not output_directory.name:
+                project_directory = archive_name
+            else:
+                project_directory = output_directory
+
+        for afile in files:
+            with afile as f:
+                if len(first_parts) == 1:
+                    if not output_directory.name:
+                        dest = Path(afile.path)
+                    else:
+                        dest = output_directory / Path(*Path(afile.path).parts[1:])
+                else:
+                    if not output_directory.name:
+                        dest = archive_name / afile.path
+                    else:
+                        dest = output_directory / afile.path
+
+                dest.parents[0].mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(f.read())
+                print(dest, file=sys.stderr)
+
+        project = CondaProject(project_directory)
+        return project
 
     @classmethod
     def init(
@@ -238,8 +310,11 @@ class CondaProject:
 
     @property
     def default_environment(self) -> Environment:
-        name = next(iter(self._project_file.environments))
-        return self.environments[name]
+        try:
+            name = next(iter(self._project_file.environments))
+            return self.environments[name]
+        except StopIteration:
+            return None
 
     @property
     def commands(self) -> BaseCommands:
@@ -709,19 +784,32 @@ class BaseEnvironments(BaseModel):
 class Command(BaseModel):
     name: str
     cmd: str
-    environment: Environment
+    environment: Optional[Environment] = None
     command_variables: Optional[Dict[str, Optional[str]]] = None
     project: CondaProject
 
-    def run(self, environment=None, extra_args=None, verbose=False) -> NoReturn:
-        if environment is None:
-            environment = self.environment
+    def run(
+        self,
+        environment=None,
+        external_environment=None,
+        extra_args=None,
+        verbose=False,
+    ) -> NoReturn:
+        if external_environment is None and self.environment is None:
+            prefix = conda_prefix()
+        elif external_environment is not None:
+            prefix = conda_prefix(external_environment)
         else:
-            if isinstance(environment, str):
-                environment = self.project.environments[environment]
+            if environment is None:
+                environment = self.environment
+            else:
+                if isinstance(environment, str):
+                    environment = self.project.environments[environment]
 
-        if not environment.is_consistent:
-            environment.install(verbose=verbose)
+            if not environment.is_consistent:
+                environment.install(verbose=verbose)
+
+            prefix = environment.prefix
 
         env = prepare_variables(
             self.project.directory,
@@ -731,7 +819,7 @@ class Command(BaseModel):
 
         conda_run(
             cmd=self.cmd,
-            prefix=environment.prefix,
+            prefix=prefix,
             working_dir=self.project.directory,
             env=env,
             extra_args=extra_args,

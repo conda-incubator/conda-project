@@ -26,9 +26,15 @@ requirements:
     - setuptools
   run:
     - python {{ project['requires-python'] }}
-    {% for dep in project['dependencies'] %}
-    - {{ dep.lower() }}
-    {% endfor %}
+    - conda-lock >=1.2
+    - lockfile
+    - pexpect
+    - ruamel.yaml
+    - pydantic
+    - shellingham
+    - python-dotenv
+    - fsspec
+    - python-libarchive-c
 
 test:
   imports:

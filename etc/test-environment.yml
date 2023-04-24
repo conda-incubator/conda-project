@@ -13,3 +13,5 @@ dependencies:
   - pytest-mock
   - shellingham
   - python-dotenv
+  - fsspec
+  - python-libarchive-c

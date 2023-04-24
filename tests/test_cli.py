@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
+from argparse import Namespace
 from textwrap import dedent
 
 import pytest
 
+from conda_project.cli.commands import _load_project
 from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
@@ -224,7 +226,7 @@ def test_run_default_command(mocker, multi_env_multi_command):
     _ = parse_and_run(["run", "--directory", str(multi_env_multi_command)])
 
     assert default_command.run.call_args == mocker.call(
-        environment=None, extra_args=[], verbose=True
+        environment=None, extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -236,7 +238,7 @@ def test_run_default_command_with_env(mocker, multi_env_multi_command):
     )
 
     assert default_command.run.call_args == mocker.call(
-        environment="env2", extra_args=[], verbose=True
+        environment="env2", extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -269,7 +271,7 @@ def test_run_unnamed_command(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment=None, extra_args=[], verbose=True
+        environment=None, extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -299,7 +301,7 @@ def test_run_unnamed_command_with_env(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment="env2", extra_args=[], verbose=True
+        environment="env2", extra_args=[], external_environment=None, verbose=True
     )
 
 
@@ -332,5 +334,47 @@ def test_run_unnamed_command_with_extra_args(mocker, multi_env_multi_command):
         project=project.spy_return,
     )
     assert mocked_run.call_args == mocker.call(
-        environment="env2", extra_args=["--flag", "value", "arg1"], verbose=True
+        environment="env2",
+        extra_args=["--flag", "value", "arg1"],
+        external_environment=None,
+        verbose=True,
     )
+
+
+@pytest.mark.parametrize("action", ("lock", "check", "install", "activate", "run"))
+def test_cli_archive_arguments(action, mocker, capsys):
+    mocked_action = mocker.patch(
+        f"conda_project.cli.commands.{action}",
+        return_value=42,
+        side_effect=print(f"I am {action}"),
+    )
+
+    ret = parse_and_run(
+        [action, "--project-archive", "project.tar.gz", "--directory", "project-dir"]
+    )
+    assert ret == 42
+
+    assert mocked_action.call_count == 1
+    assert "project_archive" in mocked_action.call_args.args[0]
+    assert "archive_storage_options" in mocked_action.call_args.args[0]
+
+    out, err = capsys.readouterr()
+    assert f"I am {action}\n" == out
+    assert "" == err
+
+
+def test_archive_storage_options_remote(mocker):
+    mocked_project = mocker.patch("conda_project.cli.commands.CondaProject")
+
+    args = Namespace(
+        project_archive="protocol://bucket/file.zip",
+        archive_storage_options="key1=valueA,key2=valueB",
+        directory=None,
+    )
+
+    _ = _load_project(args)
+
+    assert mocked_project.from_archive.call_args.kwargs["storage_options"] == {
+        "key1": "valueA",
+        "key2": "valueB",
+    }

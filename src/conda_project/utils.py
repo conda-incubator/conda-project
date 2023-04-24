@@ -15,6 +15,7 @@ from pathlib import Path
 from subprocess import Popen
 from typing import Dict, List, NoReturn, Optional, Type, Union
 
+import shellingham
 from dotenv import dotenv_values
 
 from .exceptions import CondaProjectError
@@ -165,3 +166,19 @@ def execvped(
             os.execvpe(file, args, env)
         finally:
             os.chdir(old_dir)
+
+
+def detect_shell():
+    try:
+        shell_name, shell_path = shellingham.detect_shell()
+    except shellingham.ShellDetectionFailure:
+        if os.name == "posix":
+            shell_name = shell_path = os.environ.get("SHELL", "/bin/sh")
+        elif os.name == "nt":
+            shell_name = shell_path = os.environ.get("COMSPEC", "cmd.exe")
+        else:
+            raise RuntimeError(
+                "Could not determine an appropriate shell to activate for your OS."
+            )
+
+    return shell_name, shell_path

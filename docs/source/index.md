@@ -7,6 +7,7 @@
 
 user_guide
 tutorial
+experimental
 setup_for_development
 api/modules
 ```

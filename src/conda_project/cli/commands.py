@@ -13,6 +13,30 @@ from ..project import Command, CondaProject
 logger = logging.getLogger(__name__)
 
 
+def _load_project(args: Namespace):
+    if args.project_archive is not None:
+        _storage_options = (
+            []
+            if args.archive_storage_options is None
+            else args.archive_storage_options.split(",")
+        )
+
+        storage_options = {}
+        for option in _storage_options:
+            k, v = option.split("=")
+            storage_options[k] = v
+
+        project = CondaProject.from_archive(
+            args.project_archive,
+            storage_options=storage_options,
+            output_directory=args.directory,
+        )
+    else:
+        project = CondaProject(args.directory)
+
+    return project
+
+
 def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int]:
     """Wrap a subcommand function to catch exceptions and return an appropriate error code."""
 
@@ -61,7 +85,7 @@ def create(args: Namespace) -> int:
 
 @handle_errors
 def lock(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.environment:
         to_lock = [project.environments[args.environment]]
@@ -76,13 +100,13 @@ def lock(args: Namespace) -> bool:
 
 @handle_errors
 def check(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
     return project.check(verbose=True)
 
 
 @handle_errors
 def install(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.all:
         for _, env in project.environments:
@@ -125,7 +149,7 @@ def clean(args: Namespace) -> bool:
 
 @handle_errors
 def run(args: Namespace) -> NoReturn:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.command:
         try:
@@ -140,12 +164,17 @@ def run(args: Namespace) -> NoReturn:
     else:
         to_run = project.default_command
 
-    to_run.run(environment=args.environment, extra_args=args.extra_args, verbose=True)
+    to_run.run(
+        environment=args.environment,
+        external_environment=args.external_environment,
+        extra_args=args.extra_args,
+        verbose=True,
+    )
 
 
 @handle_errors
 def activate(args: Namespace) -> bool:
-    project = CondaProject(args.directory)
+    project = _load_project(args)
 
     if args.environment:
         env = project.environments[args.environment]

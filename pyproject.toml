@@ -38,6 +38,8 @@ dependencies = [
     "pydantic",
     "shellingham",
     "python-dotenv",
+    "fsspec",
+    "libarchive-c"
 ]
 
 [tool.setuptools_scm]
@@ -68,6 +70,7 @@ documentation = "https://conda-incubator.github.io/conda-project/user_guide.html
 omit = [
     "conda_project/__main__.py",
     "tests/*",
+    "scripts/*"
 ]
 exclude_lines = [
     "pragma: no cover",
@@ -89,7 +92,7 @@ disallow_untyped_defs = true
 warn_no_return = true
 
 [tool.pytest.ini_options]
-norecursedirs = [".*", "*.egg*", "build", "dist", "conda.recipe", "examples", "env"]
+norecursedirs = [".*", "*.egg*", "build", "dist", "conda.recipe", "examples", "env", "scripts"]
 addopts = "-vv --cov-report term-missing --cov conda_project --tb native --strict-markers --durations=20"
 markers = [
     "serial: execute test serially (to avoid race conditions)",
