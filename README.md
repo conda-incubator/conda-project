@@ -20,7 +20,14 @@ create.
 
 This package is intended as a successor to [Anaconda Project](https://github.com/Anaconda-Platform/anaconda-project).
 We chose to create Conda Project to foster community involvement, adopt newer standards like conda-lock, and provide
-a conda-native workflow. A [standalone conversion script](https://gist.github.com/AlbertDeFusco/e1bc5b960340e78ac9b563fc8de5c727) is provided.
+a conda-native workflow. A standalone conversion script is provided in this repo at `scripts/ap-to-cp.py`. You can run
+it as follows. By default it will write Conda Project files into your current working directory. You can read anaconda-project.yml file from any other directory or output Conda Project files to any other directory.
+
+You'll need `pydantic` and `ruamel.yaml` installed.
+
+```text
+python ap-to-cp.py /path/to/anaconda-project.yml [/output/directory]
+```
 
 ## Installation
 
