@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.1] - 2023-04-05
+
+## Maintenance
+
+- Build system and CI fixes [#96](https://github.com/conda-incubator/conda-project/pull/96), [#97](https://github.com/conda-incubator/conda-project/pull/97), [#100](https://github.com/conda-incubator/conda-project/pull/100), [#101](https://github.com/conda-incubator/conda-project/pull/101)
+
 ## [0.1.0] - 2023-03-31
 
 ### Added
