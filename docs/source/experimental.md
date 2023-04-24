@@ -26,12 +26,12 @@ more information. To pass specific parameters to the FSSpec driver use the `--ar
                         options username=<user>,password=<pass>
 ```
 
-Here's an example of running a project directly from an archive stored on S3. Note that `s3fs` may note already be
+Here's an example of running a project directly from an archive stored on S3. Note that `s3fs` may not already be
 installed with Conda Project. This will run the default command for the
 [cmds-and-vars](https://github.com/conda-incubator/conda-project/tree/main/examples/cmds-and-vars) example project.
 
 First the archive is downloaded and the contents are extracted to a local directory called `cmds-and-vars`. You
-can change the output directory with the optional `--directory` flag. Then the the `run` action is performed, in
+can change the output directory with the optional `--directory` flag. Then the `run` action is performed, in
 this case on the default command. You'll see that it installs the local locked environment and executes the command.
 
 ```text
