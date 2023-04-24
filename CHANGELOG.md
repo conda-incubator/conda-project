@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2023-04-24
+
+## Added
+
+- Experimental: run commands using an external conda environment. [#106](https://github.com/conda-incubator/conda-project/pull/106)
+- Experimental: download and extract a project archive on first use. [#106](https://github.com/conda-incubator/conda-project/pull/106)
+- Experimental: Anaconda Project -> Conda Project conversion script. [#106](https://github.com/conda-incubator/conda-project/pull/106)
+
 ## [0.1.1] - 2023-04-05
 
 ## Maintenance
