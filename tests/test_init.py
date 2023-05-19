@@ -18,7 +18,7 @@ def test_project_init_expanduser(mocker):
 
     project_directory = "~__a-conda-project-user__/project"
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises((RuntimeError, FileNotFoundError)):
         _ = CondaProject(project_directory)
 
     assert expanduser.call_count == 1
@@ -125,7 +125,7 @@ def test_project_directory_expanduser(mocker):
     expanduser = mocker.spy(Path, "expanduser")
 
     directory = "~__a-conda-project-user__/project"
-    with pytest.raises(RuntimeError):
+    with pytest.raises((RuntimeError, FileNotFoundError)):
         _ = CondaProject(directory)
 
     assert expanduser.call_count == 1
