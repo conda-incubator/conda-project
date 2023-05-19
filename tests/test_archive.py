@@ -123,6 +123,7 @@ def test_archive_storage_options(mocker):
     assert mocked_open_files.call_args_list[0].kwargs == {
         "file": {"key1": "valueA", "key2": "valueB"}
     }
+    assert "simplecache" in mocked_open_files.call_args_list[0].args[0]
 
 
 def test_archive_path_expanduser(mocker):

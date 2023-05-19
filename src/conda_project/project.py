@@ -155,6 +155,7 @@ class CondaProject:
         protocol, _ = split_protocol(fn)
         if protocol is not None:
             options = {protocol: storage_options}
+            fn = f"simplecache::{fn}"
         else:
             fn = Path(fn).expanduser()
             options = {}
