@@ -11,6 +11,20 @@ from conda_project.exceptions import CondaProjectError
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
 
 
+def test_project_init_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    project_directory = "~__a-conda-project-user__/project"
+
+    with pytest.raises(RuntimeError):
+        _ = CondaProject(project_directory)
+
+    assert expanduser.call_count == 1
+    assert str(expanduser.call_args_list[0].args[0]) == project_directory
+
+
 def test_project_init_new_directory(tmp_path, capsys):
     project_directory = tmp_path / "new-project"
     assert not os.path.exists(project_directory)
@@ -103,6 +117,19 @@ def test_project_init_and_lock(tmp_path):
     p = CondaProject.init(tmp_path, dependencies=["python=3.8"], lock_dependencies=True)
     assert p.default_environment.lockfile.exists()
     assert p.default_environment.lockfile == tmp_path / "conda-lock.default.yml"
+
+
+def test_project_directory_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    directory = "~__a-conda-project-user__/project"
+    with pytest.raises(RuntimeError):
+        _ = CondaProject(directory)
+
+    assert expanduser.call_count == 1
+    assert str(expanduser.call_args_list[0].args[0]) == directory
 
 
 def test_conda_project_init_empty_dir(tmp_path, caplog):

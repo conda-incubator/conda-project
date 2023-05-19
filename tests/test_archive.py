@@ -123,3 +123,32 @@ def test_archive_storage_options(mocker):
     assert mocked_open_files.call_args_list[0].kwargs == {
         "file": {"key1": "valueA", "key2": "valueB"}
     }
+
+
+def test_archive_path_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    archive = "~__a-conda-project-user__/project.tar.gz"
+    with pytest.raises(RuntimeError):
+        _ = CondaProject.from_archive(fn=archive)
+
+    assert expanduser.call_count == 2
+    assert str(expanduser.call_args_list[0].args[0]) == "."
+    assert str(expanduser.call_args_list[1].args[0]) == archive
+
+
+def test_archive_output_directory_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    archive = ASSETS_DIR / "top-level-dir.tar.gz"
+
+    output_directory = "~__a-conda-project-user__/project"
+    with pytest.raises(RuntimeError):
+        _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+
+    assert expanduser.call_count == 1
+    assert str(expanduser.call_args_list[0].args[0]) == output_directory
