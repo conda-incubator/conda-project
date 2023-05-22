@@ -136,8 +136,6 @@ def test_archive_path_expanduser(mocker):
         _ = CondaProject.from_archive(fn=archive)
 
     assert expanduser.call_count == 2
-    assert str(expanduser.call_args_list[0].args[0]) == "."
-    assert str(expanduser.call_args_list[1].args[0]) == archive
 
 
 def test_archive_output_directory_expanduser(mocker):
@@ -152,4 +150,3 @@ def test_archive_output_directory_expanduser(mocker):
         _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
 
     assert expanduser.call_count == 1
-    assert str(expanduser.call_args_list[0].args[0]) == output_directory

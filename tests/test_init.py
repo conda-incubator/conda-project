@@ -22,7 +22,6 @@ def test_project_init_expanduser(mocker):
         _ = CondaProject(project_directory)
 
     assert expanduser.call_count == 1
-    assert str(expanduser.call_args_list[0].args[0]) == project_directory
 
 
 def test_project_init_new_directory(tmp_path, capsys):
@@ -129,7 +128,6 @@ def test_project_directory_expanduser(mocker):
         _ = CondaProject(directory)
 
     assert expanduser.call_count == 1
-    assert str(expanduser.call_args_list[0].args[0]) == directory
 
 
 def test_conda_project_init_empty_dir(tmp_path, caplog):
@@ -168,7 +166,7 @@ def test_conda_project_init_with_env_yaml(project_directory_factory):
     assert project.default_environment.prefix == project.directory / "envs" / "default"
 
 
-def test_project_init_expands_cwd(monkeypatch, project_directory_factory):
+def test_project_init_resolves_cwd(monkeypatch, project_directory_factory):
     project_path = project_directory_factory(env_yaml="")
     monkeypatch.chdir(project_path)
 

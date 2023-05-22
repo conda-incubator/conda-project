@@ -148,8 +148,7 @@ class CondaProject:
     ):
         """Extra a conda-project archive and load the project"""
 
-        if isinstance(output_directory, str):
-            output_directory = Path(output_directory).expanduser()
+        output_directory = Path(output_directory).expanduser()
 
         storage_options = {} if storage_options is None else storage_options
         protocol, _ = split_protocol(fn)
