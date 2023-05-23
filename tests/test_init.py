@@ -9,6 +9,7 @@ from ruamel.yaml import YAML
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
+from conda_project.utils import is_windows
 
 
 def test_project_init_expanduser(mocker):
@@ -18,8 +19,12 @@ def test_project_init_expanduser(mocker):
 
     project_directory = "~__a-conda-project-user__/project"
 
-    with pytest.raises((RuntimeError, FileNotFoundError)):
-        _ = CondaProject(project_directory)
+    if is_windows():
+        with pytest.raises(FileNotFoundError):
+            _ = CondaProject(project_directory)
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject(project_directory)
 
     assert expanduser.call_count == 1
 
@@ -124,8 +129,12 @@ def test_project_directory_expanduser(mocker):
     expanduser = mocker.spy(Path, "expanduser")
 
     directory = "~__a-conda-project-user__/project"
-    with pytest.raises((RuntimeError, FileNotFoundError)):
-        _ = CondaProject(directory)
+    if is_windows():
+        with pytest.raises(FileNotFoundError):
+            _ = CondaProject(directory)
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject(directory)
 
     assert expanduser.call_count == 1
 

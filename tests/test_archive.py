@@ -7,6 +7,7 @@ import pytest
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.project import CondaProject
+from conda_project.utils import is_windows
 
 ASSETS_DIR = Path(__file__).parents[0] / "assets"
 
@@ -132,8 +133,12 @@ def test_archive_path_expanduser(mocker):
     expanduser = mocker.spy(Path, "expanduser")
 
     archive = "~__a-conda-project-user__/project.tar.gz"
-    with pytest.raises((RuntimeError, FileNotFoundError)):
-        _ = CondaProject.from_archive(fn=archive)
+    if is_windows():
+        with pytest.raises(FileNotFoundError):
+            _ = CondaProject.from_archive(fn=archive)
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject.from_archive(fn=archive)
 
     assert expanduser.call_count == 2
 
@@ -146,7 +151,11 @@ def test_archive_output_directory_expanduser(mocker):
     archive = ASSETS_DIR / "top-level-dir.tar.gz"
 
     output_directory = "~__a-conda-project-user__/project"
-    with pytest.raises((RuntimeError, FileNotFoundError)):
-        _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+    if is_windows():
+        with pytest.raises(FileNotFoundError):
+            _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
 
     assert expanduser.call_count == 1
