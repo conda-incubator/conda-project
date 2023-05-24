@@ -16,6 +16,8 @@ on:
       - "docs/**"
     branches:
       - main
+
+
 jobs:
   package:
     name: Build package
@@ -59,6 +61,7 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      CONDA_DEFAULT_CHANNELS: conda-forge
     steps:
       - uses: actions/checkout@v3
       - name: Download conda standalone
