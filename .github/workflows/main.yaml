@@ -61,7 +61,6 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
-      CONDA_DEFAULT_CHANNELS: conda-forge
     steps:
       - uses: actions/checkout@v3
       - name: Download conda standalone
@@ -82,6 +81,9 @@ jobs:
         shell: bash
         run: |
           ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
+      - name: Update with test dependencies
+        shell: bash
+        run: |
           if [ $RUNNER_OS == 'Windows' ]; then
             source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
           else
@@ -101,6 +103,8 @@ jobs:
           fi
       - name: py.test
         shell: bash
+        env:
+          CONDA_DEFAULT_CHANNELS: conda-forge
         run: |
           if [ $RUNNER_OS == 'Windows' ]; then
             source $HOME/miniconda/Scripts/activate root && \
