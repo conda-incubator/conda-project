@@ -152,10 +152,9 @@ def test_archive_output_directory_expanduser(mocker):
 
     output_directory = "~__a-conda-project-user__/project"
     if is_windows():
-        with pytest.raises(FileNotFoundError):
-            _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+        _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+        assert expanduser.call_count == 3
     else:
         with pytest.raises(RuntimeError):
             _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
-
-    assert expanduser.call_count == 1
+        assert expanduser.call_count == 1

@@ -20,8 +20,7 @@ def test_project_init_expanduser(mocker):
     project_directory = "~__a-conda-project-user__/project"
 
     if is_windows():
-        with pytest.raises(FileNotFoundError):
-            _ = CondaProject(project_directory)
+       _ = CondaProject(project_directory)
     else:
         with pytest.raises(RuntimeError):
             _ = CondaProject(project_directory)
@@ -130,8 +129,7 @@ def test_project_directory_expanduser(mocker):
 
     directory = "~__a-conda-project-user__/project"
     if is_windows():
-        with pytest.raises(FileNotFoundError):
-            _ = CondaProject(directory)
+        _ = CondaProject(directory)
     else:
         with pytest.raises(RuntimeError):
             _ = CondaProject(directory)
