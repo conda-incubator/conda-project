@@ -20,7 +20,7 @@ def test_project_init_expanduser(mocker):
     project_directory = "~__a-conda-project-user__/project"
 
     if is_windows():
-       _ = CondaProject(project_directory)
+        _ = CondaProject(project_directory)
     else:
         with pytest.raises(RuntimeError):
             _ = CondaProject(project_directory)
