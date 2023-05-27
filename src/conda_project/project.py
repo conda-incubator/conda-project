@@ -111,7 +111,7 @@ class CondaProject:
     """
 
     def __init__(self, directory: Union[Path, str] = "."):
-        self.directory = Path(directory).resolve()
+        self.directory = Path(directory).expanduser().resolve()
         logger.info(f"created Project instance at {self.directory}")
 
         self.project_yaml_path = find_file(self.directory, PROJECT_YAML_FILENAMES)
@@ -148,14 +148,15 @@ class CondaProject:
     ):
         """Extra a conda-project archive and load the project"""
 
-        if isinstance(output_directory, str):
-            output_directory = Path(output_directory)
+        output_directory = Path(output_directory).expanduser()
 
         storage_options = {} if storage_options is None else storage_options
         protocol, _ = split_protocol(fn)
         if protocol is not None:
             options = {protocol: storage_options}
+            fn = f"simplecache::{fn}"
         else:
+            fn = Path(fn).expanduser()
             options = {}
 
         files = fsspec.open_files(f"libarchive://**::{fn}", **options)
@@ -243,7 +244,7 @@ class CondaProject:
 
         """
 
-        directory = Path(directory).resolve()
+        directory = Path(directory).expanduser().resolve()
         if not directory.exists():
             directory.mkdir(parents=True)
 

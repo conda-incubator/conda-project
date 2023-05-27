@@ -7,6 +7,7 @@ import pytest
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.project import CondaProject
+from conda_project.utils import is_windows
 
 ASSETS_DIR = Path(__file__).parents[0] / "assets"
 
@@ -123,3 +124,37 @@ def test_archive_storage_options(mocker):
     assert mocked_open_files.call_args_list[0].kwargs == {
         "file": {"key1": "valueA", "key2": "valueB"}
     }
+    assert "simplecache" in mocked_open_files.call_args_list[0].args[0]
+
+
+def test_archive_path_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    archive = "~__a-conda-project-user__/project.tar.gz"
+    if is_windows():
+        with pytest.raises(FileNotFoundError):
+            _ = CondaProject.from_archive(fn=archive)
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject.from_archive(fn=archive)
+
+    assert expanduser.call_count == 2
+
+
+def test_archive_output_directory_expanduser(mocker):
+    from pathlib import Path
+
+    expanduser = mocker.spy(Path, "expanduser")
+
+    archive = ASSETS_DIR / "top-level-dir.tar.gz"
+
+    output_directory = "~__a-conda-project-user__/project"
+    if is_windows():
+        _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+        assert expanduser.call_count == 3
+    else:
+        with pytest.raises(RuntimeError):
+            _ = CondaProject.from_archive(fn=archive, output_directory=output_directory)
+        assert expanduser.call_count == 1
