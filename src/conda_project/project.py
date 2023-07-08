@@ -534,10 +534,11 @@ class Environment(BaseModel):
         # after the lockfile has been created conda-lock updates
         # the hash in the lockfile but does not remove the unspecified
         # package (and necessary orphaned dependencies) from the lockfile.
-        # To avoid this scenario lockfiles are written to a temporary location
-        # and copied back to the self.lockfile path if successful.
-        tempdir = Path(tempfile.mkdtemp())
-        lockfile = tempdir / self.lockfile.name
+        # To avoid this scenario lockfiles are written to a temporary name
+        # and copied to the self.lockfile path if successful. It is
+        # important to create the lock file in the same directory so that
+        # conda-lock's relative path handling works as expected.
+        templock = Path(tempfile.mktemp(dir=self.lockfile.parent))
 
         channel_overrides, platform_overrides = self._overrides
 
@@ -568,7 +569,7 @@ class Environment(BaseModel):
                         make_lock_files(
                             conda=CONDA_EXE,
                             src_files=list(self.sources),
-                            lockfile_path=lockfile,
+                            lockfile_path=templock,
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
@@ -589,7 +590,8 @@ class Environment(BaseModel):
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
                     finally:
-                        shutil.rmtree(tempdir)
+                        if os.path.exists(templock):
+                            os.unlink(templock)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
