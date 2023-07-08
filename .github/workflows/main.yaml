@@ -167,11 +167,4 @@ jobs:
     - name: Decide whether all required jobs succeeded or failed
       uses: re-actors/alls-green@release/v1
       with:
-        # We allow skipping the package job as a hack to allow the docs workflow to run without
-        # running the test job. Since the `check` job is required for PRs to be merged, we need
-        # it to be green, even if the tests are skipped via the paths-ignore workflow controls
-        # at the top of this file. Since the package job is required for the upload job, we
-        # wouldn't be allowing any other undesired behavior, since the package couldn't be
-        # uploaded if the package job didn't run.
-        allowed-skips: package
         jobs: ${{ toJSON(needs) }}
