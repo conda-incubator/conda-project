@@ -2,6 +2,7 @@
 
 [![codecov](https://codecov.io/gh/conda-incubator/conda-project/branch/main/graph/badge.svg?token=XNRS8JKT75)](https://codecov.io/gh/conda-incubator/conda-project)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
+[![Static Badge](https://img.shields.io/badge/docs-success-blue?logo=github)](https://conda-incubator.github.io/conda-project)
 
 Tool for encapsulating, running, and reproducing projects with conda environments.
 
