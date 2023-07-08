@@ -16,7 +16,7 @@ on:
       - "MANIFEST"
       - "docs/**"
       - ".github/workflows/docs.yml"
-      - ".github/workflows/main.yaml"
+      - ".github/workflows/main.yml"
     branches:
       - main
 
