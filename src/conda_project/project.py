@@ -539,7 +539,9 @@ class Environment(BaseModel):
         # important to create the lock file in the same directory so that
         # conda-lock's relative path handling works as expected.
         lockname = self.lockfile.name
-        templock = Path(tempfile.mktemp(prefix=lockname + '.', dir=self.lockfile.parent))
+        templock = Path(
+            tempfile.mktemp(prefix=lockname + ".", dir=self.lockfile.parent)
+        )
         tempname = templock.name
 
         channel_overrides, platform_overrides = self._overrides
@@ -576,12 +578,12 @@ class Environment(BaseModel):
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
                         )
-                        with open(templock, 'r') as fp:
+                        with open(templock, "r") as fp:
                             data = fp.read()
                         # Replace the occurences of the temporary filename
                         # (in the header comment) with the proper filename
                         data = data.replace(tempname, lockname)
-                        with open(templock, 'w') as fp:
+                        with open(templock, "w") as fp:
                             fp.write(data)
                         shutil.copy(templock, self.lockfile)
                     except SubprocessError as e:
