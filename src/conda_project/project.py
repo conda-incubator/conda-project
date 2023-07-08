@@ -574,7 +574,7 @@ class Environment(BaseModel):
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
                         )
-                        shutil.copy(lockfile, self.lockfile)
+                        shutil.copy(templock, self.lockfile)
                     except SubprocessError as e:
                         try:
                             output = json.loads(e.output)
