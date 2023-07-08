@@ -17,7 +17,7 @@ from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
 from subprocess import SubprocessError
-from typing import Dict, List, NoReturn, Optional, Tuple, Union
+from typing import Dict, List, Literal, NoReturn, Optional, Tuple, Union
 
 import fsspec
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
@@ -767,10 +767,11 @@ class Environment(BaseModel):
             logger=logger,
         )
 
-    def add(
+    def update(
         self,
         dependencies: List[str],
         channels: Optional[List[str]] = None,
+        method: Literal["add", "remove"] = "add",
         verbose: bool = False,
     ) -> None:
         writable_source = self.sources[
@@ -779,8 +780,20 @@ class Environment(BaseModel):
         source = EnvironmentYaml.parse_yaml(writable_source)
         original_source = source.copy(deep=True)
 
-        source.add_dependencies(dependencies, channels)
+        if method == "add":
+            source.add_dependencies(dependencies, channels)
+        elif method == "remove":
+            source.remove_dependencies(dependencies)
+        else:
+            raise ValueError(f"{method} can only be 'add' or 'remove'.")
+
         source.yaml(writable_source)
+
+        if source == original_source:
+            return
+
+        if self.is_locked:
+            return
 
         try:
             self.lock(verbose=verbose)

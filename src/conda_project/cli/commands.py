@@ -139,7 +139,21 @@ def add(args: Namespace) -> bool:
         else project.default_environment
     )
 
-    env.add(args.dependencies, args.channel, verbose=True)
+    env.update(args.dependencies, args.channel, method="add", verbose=True)
+    return True
+
+
+@handle_errors
+def remove(args: Namespace) -> bool:
+    project = _load_project(args)
+
+    env = (
+        project.environments[args.environment]
+        if args.environment
+        else project.default_environment
+    )
+
+    env.update(args.dependencies, method="remove", verbose=True)
     return True
 
 

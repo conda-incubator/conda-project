@@ -67,6 +67,7 @@ def cli() -> ArgumentParser:
     _create_check_parser(subparsers, common, extras)
     _create_install_parser(subparsers, common, extras)
     _create_add_parser(subparsers, common, extras)
+    _create_remove_parser(subparsers, common, extras)
     _create_activate_parser(subparsers, common, extras)
     _create_clean_parser(subparsers, common)
     _create_run_parser(subparsers, common, extras)
@@ -289,6 +290,37 @@ def _create_add_parser(
     )
 
     p.set_defaults(func=commands.add)
+
+
+def _create_remove_parser(
+    subparsers: "_SubParsersAction", *parent_parsers: ArgumentParser
+) -> None:
+    """Add a subparser for the "remove" subcommand.
+
+    Args:
+        subparsers: The existing subparsers corresponding to the "command" meta-variable.
+        parent_parsers: The parent parsers, which are used to pass common arguments into the subcommands.
+
+    """
+    desc = "Remove packages to an environment"
+
+    # TODO: If we deprecate "create", this loop can go away.
+    p = subparsers.add_parser(
+        "remove", description=desc, help=desc, parents=parent_parsers
+    )
+    p.add_argument("--environment", default=None)
+    p.add_argument(
+        "dependencies",
+        help=(
+            "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
+            "where <op> can be =, <, >, <=, or >=."
+        ),
+        action="store",
+        nargs="*",
+        metavar="PACKAGE_SPECIFICATION",
+    )
+
+    p.set_defaults(func=commands.remove)
 
 
 def _create_clean_parser(
