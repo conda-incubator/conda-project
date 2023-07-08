@@ -498,7 +498,7 @@ class Environment(BaseModel):
         locked_pkgs = {
             (p.name, p.version, p.manager, p.hash.sha256)
             for p in lock.package
-            if p.platform == current_platform() and not p.optional
+            if p.platform == current_platform() and p.category == "main"
         }
 
         # Compare the sets
@@ -766,6 +766,30 @@ class Environment(BaseModel):
             verbose=verbose,
             logger=logger,
         )
+
+    def add(
+        self,
+        dependencies: List[str],
+        channels: Optional[List[str]] = None,
+        verbose: bool = False,
+    ) -> None:
+        writable_source = self.sources[
+            0
+        ]  # TODO: if multiple sources identify the first writable
+        source = EnvironmentYaml.parse_yaml(writable_source)
+        original_source = source.copy(deep=True)
+
+        source.add_dependencies(dependencies, channels)
+        source.yaml(writable_source)
+
+        try:
+            self.lock(verbose=verbose)
+        except Exception as e:
+            original_source.yaml(writable_source)
+            raise e
+
+        self.clean(verbose=verbose)
+        self.install(verbose=verbose)
 
     def activate(self, verbose=False) -> None:
         if not self.is_consistent:
