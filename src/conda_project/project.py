@@ -534,10 +534,15 @@ class Environment(BaseModel):
         # after the lockfile has been created conda-lock updates
         # the hash in the lockfile but does not remove the unspecified
         # package (and necessary orphaned dependencies) from the lockfile.
-        # To avoid this scenario lockfiles are written to a temporary location
-        # and copied back to the self.lockfile path if successful.
-        tempdir = Path(tempfile.mkdtemp())
-        lockfile = tempdir / self.lockfile.name
+        # To avoid this scenario lockfiles are written to a temporary name
+        # and copied to the self.lockfile path if successful. It is
+        # important to create the lock file in the same directory so that
+        # conda-lock's relative path handling works as expected.
+        lockname = self.lockfile.name
+        templock = Path(
+            tempfile.mktemp(prefix=lockname + ".", dir=self.lockfile.parent)
+        )
+        tempname = templock.name
 
         channel_overrides, platform_overrides = self._overrides
 
@@ -568,12 +573,19 @@ class Environment(BaseModel):
                         make_lock_files(
                             conda=CONDA_EXE,
                             src_files=list(self.sources),
-                            lockfile_path=lockfile,
+                            lockfile_path=templock,
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
                         )
-                        shutil.copy(lockfile, self.lockfile)
+                        with open(templock, "r") as fp:
+                            data = fp.read()
+                        # Replace the occurences of the temporary filename
+                        # (in the header comment) with the proper filename
+                        data = data.replace(tempname, lockname)
+                        with open(templock, "w") as fp:
+                            fp.write(data)
+                        shutil.copy(templock, self.lockfile)
                     except SubprocessError as e:
                         try:
                             output = json.loads(e.output)
@@ -589,7 +601,8 @@ class Environment(BaseModel):
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
                     finally:
-                        shutil.rmtree(tempdir)
+                        if os.path.exists(templock):
+                            os.unlink(templock)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
