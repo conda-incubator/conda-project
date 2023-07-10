@@ -212,7 +212,7 @@ class CondaProject:
         channels: Optional[List[str]] = None,
         platforms: Optional[List[str]] = None,
         conda_configs: Optional[List[str]] = None,
-        lock_dependencies: bool = True,
+        lock_dependencies: bool = False,
         verbose: bool = False,
     ) -> CondaProject:
         """Initialize a new project.
@@ -236,7 +236,7 @@ class CondaProject:
             conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
             lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
-                               Default is True.
+                               Default is False.
             verbose:           Print information to stdout. The default value is False.
 
         Returns:

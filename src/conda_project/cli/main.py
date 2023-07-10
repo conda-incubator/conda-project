@@ -124,8 +124,8 @@ def _create_init_parser(
             default=None,
         )
         p.add_argument(
-            "--no-lock",
-            help="Do not create the conda-lock.<env>.yml file(s)",
+            "--lock",
+            help="Create the conda-lock.<env>.yml file(s)",
             action="store_true",
         )
         p.add_argument(

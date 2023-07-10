@@ -29,7 +29,7 @@ The following is the output of `conda project init --help`:
 
 ```text
 usage: conda-project init [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
-                            [--no-lock] [--install]
+                            [--lock] [--install]
                             [dependencies [dependencies ...]]
 
 Initialize a new project
@@ -50,7 +50,7 @@ optional arguments:
   --conda-configs CONDA_CONFIGS
                         Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
                         format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
-  --no-lock             Do no create the conda-lock.<env>.yml file(s)
+  --lock                Create the conda-lock.<env>.yml file(s)
   --install             Create the local conda environment for the current platform.
 ```
 
