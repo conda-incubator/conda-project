@@ -767,7 +767,7 @@ class Environment(BaseModel):
             logger=logger,
         )
 
-    def update(
+    def _update(
         self,
         dependencies: List[str],
         channels: Optional[List[str]] = None,
@@ -803,6 +803,23 @@ class Environment(BaseModel):
 
         self.clean(verbose=verbose)
         self.install(verbose=verbose)
+
+    def add(
+        self,
+        dependencies: List[str],
+        channels: Optional[List[str]] = None,
+        verbose: bool = False,
+    ) -> None:
+        self._update(
+            dependencies=dependencies, channels=channels, method="add", verbose=verbose
+        )
+
+    def remove(
+        self,
+        dependencies: List[str],
+        verbose: bool = False,
+    ) -> None:
+        self._update(dependencies=dependencies, method="remove", verbose=verbose)
 
     def activate(self, verbose=False) -> None:
         if not self.is_consistent:

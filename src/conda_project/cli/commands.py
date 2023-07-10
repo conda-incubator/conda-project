@@ -139,7 +139,7 @@ def add(args: Namespace) -> bool:
         else project.default_environment
     )
 
-    env.update(args.dependencies, args.channel, method="add", verbose=True)
+    env.add(args.dependencies, args.channel, verbose=True)
     return True
 
 
@@ -153,7 +153,7 @@ def remove(args: Namespace) -> bool:
         else project.default_environment
     )
 
-    env.update(args.dependencies, method="remove", verbose=True)
+    env.remove(args.dependencies, verbose=True)
     return True
 
 
