@@ -11,7 +11,15 @@ from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
 PROJECT_ACTIONS = ("init", "create", "check")
-ENVIRONMENT_ACTIONS = ("clean", "install", "prepare", "lock", "activate")
+ENVIRONMENT_ACTIONS = (
+    "clean",
+    "install",
+    "prepare",
+    "lock",
+    "activate",
+    "add",
+    "remove",
+)
 COMMAND_ACTIONS = ("run",)
 ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
 
