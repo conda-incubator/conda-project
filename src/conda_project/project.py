@@ -801,8 +801,7 @@ class Environment(BaseModel):
             original_source.yaml(writable_source)
             raise e
 
-        self.clean(verbose=verbose)
-        self.install(verbose=verbose)
+        self.install(force=True, verbose=verbose)
 
     def add(
         self,

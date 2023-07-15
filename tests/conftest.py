@@ -8,6 +8,7 @@ from typing import Optional
 
 import pytest
 
+from conda_project import CondaProject
 from conda_project.conda import call_conda
 
 
@@ -65,6 +66,12 @@ def project_directory_factory(tmp_path, request):
     create_project_directory._suffix = suffix
 
     return create_project_directory
+
+
+@pytest.fixture
+def project(tmp_path) -> CondaProject:
+    """Initialize and empty project"""
+    return CondaProject.init(tmp_path)
 
 
 @pytest.fixture
