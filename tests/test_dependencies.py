@@ -73,6 +73,7 @@ def test_add_and_remove(project: CondaProject, mocker: MockerFixture):
     assert env.dependencies == ["python=3.10", "requests"]
 
     assert project.default_environment.lockfile.exists()
+    assert project.default_environment.is_locked
     assert project.default_environment.is_consistent
     assert install_spy.call_args_list[-1].kwargs["force"] is True
 

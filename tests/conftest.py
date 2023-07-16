@@ -8,8 +8,8 @@ from typing import Optional
 
 import pytest
 
-from conda_project import CondaProject
 from conda_project.conda import call_conda
+from conda_project.project import CondaProject, current_platform
 
 
 @pytest.fixture()
@@ -71,7 +71,7 @@ def project_directory_factory(tmp_path, request):
 @pytest.fixture
 def project(tmp_path) -> CondaProject:
     """Initialize and empty project"""
-    return CondaProject.init(tmp_path)
+    return CondaProject.init(tmp_path, platforms=[current_platform()])
 
 
 @pytest.fixture
