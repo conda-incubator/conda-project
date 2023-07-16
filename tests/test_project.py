@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
-from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -895,8 +894,8 @@ def test_project_lock_env_multiple_sources(project_directory_factory):
         lock = YAML().load(f)
 
     assert lock["metadata"]["sources"] == [
-        str(project_path / f"environment{project_directory_factory._suffix}"),
-        str(project_path / f"extras{project_directory_factory._suffix}"),
+        f"environment{project_directory_factory._suffix}",
+        f"extras{project_directory_factory._suffix}",
     ]
 
     assert "requests" in [p["name"] for p in lock["package"]]
@@ -942,10 +941,10 @@ def test_project_lock_env_multiple_sources_different_directories(
     with project.default_environment.lockfile.open() as f:
         lock = YAML().load(f)
 
-    assert Path(lock["metadata"]["sources"][0]).samefile(
+    assert (project.directory / lock["metadata"]["sources"][0]).samefile(
         project_path / "project" / f"environment{project_directory_factory._suffix}"
     )
-    assert Path(lock["metadata"]["sources"][1]).samefile(
+    assert (project.directory / lock["metadata"]["sources"][1]).samefile(
         project_path / f"extras{project_directory_factory._suffix}"
     )
 
