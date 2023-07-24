@@ -498,7 +498,7 @@ class Environment(BaseModel):
         locked_pkgs = {
             (p.name, p.version, p.manager, p.hash.sha256)
             for p in lock.package
-            if p.platform == current_platform() and not p.optional
+            if p.platform == current_platform() and p.category == "main"
         }
 
         # Compare the sets
