@@ -114,7 +114,7 @@ def test_is_installed_with_pip_package(project_directory_factory):
 
 
 @pytest.mark.slow
-def test_is_prepared_live_env_changed(project_directory_factory, capsys):
+def test_is_installed_live_env_changed(project_directory_factory, capsys):
     env_yaml = dedent(
         """\
         name: test
@@ -143,7 +143,7 @@ def test_is_prepared_live_env_changed(project_directory_factory, capsys):
 
 
 @pytest.mark.slow
-def test_is_prepared_source_changed(project_directory_factory, capsys):
+def test_is_installed_source_changed(project_directory_factory, capsys):
     env_yaml = dedent(
         """\
         name: test
@@ -192,7 +192,7 @@ def test_install_env_exists(project_directory_factory, capsys):
     assert "The environment already exists" in stdout
 
 
-def test_lock_wrong_platform(project_directory_factory):
+def test_locked_for_wrong_platform(project_directory_factory):
     env_yaml = dedent(
         """\
         name: test
