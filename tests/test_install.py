@@ -95,7 +95,8 @@ def test_is_installed_with_pip_package(project_directory_factory):
           - pip
           - pip:
             - requests
-            - pyrfc3339 # this becomes 'pyRFC3339' in pip freeze
+            - pyRFC3339         # conda-lock stores lower case package names
+            - typing_extensions # conda-lock switches _ to -
         platforms: [{current_platform()}]
         """
     )
@@ -185,7 +186,6 @@ def test_is_prepared_duplicate_package(project_directory_factory):
           - pip
           - pip:
             - botocore==1.15.32 # this forces an older version of urllib3 to install
-            - typing_extensions # conda-lock switches _ to -, pip freeze does not
         channels: [defaults]
         platforms: [{current_platform()}]
         """
