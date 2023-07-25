@@ -257,6 +257,23 @@ def test_lock(project_directory_factory):
     assert project.default_environment.is_locked
 
 
+def test_lock_failed_from_conda(project_directory_factory):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        """
+    )
+    condarc = "solver: [😾]"
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, files={".condarc": condarc}
+    )
+
+    project = CondaProject(project_path)
+    with pytest.raises(CondaProjectLockFailed):
+        project.default_environment.lock()
+
+
 def test_lock_no_channels(project_directory_factory):
     env_yaml = dedent(
         """\

@@ -590,14 +590,22 @@ class Environment(BaseModel):
                         try:
                             output = json.loads(e.output)
                         except json.decoder.JSONDecodeError:
-                            # A bug in conda-libmamba-solver causes # serialization
+                            # A bug in conda-libmamba-solver causes serialization
                             # errors so we'll just print the full stack trace on error.
                             raise CondaProjectLockFailed(e.stderr)
 
-                        msg = output["message"].replace(
-                            "target environment",
-                            f"supplied channels: {channel_overrides or specified_channels}",
-                        )
+                        original_msg = output.get("message")
+                        if original_msg is not None:
+                            msg = original_msg.replace(
+                                "target environment",
+                                f"supplied channels: {channel_overrides or specified_channels}",
+                            )
+                        else:
+                            msg = output.get(
+                                "traceback",
+                                "<something went wrong during the lock and the message could not be recovered>",
+                            )
+
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
                     finally:
