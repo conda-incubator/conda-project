@@ -264,7 +264,7 @@ def test_lock_failed_from_conda(project_directory_factory):
         dependencies: []
         """
     )
-    condarc = "solver: [😾]"
+    condarc = "channels: {😾}"
     project_path = project_directory_factory(
         env_yaml=env_yaml, files={".condarc": condarc}
     )
