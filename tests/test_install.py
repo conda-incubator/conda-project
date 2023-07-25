@@ -48,9 +48,10 @@ def test_install_no_dependencies(project_directory_factory):
 @pytest.mark.slow
 def test_is_installed(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: [python=3.8]
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -60,11 +61,12 @@ def test_is_installed(project_directory_factory):
     assert project.default_environment.is_consistent
 
     updated_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
           - requests
+        platforms: [{current_platform()}]
         """
     )
 
@@ -86,7 +88,7 @@ def test_is_installed(project_directory_factory):
 def test_is_installed_with_pip_package(project_directory_factory):
     """Test that we can import the package if it is installed with pip."""
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
@@ -94,6 +96,7 @@ def test_is_installed_with_pip_package(project_directory_factory):
           - pip:
             - requests
             - pyrfc3339 # this becomes 'pyRFC3339' in pip freeze
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -116,9 +119,10 @@ def test_is_installed_with_pip_package(project_directory_factory):
 @pytest.mark.slow
 def test_is_installed_live_env_changed(project_directory_factory, capsys):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: [python=3.8]
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -145,9 +149,10 @@ def test_is_installed_live_env_changed(project_directory_factory, capsys):
 @pytest.mark.slow
 def test_is_installed_source_changed(project_directory_factory, capsys):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: [python=3.8]
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -264,9 +269,10 @@ def test_install_as_platform(project_directory_factory):
 
 def test_install_relocks(project_directory_factory, capsys):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: []
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -276,10 +282,11 @@ def test_install_relocks(project_directory_factory, capsys):
     assert project.default_environment.is_locked
 
     updated_env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     with (project.default_environment.sources[0]).open("wt") as f:
