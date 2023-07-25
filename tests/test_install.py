@@ -8,7 +8,7 @@ from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError
-from conda_project.project import CondaProject
+from conda_project.project import CondaProject, current_platform
 
 
 def test_install_with_gitignore(project_directory_factory):
@@ -169,6 +169,26 @@ def test_is_installed_source_changed(project_directory_factory, capsys):
 
     stdout = capsys.readouterr().out
     assert "The environment exists but does not match the locked dependencies" in stdout
+
+
+@pytest.mark.slow
+def test_is_prepared_duplicate_package(project_directory_factory):
+    env_yaml = dedent(
+        f"""\
+        dependencies:
+          - urllib3>1.25
+          - pip
+          - pip:
+            - botocore==1.15.32 # this forces an older version of urllib3 to install
+        channels: [defaults]
+        platforms: [{current_platform()}]
+        """
+    )
+
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+    project.default_environment.install()
+    assert project.default_environment.is_consistent
 
 
 def test_install_env_exists(project_directory_factory, capsys):

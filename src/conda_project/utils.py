@@ -11,9 +11,10 @@ from collections import ChainMap
 from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
+from itertools import groupby
 from pathlib import Path
 from subprocess import Popen
-from typing import Dict, List, NoReturn, Optional, Type, Union
+from typing import Callable, Dict, List, NoReturn, Optional, Type, Union
 
 import shellingham
 from dotenv import dotenv_values
@@ -182,3 +183,14 @@ def detect_shell():
             )
 
     return shell_name, shell_path
+
+
+def dedupe_list_of_dicts(data: list, key: Callable, keep: Callable) -> list:
+    deduped = []
+    for _, g in groupby(sorted(data, key=key), key=key):
+        values = list(g)
+        if len(values) > 1:
+            deduped.extend(list(filter(keep, values)))
+        else:
+            deduped.extend(values)
+    return deduped

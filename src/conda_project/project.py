@@ -48,7 +48,13 @@ from .project_file import (
     EnvironmentYaml,
     yaml,
 )
-from .utils import Spinner, env_variable, find_file, prepare_variables
+from .utils import (
+    Spinner,
+    dedupe_list_of_dicts,
+    env_variable,
+    find_file,
+    prepare_variables,
+)
 
 _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
@@ -495,9 +501,15 @@ class Environment(BaseModel):
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
+
+        # When an environment is installed pypi packages take precedence
+        deduped_lock = dedupe_list_of_dicts(
+            lock.package, key=lambda x: x.name, keep=lambda x: x.manager == "pip"
+        )
+
         locked_pkgs = {
             (p.name, p.version, p.manager, p.hash.sha256)
-            for p in lock.package
+            for p in deduped_lock
             if p.platform == current_platform() and p.category == "main"
         }
 
