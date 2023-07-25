@@ -197,6 +197,26 @@ def test_is_prepared_duplicate_package(project_directory_factory):
     assert project.default_environment.is_consistent
 
 
+@pytest.mark.slow
+def test_is_installed_no_sha256(project_directory_factory):
+    env_yaml = dedent(
+        f"""\
+        dependencies:
+            - defusco::jsonmerge=1.7.0  # sha256 is not available for this package
+            - pip:
+              - urllib3
+        channels:
+            - defaults
+        platforms: [{current_platform()}]
+        """
+    )
+
+    project_path = project_directory_factory(env_yaml=env_yaml)
+    project = CondaProject(project_path)
+    project.default_environment.install()
+    assert project.default_environment.is_consistent
+
+
 def test_install_env_exists(project_directory_factory, capsys):
     env_yaml = dedent(
         """\

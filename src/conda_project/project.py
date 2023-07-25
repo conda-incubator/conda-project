@@ -482,7 +482,7 @@ class Environment(BaseModel):
 
         pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
 
-        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
+        # Generate a set of (name, version, manager, hash) tuples from the conda environment
         # We also convert the conda package_type attribute to a string in the set
         # {"conda", "pip"} to allow direct comparison with conda-lock.
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
@@ -493,11 +493,11 @@ class Environment(BaseModel):
             if manager == "pip":
                 sha256 = pip_sha256.get(p.name)
             else:
-                sha256 = p.sha256
+                sha256 = p.md5  # not all conda packages will have a published sha256
 
             installed_pkgs.add((p.name, p.version, manager, sha256))
 
-        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
+        # Generate a set of (name, version, manager, hash) tuples from the lockfile
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
@@ -507,11 +507,11 @@ class Environment(BaseModel):
             lock.package, key=lambda x: x.name, keep=lambda x: x.manager == "pip"
         )
 
-        locked_pkgs = {
-            (p.name, p.version, p.manager, p.hash.sha256)
-            for p in deduped_lock
-            if p.platform == current_platform() and p.category == "main"
-        }
+        locked_pkgs = set()
+        for p in deduped_lock:
+            if p.platform == current_platform() and p.category == "main":
+                hash = p.hash.md5 if p.manager == "conda" else p.hash.sha256
+                locked_pkgs.add((p.name, p.version, p.manager, hash))
 
         # Compare the sets
         # We can do this because the tuples are hashable. Also we don't need to
