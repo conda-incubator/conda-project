@@ -95,7 +95,7 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
     for line in pip_freeze.stdout.strip().splitlines():
         m = _PIP_FREEZE_REGEX_PATTERN.match(line)
         if m is not None:
-            pip_sha256[m.group("name").lower()] = m.group("sha256")
+            pip_sha256[m.group("name").lower().replace("_", "-")] = m.group("sha256")
     return pip_sha256
 
 

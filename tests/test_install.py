@@ -185,6 +185,7 @@ def test_is_prepared_duplicate_package(project_directory_factory):
           - pip
           - pip:
             - botocore==1.15.32 # this forces an older version of urllib3 to install
+            - typing_extensions # conda-lock switches _ to -, pip freeze does not
         channels: [defaults]
         platforms: [{current_platform()}]
         """
