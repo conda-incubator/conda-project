@@ -9,6 +9,7 @@ from shellingham import ShellDetectionFailure
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.utils import (
+    dedupe_list_of_dicts,
     detect_shell,
     env_variable,
     execvped,
@@ -273,3 +274,25 @@ def test_detect_shell_failed(mocker):
 
     with pytest.raises(RuntimeError):
         _ = detect_shell()
+
+
+def test_dedupe_list_of_dicts():
+    duplicated = [
+        {"name": "aaa", "k1": "cat1"},  # <-- keep this
+        {"name": "bbb", "k1": "cat1"},
+        {"name": "ccc", "k1": "cat2"},
+        {"name": "aaa", "k1": "cat2"},
+        {"name": "ddd", "k1": "cat2"},
+        {"name": "ccc", "k1": "cat1"},  # <-- keep this
+    ]
+
+    deupded = dedupe_list_of_dicts(
+        duplicated, lambda x: x["name"], lambda x: x["k1"] == "cat1"
+    )
+
+    assert deupded == [
+        {"name": "aaa", "k1": "cat1"},
+        {"name": "bbb", "k1": "cat1"},
+        {"name": "ccc", "k1": "cat1"},
+        {"name": "ddd", "k1": "cat2"},
+    ]
