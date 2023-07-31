@@ -7,6 +7,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
+from pytest_mock import MockerFixture
 from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
@@ -74,6 +75,60 @@ def test_lock(project_directory_factory):
     assert lockfile == project.default_environment.lockfile
     assert lockfile.exists()
     assert project.default_environment.is_locked
+
+
+@pytest.mark.slow
+def test_lock_message_supplied_platforms(
+    project_directory_factory, mocker: MockerFixture
+):
+    import conda_project.project
+
+    spinner = mocker.spy(conda_project.project, "Spinner")
+
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.8
+        platforms: [osx-arm64, linux-64]
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+
+    assert (
+        spinner.call_args.kwargs["prefix"]
+        == "Locking dependencies for environment default on platforms linux-64, osx-arm64"
+    )
+
+
+@pytest.mark.slow
+def test_lock_message_default_platforms(
+    project_directory_factory, mocker: MockerFixture
+):
+    import conda_project.project
+
+    spinner = mocker.spy(conda_project.project, "Spinner")
+
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.8
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock(verbose=True)
+
+    platforms = ", ".join(sorted(DEFAULT_PLATFORMS))
+    assert (
+        spinner.call_args.kwargs["prefix"]
+        == f"Locking dependencies for environment default on platforms {platforms}"
+    )
 
 
 def test_lock_failed_from_conda(project_directory_factory):
