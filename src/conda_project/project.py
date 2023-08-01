@@ -559,19 +559,22 @@ class Environment(BaseModel):
         channel_overrides, platform_overrides = self._overrides
 
         specified_channels = []
+        specified_platforms = set()
         for fn in self.sources:
             env = EnvironmentYaml.parse_yaml(fn)
             for channel in env.channels or []:
                 if channel not in specified_channels:
                     specified_channels.append(channel)
+            if env.platforms:
+                specified_platforms.update(env.platforms)
 
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.project.condarc)):
                 if verbose:
-                    p = (
+                    p = sorted(
                         platform_overrides
                         if platform_overrides is not None
-                        else DEFAULT_PLATFORMS
+                        else specified_platforms
                     )
                     context = Spinner(
                         prefix=f"Locking dependencies for environment {self.name} on "
