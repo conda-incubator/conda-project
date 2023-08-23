@@ -48,10 +48,9 @@ def test_install_no_dependencies(project_directory_factory):
 @pytest.mark.slow
 def test_is_installed(project_directory_factory):
     env_yaml = dedent(
-        f"""\
+        """\
         name: test
         dependencies: [python=3.8]
-        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -61,12 +60,11 @@ def test_is_installed(project_directory_factory):
     assert project.default_environment.is_consistent
 
     updated_yaml = dedent(
-        f"""\
+        """\
         name: test
         dependencies:
           - python=3.8
           - requests
-        platforms: [{current_platform()}]
         """
     )
 
