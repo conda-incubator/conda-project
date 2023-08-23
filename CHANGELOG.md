@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.1] - 2023-08-01
+
+## Fixes
+
+- Fix expand `~` in paths [#110](https://github.com/conda-incubator/conda-project/pull/110)
+- Fix relative paths in `conda-lock.<env>.yml` [#125](https://github.com/conda-incubator/conda-project/pull/125)
+- Fix support for newer conda-lock versions [#129](https://github.com/conda-incubator/conda-project/pull/129)
+- Fix for inconsistent installed envs [#135](https://github.com/conda-incubator/conda-project/pull/135)
+- Fix for error messages from conda [#134](https://github.com/conda-incubator/conda-project/pull/134)
+- Fix locking platforms message [#137](https://github.com/conda-incubator/conda-project/pull/137)
+
+## Maintenance
+
+- Add new static badge linking to documentation [#116](https://github.com/conda-incubator/conda-project/pull/116)
+
 ## [0.2.0] - 2023-04-24
 
 ## Added

@@ -48,7 +48,13 @@ from .project_file import (
     EnvironmentYaml,
     yaml,
 )
-from .utils import Spinner, env_variable, find_file, prepare_variables
+from .utils import (
+    Spinner,
+    dedupe_list_of_dicts,
+    env_variable,
+    find_file,
+    prepare_variables,
+)
 
 _TEMPFILE_DELETE = False if sys.platform.startswith("win") else True
 
@@ -89,7 +95,7 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
     for line in pip_freeze.stdout.strip().splitlines():
         m = _PIP_FREEZE_REGEX_PATTERN.match(line)
         if m is not None:
-            pip_sha256[m.group("name")] = m.group("sha256")
+            pip_sha256[m.group("name").lower().replace("_", "-")] = m.group("sha256")
     return pip_sha256
 
 
@@ -476,7 +482,7 @@ class Environment(BaseModel):
 
         pip_sha256 = _load_pip_sha256_hashes(str(self.prefix))
 
-        # Generate a set of (name, version, manager, sha256) tuples from the conda environment
+        # Generate a set of (name, version, manager, hash) tuples from the conda environment
         # We also convert the conda package_type attribute to a string in the set
         # {"conda", "pip"} to allow direct comparison with conda-lock.
         # TODO: pip_interop_enabled is marked "DO NOT USE". What is the alternative?
@@ -487,19 +493,25 @@ class Environment(BaseModel):
             if manager == "pip":
                 sha256 = pip_sha256.get(p.name)
             else:
-                sha256 = p.sha256
+                sha256 = p.md5  # not all conda packages will have a published sha256
 
             installed_pkgs.add((p.name, p.version, manager, sha256))
 
-        # Generate a set of (name, version, manager, sha256) tuples from the lockfile
+        # Generate a set of (name, version, manager, hash) tuples from the lockfile
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
-        locked_pkgs = {
-            (p.name, p.version, p.manager, p.hash.sha256)
-            for p in lock.package
-            if p.platform == current_platform() and p.category == "main"
-        }
+
+        # When an environment is installed pypi packages take precedence
+        deduped_lock = dedupe_list_of_dicts(
+            lock.package, key=lambda x: x.name, keep=lambda x: x.manager == "pip"
+        )
+
+        locked_pkgs = set()
+        for p in deduped_lock:
+            if p.platform == current_platform() and p.category == "main":
+                hash = p.hash.md5 if p.manager == "conda" else p.hash.sha256
+                locked_pkgs.add((p.name, p.version, p.manager, hash))
 
         # Compare the sets
         # We can do this because the tuples are hashable. Also we don't need to
@@ -547,19 +559,22 @@ class Environment(BaseModel):
         channel_overrides, platform_overrides = self._overrides
 
         specified_channels = []
+        specified_platforms = set()
         for fn in self.sources:
             env = EnvironmentYaml.parse_yaml(fn)
             for channel in env.channels or []:
                 if channel not in specified_channels:
                     specified_channels.append(channel)
+            if env.platforms:
+                specified_platforms.update(env.platforms)
 
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.project.condarc)):
                 if verbose:
-                    p = (
+                    p = sorted(
                         platform_overrides
                         if platform_overrides is not None
-                        else DEFAULT_PLATFORMS
+                        else specified_platforms
                     )
                     context = Spinner(
                         prefix=f"Locking dependencies for environment {self.name} on "
@@ -590,14 +605,22 @@ class Environment(BaseModel):
                         try:
                             output = json.loads(e.output)
                         except json.decoder.JSONDecodeError:
-                            # A bug in conda-libmamba-solver causes # serialization
+                            # A bug in conda-libmamba-solver causes serialization
                             # errors so we'll just print the full stack trace on error.
                             raise CondaProjectLockFailed(e.stderr)
 
-                        msg = output["message"].replace(
-                            "target environment",
-                            f"supplied channels: {channel_overrides or specified_channels}",
-                        )
+                        original_msg = output.get("message")
+                        if original_msg is not None:
+                            msg = original_msg.replace(
+                                "target environment",
+                                f"supplied channels: {channel_overrides or specified_channels}",
+                            )
+                        else:
+                            msg = output.get(
+                                "traceback",
+                                "<something went wrong during the lock and the message could not be recovered>",
+                            )
+
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
                     finally:
