@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, OrderedDict, TextIO, Union
 
 from conda_lock._vendor.conda.models.match_spec import MatchSpec
+from pkg_resources import Requirement
 from pydantic import BaseModel, ValidationError, validator
 from ruamel.yaml import YAML
 
@@ -124,27 +125,76 @@ class EnvironmentYaml(BaseYaml):
             return UniqueOrderedList(v)
 
     @property
-    def matchspecs(self):
+    def conda_matchspecs(self):
         return [
             MatchSpec(dep) for dep in self.dependencies if not isinstance(dep, dict)
         ]
+
+    @property
+    def _pip_requirements(self):
+        return [d for d in self.dependencies if isinstance(d, dict) and "pip" in d]
+
+    @property
+    def pip_requirements(self):
+        pip = self._pip_requirements
+        if pip:
+            return [Requirement(dep) for dep in self._pip_requirements[0]["pip"]]
+        else:
+            return []
+
+    def _add_pip_requirements(self, reqs):
+        if "pip" not in self.dependencies:
+            print(
+                "Warning: you have pip-installed dependencies in your environment file, "
+                "but you do not list pip itself as one of your conda dependencies. Please "
+                "add an explicit pip dependency. I'm adding one for you, but still nagging you."
+            )
+            self.dependencies.append("pip")
+        pip = self._pip_requirements
+        if pip:
+            pip[0]["pip"].extend(reqs)
+        else:
+            self.dependencies.append({"pip": reqs})
+
+    def _replace_pip_requirement(self, idx, req):
+        pip = self._pip_requirements
+        if pip:
+            pip[0]["pip"][idx] = req
+
+    def _remove_pip_requirement(self, idx):
+        pip = self._pip_requirements
+        if pip:
+            pip[0]["pip"].pop(idx)
 
     def add_dependencies(
         self,
         dependencies: List[str],
         channels: Optional[Union[UniqueOrderedList, List[str]]] = None,
     ) -> None:
-        current_names = [dep.name for dep in self.matchspecs]
+        current_conda_names = [dep.name for dep in self.conda_matchspecs]
+        current_pip_names = [dep.name for dep in self.pip_requirements]
 
-        to_add = []
+        conda_to_add = []
+        pip_to_add = []
         for dep in dependencies:
-            name = MatchSpec(dep).name
-            if name in current_names:
-                self.dependencies[current_names.index(name)] = dep
+            if dep.startswith("pypi::"):
+                _, dep = dep.split("::", maxsplit=1)
+                name = Requirement(dep).name
+                if name in current_pip_names:
+                    # self._pip_requirements[current_pip_names.index(name)] = dep
+                    self._replace_pip_requirement(current_pip_names.index(name), dep)
+                else:
+                    pip_to_add.append(dep)
             else:
-                to_add.append(dep)
+                name = MatchSpec(dep).name
+                if name in current_conda_names:
+                    self.dependencies[current_conda_names.index(name)] = dep
+                else:
+                    conda_to_add.append(dep)
 
-        self.dependencies.extend(to_add)
+        self.dependencies.extend(conda_to_add)
+        if pip_to_add:
+            self._add_pip_requirements(pip_to_add)
 
         if channels:
             if self.channels:
@@ -153,10 +203,17 @@ class EnvironmentYaml(BaseYaml):
                 self.channels = UniqueOrderedList(channels)
 
     def remove_dependencies(self, dependencies: List[str]) -> None:
-        current_names = [dep.name for dep in self.matchspecs]
+        current_conda_names = [dep.name for dep in self.conda_matchspecs]
+        current_pip_names = [dep.name for dep in self.pip_requirements]
 
         for dep in dependencies:
-            name = MatchSpec(dep).name
-            if name in current_names:
-                self.dependencies.pop(current_names.index(name))
-                current_names.remove(name)
+            if dep.startswith("pypi::"):
+                _, dep = dep.split("::", maxsplit=1)
+                name = Requirement(dep).name
+                if name in current_pip_names:
+                    self._remove_pip_requirement(current_pip_names.index(name))
+            else:
+                name = MatchSpec(dep).name
+                if name in current_conda_names:
+                    self.dependencies.pop(current_conda_names.index(name))
+                    current_conda_names.remove(name)

@@ -264,9 +264,11 @@ class CondaProject:
             name = directory.name
 
         environment_yaml = EnvironmentYaml(
-            channels=channels or ["defaults"],
-            dependencies=dependencies or [],
             platforms=platforms or list(DEFAULT_PLATFORMS),
+        )
+
+        environment_yaml.add_dependencies(
+            dependencies=dependencies or [], channels=channels or ["defaults"]
         )
 
         environment_yaml_path = directory / "environment.yml"
@@ -290,8 +292,7 @@ class CondaProject:
         project = cls(directory)
 
         if lock_dependencies:
-            if dependencies:
-                project.default_environment.lock(verbose=verbose)
+            project.default_environment.lock(verbose=verbose)
 
         if verbose:
             print(f"Project created at {directory}")
