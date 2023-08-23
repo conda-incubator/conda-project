@@ -290,7 +290,8 @@ class CondaProject:
         project = cls(directory)
 
         if lock_dependencies:
-            project.default_environment.lock(verbose=verbose)
+            if dependencies:
+                project.default_environment.lock(verbose=verbose)
 
         if verbose:
             print(f"Project created at {directory}")

@@ -122,6 +122,11 @@ def test_project_init_and_lock(tmp_path):
     assert p.default_environment.lockfile == tmp_path / "conda-lock.default.yml"
 
 
+def test_project_init_no_dependencies(tmp_path):
+    p = CondaProject.init(tmp_path, dependencies=[], lock_dependencies=True)
+    assert not p.default_environment.lockfile.exists()
+
+
 def test_project_directory_expanduser(mocker):
     from pathlib import Path
 
