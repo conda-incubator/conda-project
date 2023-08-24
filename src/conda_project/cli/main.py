@@ -281,8 +281,11 @@ def _create_add_parser(
     p.add_argument(
         "dependencies",
         help=(
-            "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
-            "where <op> can be =, <, >, <=, or >=."
+            "Packages to add to the environment.yml. The format for each package is "
+            "'[<prefix>::]<name>[<op><version>]' where <op> can be =, <, >, <=, or >=. "
+            "Most commonly `<prefix>::` declares the conda channel from which to install packages. Use the "
+            "prefix `pypi::` to add pip package dependencies with support for full pip package specification "
+            "syntax."
         ),
         action="store",
         nargs="*",
@@ -312,8 +315,8 @@ def _create_remove_parser(
     p.add_argument(
         "dependencies",
         help=(
-            "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
-            "where <op> can be =, <, >, <=, or >=."
+            "Packages to remove from the environment.yml. Only the name of the package is required here. To remove "
+            "a pip package use the pypyi:: prefix."
         ),
         action="store",
         nargs="*",
