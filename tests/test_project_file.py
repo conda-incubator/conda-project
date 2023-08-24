@@ -304,6 +304,17 @@ def test_remove_dependencies():
     assert env.dependencies == ["python=3.10"]
 
 
+def test_remove_dependencies_extra_fields():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "numpy", "conda-forge::pandas>=2"],
+        channels=["defaults"],
+    )
+
+    env.remove_dependencies(["conda-forge::numpy", "pandas[stuff]"])
+
+    assert env.dependencies == ["python=3.10"]
+
+
 def test_env_add_pip_dependencies_no_pip(capsys):
     env = EnvironmentYaml(dependencies=["python=3.10"])
 
@@ -331,4 +342,13 @@ def test_remove_pip_dependency():
     )
 
     env.remove_dependencies(["pypi::pydantic"])
+    assert env.dependencies == ["python=3.10", "pip", {"pip": []}]
+
+
+def test_remove_pip_dependency_extras():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
+    )
+
+    env.remove_dependencies(["pypi::pydantic<2"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": []}]
