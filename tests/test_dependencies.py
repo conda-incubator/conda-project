@@ -57,14 +57,23 @@ def test_add_invalid_dependency(project: CondaProject):
 
 
 @pytest.mark.slow
+def test_add_does_not_install(project: CondaProject):
+    assert not project.default_environment.lockfile.exists()
+    assert not (project.default_environment.prefix / "conda-meta" / "history").exists()
+
+    project.default_environment.add(dependencies=["python=3.10"])
+    assert project.default_environment.lockfile.exists()
+
+    assert not (project.default_environment.prefix / "conda-meta" / "history").exists()
+
+
+@pytest.mark.slow
 def test_add_and_remove(project: CondaProject, mocker: MockerFixture):
     from conda_project.project import Environment
 
     install_spy = mocker.spy(Environment, "install")
 
-    assert not project.default_environment.lockfile.exists()
-    assert not project.default_environment.is_consistent
-
+    project.default_environment.install()
     project.default_environment.add(
         dependencies=["python=3.10", "requests"], channels=["defaults"]
     )
@@ -74,6 +83,7 @@ def test_add_and_remove(project: CondaProject, mocker: MockerFixture):
 
     assert project.default_environment.lockfile.exists()
     assert project.default_environment.is_locked
+
     assert project.default_environment.is_consistent
     assert install_spy.call_args_list[-1].kwargs["force"] is True
 

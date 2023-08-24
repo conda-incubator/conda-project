@@ -826,7 +826,8 @@ class Environment(BaseModel):
             original_source.yaml(writable_source)
             raise e
 
-        self.install(force=True, verbose=verbose)
+        if (self.prefix / "conda-meta" / "history").exists():
+            self.install(force=True, verbose=verbose)
 
     def add(
         self,

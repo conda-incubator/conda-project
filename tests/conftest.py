@@ -71,7 +71,10 @@ def project_directory_factory(tmp_path, request):
 @pytest.fixture
 def project(tmp_path) -> CondaProject:
     """Initialize and empty project"""
-    return CondaProject.init(tmp_path, platforms=[current_platform()])
+    project = CondaProject.init(tmp_path, platforms=[current_platform()])
+    assert not project.default_environment.lockfile.exists()
+    assert not (project.default_environment.prefix / "conda-meta" / "history").exists()
+    return project
 
 
 @pytest.fixture
