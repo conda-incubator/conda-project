@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
+import os
 
 import pytest
 from pytest_mock import MockerFixture
@@ -92,6 +93,16 @@ def test_add_and_remove(project: CondaProject, mocker: MockerFixture):
     names = sorted(p["name"] for p in pkgs)
     assert "python" in names
     assert "requests" in names
+
+    orig_mtime = os.path.getmtime(project.default_environment.lockfile)
+    project.default_environment.add(dependencies=["requests"])
+    new_mtime = os.path.getmtime(project.default_environment.lockfile)
+    assert orig_mtime == new_mtime  # the lockfile has not changed
+
+    orig_mtime = os.path.getmtime(project.default_environment.lockfile)
+    project.default_environment.add(dependencies=["charset-normalizer"])
+    new_mtime = os.path.getmtime(project.default_environment.lockfile)
+    assert orig_mtime == new_mtime  # the lockfile has not changed
 
     project.default_environment.remove(dependencies=["requests"])
 

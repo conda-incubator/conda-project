@@ -251,6 +251,17 @@ def test_env_add_pip_dependencies():
     assert env.dependencies == ["python=3.10", "pip", {"pip": ["requests"]}]
 
 
+def test_env_extend_pip_dependencies():
+    env = EnvironmentYaml(dependencies=["python=3.10", "pip", {"pip": ["requests"]}])
+
+    env.add_dependencies(["pypi::pydantic[email,dotenv]<2"])
+    assert env.dependencies == [
+        "python=3.10",
+        "pip",
+        {"pip": ["requests", "pydantic[email,dotenv]<2"]},
+    ]
+
+
 def test_env_add_dependencies_empty_channels():
     env = EnvironmentYaml(dependencies=["python=3.10", "numpy"])
 

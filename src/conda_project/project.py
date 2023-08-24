@@ -805,12 +805,11 @@ class Environment(BaseModel):
         source = EnvironmentYaml.parse_yaml(writable_source)
         original_source = source.copy(deep=True)
 
+        assert method in ["add", "remove"], f"{method} is not allowed for _update"
         if method == "add":
             source.add_dependencies(dependencies, channels)
         elif method == "remove":
             source.remove_dependencies(dependencies)
-        else:
-            raise ValueError(f"{method} can only be 'add' or 'remove'.")
 
         source.yaml(writable_source)
 

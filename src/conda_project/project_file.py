@@ -92,15 +92,6 @@ class UniqueOrderedList(list):
         return super().extend(__iterable)
 
 
-def replace_duplicate_matchspec_name(dependencies, to_update):
-    names = [MatchSpec(d).name for d in dependencies if not isinstance(d, dict)]
-    for dep in to_update:
-        m = MatchSpec(dep)
-        if m.name in names:
-            idx = names.index(m.name)
-            dependencies[idx] = dep
-
-
 class EnvironmentYaml(BaseYaml):
     name: Optional[str] = None
     channels: Optional[Union[UniqueOrderedList, List[str]]] = None
