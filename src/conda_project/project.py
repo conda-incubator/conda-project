@@ -503,17 +503,23 @@ class Environment(BaseModel):
         # We only include locked packages for the current platform, and don't
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
+        current_platform_packages = [
+            p
+            for p in lock.package
+            if p.platform == current_platform() and p.category == "main"
+        ]
 
         # When an environment is installed pypi packages take precedence
         deduped_lock = dedupe_list_of_dicts(
-            lock.package, key=lambda x: x.name, keep=lambda x: x.manager == "pip"
+            current_platform_packages,
+            key=lambda x: x.name,
+            keep=lambda x: x.manager == "pip",
         )
 
         locked_pkgs = set()
         for p in deduped_lock:
-            if p.platform == current_platform() and p.category == "main":
-                hash = p.hash.md5 if p.manager == "conda" else p.hash.sha256
-                locked_pkgs.add((p.name, p.version, p.manager, hash))
+            hash = p.hash.md5 if p.manager == "conda" else p.hash.sha256
+            locked_pkgs.add((p.name, p.version, p.manager, hash))
 
         # Compare the sets
         # We can do this because the tuples are hashable. Also we don't need to
