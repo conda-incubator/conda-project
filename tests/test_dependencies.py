@@ -94,15 +94,11 @@ def test_add_and_remove(project: CondaProject, mocker: MockerFixture):
     assert "python" in names
     assert "requests" in names
 
+    # Adding a package already in environment.yml does not update the lock
     orig_mtime = os.path.getmtime(project.default_environment.lockfile)
     project.default_environment.add(dependencies=["requests"])
     new_mtime = os.path.getmtime(project.default_environment.lockfile)
-    assert orig_mtime == new_mtime  # the lockfile has not changed
-
-    orig_mtime = os.path.getmtime(project.default_environment.lockfile)
-    project.default_environment.add(dependencies=["charset-normalizer"])
-    new_mtime = os.path.getmtime(project.default_environment.lockfile)
-    assert orig_mtime == new_mtime  # the lockfile has not changed
+    assert orig_mtime == new_mtime
 
     project.default_environment.remove(dependencies=["requests"])
 

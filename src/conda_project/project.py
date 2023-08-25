@@ -816,9 +816,6 @@ class Environment(BaseModel):
         if source == original_source:
             return
 
-        if self.is_locked:
-            return
-
         try:
             self.lock(verbose=verbose)
         except Exception as e:
