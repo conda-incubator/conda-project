@@ -52,7 +52,7 @@ docs = [
     "sphinx-autobuild>=2021.3.14",
     "sphinx-autodoc-typehints>=1.19.2",
     "myst-parser>=0.18.0",
-    "pydata-sphinx-theme>=0.9.0",
+    "conda-sphinx-theme>=0.1.1",
 ]
 
 [project.scripts]
