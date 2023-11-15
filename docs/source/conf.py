@@ -35,6 +35,12 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns: list[str] = []
 
+html_static_path = ["_static"]
+
+html_css_files = [
+    "custom.css",
+]
+
 # The suffix(es) of source filenames.
 source_suffix = [".rst", ".md"]
 
@@ -51,10 +57,11 @@ autodoc_default_options = {
 }
 
 # The theme to use for HTML and HTML Help pages.
-html_theme = "pydata_sphinx_theme"
+html_theme = "conda_sphinx_theme"
 # html_logo = "_static/images/logo.svg"
 # html_favicon = "_static/images/favicon.ico"
 html_theme_options = {
+    "navbar_center": ["navbar_center"],
     "github_url": "https://github.com/conda-incubator/conda-project",
     "icon_links": [
         {
@@ -62,6 +69,17 @@ html_theme_options = {
             "url": "https://anaconda.org/defusco/conda-project",
             "icon": "fas fa-box",
         },
+        {
+            "name": "Element",
+            "url": "https://matrix.to/#/#conda:matrix.org",
+            "icon": "_static/element_logo.svg",
+            "type": "local",
+        },
+        {
+            "name": "Discourse",
+            "url": "https://conda.discourse.group/",
+            "icon": "fa-brands fa-discourse",
+            "type": "fontawesome",
+        },
     ],
 }
-html_static_path = []
