@@ -71,7 +71,7 @@ html_theme_options = {
         },
         {
             "name": "Element",
-            "url": "https://matrix.to/#/#conda-project:matrix.org",
+            "url": "https://matrix.to/#/#conda:matrix.org",
             "icon": "_static/element_logo.svg",
             "type": "local",
         },
