@@ -168,7 +168,7 @@ class EnvironmentYaml(BaseYaml):
         conda_to_add = []
         pip_to_add = []
         for dep in dependencies:
-            if dep.startswith("pypi::"):
+            if dep.startswith("@pip::"):
                 _, dep = dep.split("::", maxsplit=1)
                 name = Requirement(dep).name
                 if name in current_pip_names:
@@ -198,7 +198,7 @@ class EnvironmentYaml(BaseYaml):
         current_pip_names = [dep.name for dep in self.pip_requirements]
 
         for dep in dependencies:
-            if dep.startswith("pypi::"):
+            if dep.startswith("@pip::"):
                 _, dep = dep.split("::", maxsplit=1)
                 name = Requirement(dep).name
                 if name in current_pip_names:

@@ -21,10 +21,10 @@ Packages can also be specified when creating a project:
 conda project init python=3.10
 ```
 
-To specify pip dependencies on initialization, use the `pypi::` prefix:
+To specify pip dependencies on initialization, use the `@pip::` prefix:
 
 ```text
-conda project init python=3.10 pypi::numpy
+conda project init python=3.10 @pip::numpy
 ```
 
 This will initialize your project with a new `conda-project.yml`, `environment.yml`, and local `.condarc` file.
@@ -134,7 +134,7 @@ platform, similar to how `conda lock install` works.
 ## Adding packages to an environment
 
 The `conda project add` command works similar to `conda install` to add packages. Like `init` you
-can specify pip packages with the `pypi::` prefix.
+can specify pip packages with the `@pip::` prefix.
 The `add` command will re-lock and install your environment each time it is run.
 
 For example:
@@ -142,7 +142,7 @@ For example:
 ```text
 conda project init
 conda project add -c defaults python=3.10
-conda project add conda-forge::pandas requests pypi::pydantic
+conda project add conda-forge::pandas requests @pip::pydantic
 conda project add "pandas<2"
 ```
 
@@ -165,7 +165,7 @@ positional arguments:
   PACKAGE_SPECIFICATION
                         Packages to add to the environment.yml. The format for each package is '[<prefix>::]<name>[<op><version>]'
                         where <op> can be =, <, >, <=, or >=.Most commonly `<prefix>::` declares the conda channel from which to
-                        install packages. Use the prefix `pypi::` to add pip package dependencies with support for full pip package
+                        install packages. Use the prefix `@pip::` to add pip package dependencies with support for full pip package
                         specification syntax.
 
 optional arguments:
@@ -188,14 +188,14 @@ optional arguments:
 ## Removing a package from an environment
 
 The inverse of `add` is `conda project remove`. Removing a package will also re-lock and re-install the environment.
-Only the name of the package is required to remove it and you can remove a pip package with the `pypi::` prefix.
+Only the name of the package is required to remove it and you can remove a pip package with the `@pip::` prefix.
 
 Start from where we left of in the previous section we initialized the project and added packages.
 
 ```text
 conda project init
 conda project add -c defaults python=3.10
-conda project add "conda-forge::pandas<2" requests pypi::pydantic
+conda project add "conda-forge::pandas<2" requests @pip::pydantic
 ```
 
 In the end our environment.yml now looks like:
@@ -223,7 +223,7 @@ platforms:
 To remove packages we need only specify the name of package
 
 ```text
-conda project remove pandas pypi::pydantic
+conda project remove pandas @pip::pydantic
 ```
 
 Then we are left with:

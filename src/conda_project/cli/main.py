@@ -284,7 +284,7 @@ def _create_add_parser(
             "Packages to add to the environment.yml. The format for each package is "
             "'[<prefix>::]<name>[<op><version>]' where <op> can be =, <, >, <=, or >=. "
             "Most commonly `<prefix>::` declares the conda channel from which to install packages. Use the "
-            "prefix `pypi::` to add pip package dependencies with support for full pip package specification "
+            "prefix `@pip::` to add pypi package dependencies with support for full pypi package specification "
             "syntax."
         ),
         action="store",

@@ -247,14 +247,14 @@ def test_env_add_dependencies():
 def test_env_add_pip_dependencies():
     env = EnvironmentYaml(dependencies=["python=3.10", "pip"])
 
-    env.add_dependencies(["pypi::requests"])
+    env.add_dependencies(["@pip::requests"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": ["requests"]}]
 
 
 def test_env_extend_pip_dependencies():
     env = EnvironmentYaml(dependencies=["python=3.10", "pip", {"pip": ["requests"]}])
 
-    env.add_dependencies(["pypi::pydantic[email,dotenv]<2"])
+    env.add_dependencies(["@pip::pydantic[email,dotenv]<2"])
     assert env.dependencies == [
         "python=3.10",
         "pip",
@@ -329,7 +329,7 @@ def test_remove_dependencies_extra_fields():
 def test_env_add_pip_dependencies_no_pip(capsys):
     env = EnvironmentYaml(dependencies=["python=3.10"])
 
-    env.add_dependencies(["pypi::requests"])
+    env.add_dependencies(["@pip::requests"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": ["requests"]}]
     assert "do not list pip itself" in capsys.readouterr().out
 
@@ -339,7 +339,7 @@ def test_env_replace_pip_dependency():
         dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
     )
 
-    env.add_dependencies(["pypi::pydantic[dotenv,email]<2"])
+    env.add_dependencies(["@pip::pydantic[dotenv,email]<2"])
     assert env.dependencies == [
         "python=3.10",
         "pip",
@@ -352,7 +352,7 @@ def test_remove_pip_dependency():
         dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
     )
 
-    env.remove_dependencies(["pypi::pydantic"])
+    env.remove_dependencies(["@pip::pydantic"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": []}]
 
 
@@ -361,5 +361,5 @@ def test_remove_pip_dependency_extras():
         dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
     )
 
-    env.remove_dependencies(["pypi::pydantic<2"])
+    env.remove_dependencies(["@pip::pydantic<2"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": []}]

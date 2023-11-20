@@ -88,7 +88,7 @@ def test_project_init_conda_pkgs(tmp_path):
 def test_project_init_pip_pkgs(tmp_path):
     p = CondaProject.init(
         tmp_path,
-        dependencies=["python=3.10", "pip", "pypi::numpy"],
+        dependencies=["python=3.10", "pip", "@pip::numpy"],
         lock_dependencies=False,
     )
 
@@ -100,7 +100,7 @@ def test_project_init_pip_pkgs(tmp_path):
 
 def test_project_init_pip_pkgs_no_pip(tmp_path, capsys):
     p = CondaProject.init(
-        tmp_path, dependencies=["python=3.10", "pypi::numpy"], lock_dependencies=False
+        tmp_path, dependencies=["python=3.10", "@pip::numpy"], lock_dependencies=False
     )
 
     with p.default_environment.sources[0].open() as f:
