@@ -17,7 +17,7 @@ from contextlib import nullcontext, redirect_stderr
 from io import StringIO
 from pathlib import Path
 from subprocess import SubprocessError
-from typing import Dict, List, NoReturn, Optional, Tuple, Union
+from typing import Dict, List, Literal, NoReturn, Optional, Tuple, Union
 
 import fsspec
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
@@ -218,7 +218,7 @@ class CondaProject:
         channels: Optional[List[str]] = None,
         platforms: Optional[List[str]] = None,
         conda_configs: Optional[List[str]] = None,
-        lock_dependencies: bool = True,
+        lock_dependencies: bool = False,
         verbose: bool = False,
     ) -> CondaProject:
         """Initialize a new project.
@@ -242,7 +242,7 @@ class CondaProject:
             conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
             lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
-                               Default is True.
+                               Default is False.
             verbose:           Print information to stdout. The default value is False.
 
         Returns:
@@ -264,9 +264,11 @@ class CondaProject:
             name = directory.name
 
         environment_yaml = EnvironmentYaml(
-            channels=channels or ["defaults"],
-            dependencies=dependencies or [],
             platforms=platforms or list(DEFAULT_PLATFORMS),
+        )
+
+        environment_yaml.add_dependencies(
+            dependencies=dependencies or [], channels=channels or ["defaults"]
         )
 
         environment_yaml_path = directory / "environment.yml"
@@ -795,6 +797,56 @@ class Environment(BaseModel):
             verbose=verbose,
             logger=logger,
         )
+
+    def _update(
+        self,
+        dependencies: List[str],
+        channels: Optional[List[str]] = None,
+        method: Literal["add", "remove"] = "add",
+        verbose: bool = False,
+    ) -> None:
+        writable_source = self.sources[
+            0
+        ]  # TODO: if multiple sources identify the first writable
+        source = EnvironmentYaml.parse_yaml(writable_source)
+        original_source = source.copy(deep=True)
+
+        assert method in ["add", "remove"], f"{method} is not allowed for _update"
+        if method == "add":
+            source.add_dependencies(dependencies, channels)
+        elif method == "remove":
+            source.remove_dependencies(dependencies)
+
+        source.yaml(writable_source)
+
+        if source == original_source:
+            return
+
+        try:
+            self.lock(verbose=verbose)
+        except Exception as e:
+            original_source.yaml(writable_source)
+            raise e
+
+        if (self.prefix / "conda-meta" / "history").exists():
+            self.install(force=True, verbose=verbose)
+
+    def add(
+        self,
+        dependencies: List[str],
+        channels: Optional[List[str]] = None,
+        verbose: bool = False,
+    ) -> None:
+        self._update(
+            dependencies=dependencies, channels=channels, method="add", verbose=verbose
+        )
+
+    def remove(
+        self,
+        dependencies: List[str],
+        verbose: bool = False,
+    ) -> None:
+        self._update(dependencies=dependencies, method="remove", verbose=verbose)
 
     def activate(self, verbose=False) -> None:
         if not self.is_consistent:

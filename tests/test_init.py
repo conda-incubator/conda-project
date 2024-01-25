@@ -74,6 +74,42 @@ def test_project_init_specific_platforms(tmp_path):
     assert env["platforms"] == ["linux-64"]
 
 
+def test_project_init_conda_pkgs(tmp_path):
+    p = CondaProject.init(
+        tmp_path, dependencies=["python=3.10", "numpy"], lock_dependencies=False
+    )
+
+    with p.default_environment.sources[0].open() as f:
+        env = YAML().load(f)
+
+    assert env["dependencies"] == ["python=3.10", "numpy"]
+
+
+def test_project_init_pip_pkgs(tmp_path):
+    p = CondaProject.init(
+        tmp_path,
+        dependencies=["python=3.10", "pip", "@pip::numpy"],
+        lock_dependencies=False,
+    )
+
+    with p.default_environment.sources[0].open() as f:
+        env = YAML().load(f)
+
+    assert env["dependencies"] == ["python=3.10", "pip", {"pip": ["numpy"]}]
+
+
+def test_project_init_pip_pkgs_no_pip(tmp_path, capsys):
+    p = CondaProject.init(
+        tmp_path, dependencies=["python=3.10", "@pip::numpy"], lock_dependencies=False
+    )
+
+    with p.default_environment.sources[0].open() as f:
+        env = YAML().load(f)
+
+    assert env["dependencies"] == ["python=3.10", "pip", {"pip": ["numpy"]}]
+    assert "do not list pip itself" in capsys.readouterr().out
+
+
 def test_project_init_specific_channels(tmp_path):
     p = CondaProject.init(
         tmp_path,

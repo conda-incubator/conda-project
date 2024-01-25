@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
-from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -12,7 +11,7 @@ from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError, CondaProjectLockFailed
-from conda_project.project import DEFAULT_PLATFORMS, CondaProject
+from conda_project.project import DEFAULT_PLATFORMS, CondaProject, current_platform
 
 
 def is_libmamba_installed():
@@ -27,10 +26,11 @@ def is_libmamba_installed():
 @pytest.mark.slow
 def test_install_and_clean(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -60,10 +60,11 @@ def test_install_and_clean(project_directory_factory):
 @pytest.mark.slow
 def test_lock(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -150,9 +151,10 @@ def test_lock_failed_from_conda(project_directory_factory):
 
 def test_lock_no_channels(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: []
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -170,10 +172,11 @@ def test_lock_no_channels(project_directory_factory):
 
 def test_lock_with_channels(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         channels: [defusco, conda-forge, defaults]
         dependencies: []
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -230,9 +233,10 @@ def test_lock_with_platforms(project_directory_factory):
 
 def test_force_relock(project_directory_factory, capsys):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: []
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -257,9 +261,10 @@ def test_force_relock(project_directory_factory, capsys):
 
 def test_lock_outdated(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies: []
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -269,10 +274,11 @@ def test_lock_outdated(project_directory_factory):
     assert project.default_environment.is_locked
 
     updated_env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     with (project.default_environment.sources[0]).open("wt") as f:
@@ -284,10 +290,11 @@ def test_lock_outdated(project_directory_factory):
 @pytest.mark.slow
 def test_relock_add_packages(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -303,11 +310,12 @@ def test_relock_add_packages(project_directory_factory):
     assert "requests" not in [p["name"] for p in lock["package"]]
 
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
           - requests
+        platforms: [{current_platform()}]
         """
     )
     with project.default_environment.sources[0].open("w") as f:
@@ -327,11 +335,12 @@ def test_relock_add_packages(project_directory_factory):
 @pytest.mark.slow
 def test_relock_remove_packages(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
           - requests
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -347,10 +356,11 @@ def test_relock_remove_packages(project_directory_factory):
     assert "requests" in [p["name"] for p in lock["package"]]
 
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
+        platforms: [{current_platform()}]
         """
     )
     with project.default_environment.sources[0].open("w") as f:
@@ -368,11 +378,12 @@ def test_relock_remove_packages(project_directory_factory):
 @pytest.mark.slow
 def test_relock_failed(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
           - requests
+        platforms: [{current_platform()}]
         """
     )
     project_path = project_directory_factory(env_yaml=env_yaml)
@@ -388,11 +399,12 @@ def test_relock_failed(project_directory_factory):
     assert "requests" in [p["name"] for p in lock["package"]]
 
     env_yaml = dedent(
-        """\
+        f"""\
         name: test
         dependencies:
           - python=3.8
           - _bad-package-8933
+        platforms: [{current_platform()}]
         """
     )
     with project.default_environment.sources[0].open("w") as f:
@@ -411,7 +423,7 @@ def test_relock_failed(project_directory_factory):
 
 
 def test_project_named_environment(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -440,7 +452,7 @@ def test_project_named_environment(project_directory_factory):
 
 
 def test_project_hyphen_named_environment(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -469,7 +481,7 @@ def test_project_hyphen_named_environment(project_directory_factory):
 
 
 def test_project_environments_immutable(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -499,7 +511,7 @@ def test_project_environments_immutable(project_directory_factory):
 
 
 def test_project_multiple_envs(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -524,7 +536,7 @@ def test_project_multiple_envs(project_directory_factory):
 
 
 def test_lock_install_clean_default_with_multiple_envs(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -559,7 +571,7 @@ def test_lock_install_clean_default_with_multiple_envs(project_directory_factory
 
 
 def test_lock_install_clean_named_with_multiple_envs(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -596,7 +608,7 @@ def test_lock_install_clean_named_with_multiple_envs(project_directory_factory):
 
 
 def test_lock_install_clean_multiple_envs(project_directory_factory):
-    env_yaml = "dependencies: []\n"
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -649,9 +661,8 @@ def test_lock_install_clean_multiple_envs(project_directory_factory):
 
 @pytest.mark.slow
 def test_project_lock_env_multiple_sources(project_directory_factory):
-    environment_yml = "dependencies: [python]\n"
-
-    extras_yml = "dependencies: [requests]\n"
+    environment_yml = f"dependencies: [python]\nplatforms: [{current_platform()}]"
+    extras_yml = f"dependencies: [requests]\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -677,8 +688,8 @@ def test_project_lock_env_multiple_sources(project_directory_factory):
         lock = YAML().load(f)
 
     assert lock["metadata"]["sources"] == [
-        str(project_path / f"environment{project_directory_factory._suffix}"),
-        str(project_path / f"extras{project_directory_factory._suffix}"),
+        f"environment{project_directory_factory._suffix}",
+        f"extras{project_directory_factory._suffix}",
     ]
 
     assert "requests" in [p["name"] for p in lock["package"]]
@@ -689,9 +700,8 @@ def test_project_lock_env_multiple_sources(project_directory_factory):
 def test_project_lock_env_multiple_sources_different_directories(
     project_directory_factory,
 ):
-    environment_yml = "dependencies: [python]\n"
-
-    extras_yml = "dependencies: [requests]\n"
+    environment_yml = f"dependencies: [python]\nplatforms: [{current_platform()}]"
+    extras_yml = f"dependencies: [requests]\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
         f"""\
@@ -724,10 +734,10 @@ def test_project_lock_env_multiple_sources_different_directories(
     with project.default_environment.lockfile.open() as f:
         lock = YAML().load(f)
 
-    assert Path(lock["metadata"]["sources"][0]).samefile(
+    assert (project.directory / lock["metadata"]["sources"][0]).samefile(
         project_path / "project" / f"environment{project_directory_factory._suffix}"
     )
-    assert Path(lock["metadata"]["sources"][1]).samefile(
+    assert (project.directory / lock["metadata"]["sources"][1]).samefile(
         project_path / f"extras{project_directory_factory._suffix}"
     )
 
@@ -740,7 +750,7 @@ def test_project_lock_env_multiple_sources_different_directories(
 )
 def test_failed_to_solve_libmamba(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: fail
         channels:
           - conda-forge
@@ -748,6 +758,7 @@ def test_failed_to_solve_libmamba(project_directory_factory):
         dependencies:
           - ensureconda
           - conda-token
+        platforms: [{current_platform()}]
         """
     )
 
@@ -767,7 +778,7 @@ def test_failed_to_solve_libmamba(project_directory_factory):
 )
 def test_failed_to_solve_classic(project_directory_factory):
     env_yaml = dedent(
-        """\
+        f"""\
         name: fail
         channels:
           - conda-forge
@@ -775,6 +786,7 @@ def test_failed_to_solve_classic(project_directory_factory):
         dependencies:
           - ensureconda
           - conda-token
+        platforms: [{current_platform()}]
         """
     )
     condarc = "experimental_solver: classic"
@@ -793,7 +805,7 @@ def test_failed_to_solve_classic(project_directory_factory):
 
 
 def test_check_multi_env(project_directory_factory, capsys):
-    env1 = env2 = "dependencies: []\n"
+    env1 = env2 = f"dependencies: []\nplatforms: [{current_platform()}]"
     project_yaml = dedent(
         f"""\
         name: multi-envs
@@ -821,7 +833,7 @@ def test_check_multi_env(project_directory_factory, capsys):
     project.environments["env2"].lock()
     assert project.check()
 
-    env1 = "dependencies: [python=3.8]\n"
+    env1 = f"dependencies: [python=3.8]\nplatforms: [{current_platform()}]"
     with (project_path / f"env1{project_directory_factory._suffix}").open("w") as f:
         f.write(env1)
 

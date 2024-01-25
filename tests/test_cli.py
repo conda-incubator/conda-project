@@ -11,9 +11,21 @@ from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject
 
 PROJECT_ACTIONS = ("init", "create", "check")
-ENVIRONMENT_ACTIONS = ("clean", "install", "prepare", "lock", "activate")
+ENVIRONMENT_ACTIONS = (
+    "clean",
+    "install",
+    "prepare",
+    "lock",
+    "activate",
+)
+DEPENDENCIES_ACTIONS = (
+    "add",
+    "remove",
+)
 COMMAND_ACTIONS = ("run",)
-ALL_ACTIONS = PROJECT_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
+ALL_ACTIONS = (
+    PROJECT_ACTIONS + DEPENDENCIES_ACTIONS + ENVIRONMENT_ACTIONS + COMMAND_ACTIONS
+)
 
 
 @pytest.fixture
@@ -192,6 +204,22 @@ def test_action_with_environment_name(action, multi_env, mocker):
 
     assert environments.mock_calls[0] == mocker.call.__getitem__("env1")
     assert getattr(environments["env1"], method_to_spy).call_count == 1
+
+
+@pytest.mark.parametrize("action", DEPENDENCIES_ACTIONS)
+def test_deps_action_with_environment_name(action, multi_env, mocker):
+    environments = mocker.spy(CondaProject, "environments")
+    default_environment = mocker.spy(CondaProject, "default_environment")
+
+    ret = parse_and_run(
+        [action, "--directory", str(multi_env), "--environment", "env1", "pkg"]
+    )
+    assert ret == 0
+
+    assert getattr(default_environment, action).call_count == 0
+
+    assert environments.mock_calls[0] == mocker.call.__getitem__("env1")
+    assert getattr(environments["env1"], action).call_count == 1
 
 
 @pytest.mark.parametrize("action", ["install", "clean"])

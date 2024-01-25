@@ -1,3 +1,4 @@
 # Install the documentation dependencies
 # This is required because readthedocs needs requirements.txt
 ..[docs]
+pydantic<2

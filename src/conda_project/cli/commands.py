@@ -66,7 +66,7 @@ def init(args: Namespace) -> bool:
         conda_configs=[]
         if args.conda_configs is None
         else args.conda_configs.split(","),
-        lock_dependencies=not args.no_lock,
+        lock_dependencies=args.lock,
         verbose=True,
     )
 
@@ -127,6 +127,34 @@ def prepare(args: Namespace) -> int:
         "The 'prepare' subcommand is an alias for 'install' and may be removed in a future version."
     )
     return install(args)
+
+
+@handle_errors
+def add(args: Namespace) -> bool:
+    project = _load_project(args)
+
+    env = (
+        project.environments[args.environment]
+        if args.environment
+        else project.default_environment
+    )
+
+    env.add(args.dependencies, args.channel, verbose=True)
+    return True
+
+
+@handle_errors
+def remove(args: Namespace) -> bool:
+    project = _load_project(args)
+
+    env = (
+        project.environments[args.environment]
+        if args.environment
+        else project.default_environment
+    )
+
+    env.remove(args.dependencies, verbose=True)
+    return True
 
 
 @handle_errors

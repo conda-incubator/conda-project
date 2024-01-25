@@ -11,14 +11,20 @@ The init command will always write `channels` and `platforms` into the environme
 
 From within an existing project directory, run:
 
-```shell
+```text
 conda project init
 ```
 
 Packages can also be specified when creating a project:
 
-```shell
+```text
 conda project init python=3.10
+```
+
+To specify pip dependencies on initialization, use the `@pip::` prefix:
+
+```text
+conda project init python=3.10 @pip::numpy
 ```
 
 This will initialize your project with a new `conda-project.yml`, `environment.yml`, and local `.condarc` file.
@@ -29,7 +35,7 @@ The following is the output of `conda project init --help`:
 
 ```text
 usage: conda-project init [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
-                            [--no-lock] [--install]
+                            [--lock] [--install]
                             [dependencies [dependencies ...]]
 
 Initialize a new project
@@ -50,7 +56,7 @@ optional arguments:
   --conda-configs CONDA_CONFIGS
                         Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
                         format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
-  --no-lock             Do no create the conda-lock.<env>.yml file(s)
+  --lock                Create the conda-lock.<env>.yml file(s)
   --install             Create the local conda environment for the current platform.
 ```
 
@@ -102,7 +108,7 @@ conda-project uses
 [conda-lock](https://github.com/conda-incubator/conda-lock) to lock environment dependencies.
 To manually lock your environments, run:
 
-```shell
+```text
 conda project lock
 ```
 
@@ -114,7 +120,7 @@ When you run `conda project lock` multiple times, the lock file will only be upd
 `environment.yml` has changed.
 To force a re-lock use `conda project lock --force`.
 
-## Preparing your environments
+## Installing your environments
 
 `conda project install` enforces the use of `conda-lock`.
 If a `conda-lock.<env>.yml` file is not present it will be created by install with the above
@@ -124,6 +130,157 @@ it will raise an exception.
 
 The live conda environment is built from a rendered lockfile (explicit type) for your current
 platform, similar to how `conda lock install` works.
+
+## Adding packages to an environment
+
+The `conda project add` command works similar to `conda install` to add packages. Like `init` you
+can specify pip packages with the `@pip::` prefix.
+The `add` command will re-lock and install your environment each time it is run.
+
+For example:
+
+```text
+conda project init
+conda project add -c defaults python=3.10
+conda project add conda-forge::pandas requests @pip::pydantic
+conda project add "pandas<2"
+```
+
+Note that in the above commands `pandas` was added twice. Adding a package that already exists in your
+environment.yml file will replace that entry with the new one.
+
+To add packages to an environment other than the first one in the conda-project.yml file use the `--environment <name>`
+flag.
+
+Here's the full help for the `add` command.
+
+```text
+usage: conda-project add [-h] [--directory PROJECT_DIR] [--project-archive PROJECT_ARCHIVE_FILE_OR_URL]
+                         [--archive-storage-options ARCHIVE_STORAGE_OPTIONS] [--environment ENVIRONMENT] [-c CHANNEL]
+                         [PACKAGE_SPECIFICATION [PACKAGE_SPECIFICATION ...]]
+
+Add packages to an environment
+
+positional arguments:
+  PACKAGE_SPECIFICATION
+                        Packages to add to the environment.yml. The format for each package is '[<prefix>::]<name>[<op><version>]'
+                        where <op> can be =, <, >, <=, or >=.Most commonly `<prefix>::` declares the conda channel from which to
+                        install packages. Use the prefix `@pip::` to add pip package dependencies with support for full pip package
+                        specification syntax.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --directory PROJECT_DIR
+                        Project directory (defaults to current directory)
+  --project-archive PROJECT_ARCHIVE_FILE_OR_URL
+                        EXPERIMENTAL: Extract and run directly from a project archive. The archive can be a local file or a fsspec
+                        compatible URL. You may need to install appropriate driver packages to work with remote archives. Optionally,
+                        use --directory to set the destination directory of the extracted project.
+  --archive-storage-options ARCHIVE_STORAGE_OPTIONS
+                        EXPERIMENTAL: Comma separated list of fsspec storage_options for accessing a remote archive For example
+                        --archive-storage-options username=<user>,password=<pass>
+  --environment ENVIRONMENT
+  -c CHANNEL, --channel CHANNEL
+                        Additional channel to search for packages. The default channel is 'defaults'. Multiple channels are added with
+                        repeated use of this argument.
+```
+
+## Removing a package from an environment
+
+The inverse of `add` is `conda project remove`. Removing a package will also re-lock and re-install the environment.
+Only the name of the package is required to remove it and you can remove a pip package with the `@pip::` prefix.
+
+Start from where we left of in the previous section we initialized the project and added packages.
+
+```text
+conda project init
+conda project add -c defaults python=3.10
+conda project add "conda-forge::pandas<2" requests @pip::pydantic
+```
+
+In the end our environment.yml now looks like:
+
+```yaml
+name:
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+    - conda-forge::pandas<2
+    - requests
+    - pip
+    - pip:
+      - pydantic
+variables:
+prefix:
+platforms:
+  - osx-arm64
+  - linux-64
+  - osx-64
+  - win-64
+```
+
+To remove packages we need only specify the name of package
+
+```text
+conda project remove pandas @pip::pydantic
+```
+
+Then we are left with:
+
+```yaml
+name:
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - requests
+  - pip
+  - pip: []
+variables:
+prefix:
+platforms:
+  - osx-arm64
+  - linux-64
+  - osx-64
+  - win-64
+```
+
+Here's the help output for the `remove` command:
+
+```text
+usage: conda-project remove [-h] [--directory PROJECT_DIR]
+                            [--project-archive PROJECT_ARCHIVE_FILE_OR_URL]
+                            [--archive-storage-options ARCHIVE_STORAGE_OPTIONS]
+                            [--environment ENVIRONMENT]
+                            [PACKAGE_SPECIFICATION [PACKAGE_SPECIFICATION ...]]
+
+Remove packages to an environment
+
+positional arguments:
+  PACKAGE_SPECIFICATION
+                        Packages to remove from the environment.yml. Only the
+                        name of the package is required here. To remove a pip
+                        package use the pypyi:: prefix.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --directory PROJECT_DIR
+                        Project directory (defaults to current directory)
+  --project-archive PROJECT_ARCHIVE_FILE_OR_URL
+                        EXPERIMENTAL: Extract and run directly from a project
+                        archive. The archive can be a local file or a fsspec
+                        compatible URL. You may need to install appropriate
+                        driver packages to work with remote archives.
+                        Optionally, use --directory to set the destination
+                        directory of the extracted project.
+  --archive-storage-options ARCHIVE_STORAGE_OPTIONS
+                        EXPERIMENTAL: Comma separated list of fsspec
+                        storage_options for accessing a remote archive For
+                        example --archive-storage-options
+                        username=<user>,password=<pass>
+  --environment ENVIRONMENT
+```
 
 ## Activating environments in the shell
 
@@ -197,7 +354,7 @@ by setting the variable in your shell.
 In this example the `BAR` environment variable is unset so `conda project activate` will not start
 unless a value is provided by the shell or in a `.env` file.
 
-```
+```text
 ❯ conda project activate
 CondaProjectError: The following variables do not have a default value and values
 were not provided in the .env file or set on the command line when executing 'conda project run':
@@ -206,7 +363,7 @@ BAR
 
 On Unix you can do the following
 
-```
+```text
 ❯ BAR=set-on-cli conda project activate
 ## Project environment default activated in a new shell.
 ## Exit this shell to de-activate.
@@ -215,14 +372,14 @@ On Unix you can do the following
 
 On Windows in either `cmd.exe` you can use `set variable=value`
 
-```
+  ```text
 > set BAR=set-in-shell
 > conda project activate
 ```
 
 and finally, in Powershell you would use `$env`
 
-```
+```text
 > $env:BAR = 'set-in-shell'
 > conda project activate
 ```
@@ -259,7 +416,7 @@ We can execute this script with the `default` environment as an ad-hoc command u
 interpreter provided by the default environment. Here a `.env` file is utilized to provide the
 value of the BAR variable.
 
-```
+```text
 > BAR=set-on-cli conda project run python vars.py
 The value of FOO is has-default-value
 The value of BAR is set-on-cli
@@ -271,7 +428,7 @@ return code of the command it is executing. For example the above invocation ret
 0, known as a successful execution. The `--version` flag, however exits with code 1, typically
 meaning a failed execution.
 
-```
+```text
 > BAR=set-on-cli conda project run python vars.py --version
 0.0.1
 > echo $?
@@ -280,7 +437,7 @@ meaning a failed execution.
 
 On Windows `cmd.exe` we can echo the `%ERRORLEVEL% variable.
 
-```
+```text
 > set BAR=set-on-cli
 > conda project run python vars.py --version
 > echo %ERRORLEVEL%
@@ -289,7 +446,7 @@ On Windows `cmd.exe` we can echo the `%ERRORLEVEL% variable.
 
 And in Powershell we print the `$LASTEXITCODE` variable
 
-```
+```text
 > $env:BAR = 'set-on-cli'
 > conda project run python vars.py --version
 0.0.1
@@ -308,7 +465,7 @@ commands:
 Now you can use `conda project run` without arguments and it will execute the first
 named command in the `conda-project.yml` file.
 
-```
+```text
 > BAR=set-on-cli conda project run
 The value of FOO is has-default-value
 The value of BAR is set-on-cli
@@ -317,7 +474,7 @@ The value of BAZ is None
 
 Defined commands also support extra arguments, but the name of the command must be supplied.
 
-```
+```text
 > BAR=set-on-cli conda project run print-vars --version
 0.0.1
 ```
@@ -341,13 +498,12 @@ commands:
 Here the command is run by name without any extra variables. This is the same as
 `conda project run`
 
-```
+```text
 > conda project run print-vars
 The value of FOO is bar
 The value of BAR is set-on-cli
 The value of BAZ is a-new-var
 ```
-
 
 ## Python API
 
@@ -376,10 +532,10 @@ project.environments['default'].lock()
 prefix = project.environments['default'].install()
 ```
 
-To create a new project directory the `CondaProject.create()` method follows the CLI arguments
+To create a new project directory the `CondaProject.init()` method follows the CLI arguments
 described above.
 Projects are automatically locked.
-See the docstring for `.create()` for more details.
+See the docstring for `.init()` for more details.
 
 ```python
 from conda_project import CondaProject

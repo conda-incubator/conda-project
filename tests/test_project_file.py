@@ -15,6 +15,7 @@ from conda_project.project_file import (
     Command,
     CondaProjectYaml,
     EnvironmentYaml,
+    UniqueOrderedList,
 )
 
 
@@ -215,3 +216,150 @@ def test_command_with_empty_variable():
     parsed = Command(**command)
     assert parsed.variables is not None
     assert parsed.variables.get("FOO") is None
+
+
+def test_uniqueordreredlist_init():
+    inputs = ["a", "c", "b", "c"]
+
+    uol = UniqueOrderedList(inputs)
+    assert uol == ["a", "c", "b"]
+
+
+def test_uniqueorderedlist_append_extend():
+    inputs = ["a", "c", "b", "c"]
+    uol = UniqueOrderedList(inputs)
+
+    uol.append("c")
+    assert uol == ["a", "c", "b"]
+
+    addition = ["b", "e", "d", "a"]
+    uol.extend(addition)
+    assert uol == ["a", "c", "b", "e", "d"]
+
+
+def test_env_add_dependencies():
+    env = EnvironmentYaml(dependencies=["python=3.10", "numpy"])
+
+    env.add_dependencies(["pandas", "dask"])
+    assert env.dependencies == ["python=3.10", "numpy", "pandas", "dask"]
+
+
+def test_env_add_pip_dependencies():
+    env = EnvironmentYaml(dependencies=["python=3.10", "pip"])
+
+    env.add_dependencies(["@pip::requests"])
+    assert env.dependencies == ["python=3.10", "pip", {"pip": ["requests"]}]
+
+
+def test_env_extend_pip_dependencies():
+    env = EnvironmentYaml(dependencies=["python=3.10", "pip", {"pip": ["requests"]}])
+
+    env.add_dependencies(["@pip::pydantic[email,dotenv]<2"])
+    assert env.dependencies == [
+        "python=3.10",
+        "pip",
+        {"pip": ["requests", "pydantic[email,dotenv]<2"]},
+    ]
+
+
+def test_env_add_dependencies_empty_channels():
+    env = EnvironmentYaml(dependencies=["python=3.10", "numpy"])
+
+    assert env.channels is None
+
+    env.add_dependencies(["hvplot", "geoviews"], channels=["conda-forge", "defaults"])
+    assert env.dependencies == ["python=3.10", "numpy", "hvplot", "geoviews"]
+    assert env.channels == ["conda-forge", "defaults"]
+
+
+def test_env_add_dependencies_with_channels():
+    env = EnvironmentYaml(dependencies=["python=3.10", "numpy"], channels=["defaults"])
+
+    assert isinstance(env.channels, UniqueOrderedList)
+
+    env.add_dependencies(["pandas", "dask"], channels=["conda-forge", "defaults"])
+
+    assert env.dependencies == ["python=3.10", "numpy", "pandas", "dask"]
+    assert env.channels == ["defaults", "conda-forge"]
+
+
+def test_replace_dependency():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "numpy", "conda-forge::pandas", "requests<2.31"],
+        channels=["defaults"],
+    )
+
+    env.add_dependencies(["pandas<2", "requests"])
+
+    assert env.dependencies == ["python=3.10", "numpy", "pandas<2", "requests"]
+
+
+def test_env_comparison():
+    env = EnvironmentYaml(dependencies=["python=3.10"])
+
+    env_with_channels = EnvironmentYaml(
+        dependencies=["python=3.10"], channels=["defaults"]
+    )
+
+    assert env != env_with_channels
+
+
+def test_remove_dependencies():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "numpy", "conda-forge::pandas>=2"],
+        channels=["defaults"],
+    )
+
+    env.remove_dependencies(["numpy", "pandas"])
+
+    assert env.dependencies == ["python=3.10"]
+
+
+def test_remove_dependencies_extra_fields():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "numpy", "conda-forge::pandas>=2"],
+        channels=["defaults"],
+    )
+
+    env.remove_dependencies(["conda-forge::numpy", "pandas[stuff]"])
+
+    assert env.dependencies == ["python=3.10"]
+
+
+def test_env_add_pip_dependencies_no_pip(capsys):
+    env = EnvironmentYaml(dependencies=["python=3.10"])
+
+    env.add_dependencies(["@pip::requests"])
+    assert env.dependencies == ["python=3.10", "pip", {"pip": ["requests"]}]
+    assert "do not list pip itself" in capsys.readouterr().out
+
+
+def test_env_replace_pip_dependency():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
+    )
+
+    env.add_dependencies(["@pip::pydantic[dotenv,email]<2"])
+    assert env.dependencies == [
+        "python=3.10",
+        "pip",
+        {"pip": ["pydantic[dotenv,email]<2"]},
+    ]
+
+
+def test_remove_pip_dependency():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
+    )
+
+    env.remove_dependencies(["@pip::pydantic"])
+    assert env.dependencies == ["python=3.10", "pip", {"pip": []}]
+
+
+def test_remove_pip_dependency_extras():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "pip", {"pip": ["pydantic[dotenv]"]}]
+    )
+
+    env.remove_dependencies(["@pip::pydantic<2"])
+    assert env.dependencies == ["python=3.10", "pip", {"pip": []}]

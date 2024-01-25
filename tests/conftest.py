@@ -9,6 +9,7 @@ from typing import Optional
 import pytest
 
 from conda_project.conda import call_conda
+from conda_project.project import CondaProject, current_platform
 
 
 @pytest.fixture()
@@ -65,6 +66,15 @@ def project_directory_factory(tmp_path, request):
     create_project_directory._suffix = suffix
 
     return create_project_directory
+
+
+@pytest.fixture
+def project(tmp_path) -> CondaProject:
+    """Initialize and empty project"""
+    project = CondaProject.init(tmp_path, platforms=[current_platform()])
+    assert not project.default_environment.lockfile.exists()
+    assert not (project.default_environment.prefix / "conda-meta" / "history").exists()
+    return project
 
 
 @pytest.fixture
