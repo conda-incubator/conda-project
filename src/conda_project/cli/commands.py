@@ -63,9 +63,9 @@ def init(args: Namespace) -> bool:
         dependencies=args.dependencies,
         channels=args.channel,
         platforms=args.platforms.split(","),
-        conda_configs=[]
-        if args.conda_configs is None
-        else args.conda_configs.split(","),
+        conda_configs=(
+            [] if args.conda_configs is None else args.conda_configs.split(",")
+        ),
         lock_dependencies=args.lock,
         verbose=True,
     )
