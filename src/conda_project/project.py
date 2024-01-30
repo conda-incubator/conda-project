@@ -30,7 +30,13 @@ from conda_lock.conda_lock import (
     render_lockfile_for_platform,
 )
 from fsspec.core import split_protocol
-from pydantic import BaseModel, create_model
+
+try:
+    # Version 2 provides a v1 API
+    from pydantic.v1 import BaseModel, create_model
+except ImportError:
+    from pydantic import BaseModel  # type: ignore
+    from pydantic import create_model  # type: ignore
 
 from .conda import (
     CONDA_EXE,
