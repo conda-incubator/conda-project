@@ -81,14 +81,6 @@ jobs:
         shell: bash
         run: |
           ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
-      - name: Update with test dependencies
-        shell: bash
-        run: |
-          if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
-          else
-            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
-          fi
       - name: Install Libmamba
         shell: bash
         run: |
@@ -100,6 +92,14 @@ jobs:
               source $HOME/miniconda/bin/activate root && \
               conda install conda-libmamba-solver -p $HOME/miniconda
             fi
+          fi
+      - name: Update with test dependencies
+        shell: bash
+        run: |
+          if [ $RUNNER_OS == 'Windows' ]; then
+            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
+          else
+            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
       - name: py.test
         shell: bash
