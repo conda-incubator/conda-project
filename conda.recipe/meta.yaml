@@ -12,7 +12,7 @@ source:
   path: ..
 
 build:
-  script: {{ PYTHON }} -m pip install . -vv
+  script: SETUPTOOLS_SCM_PRETEND_VERSION={{version}} {{ PYTHON }} -m pip install . -vv
   noarch: python
   entry_points:
     {% for name, reference in project['scripts'].items() %}
