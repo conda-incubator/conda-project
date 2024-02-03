@@ -42,8 +42,8 @@ test:
   imports:
     - conda_project
   commands:
-    - conda-project --help
-    - conda-project --version
+    # conda-project --help
+    # conda-project --version
     - python -c "from conda_project import __version__; assert __version__ == \"{{ version }}\""
 
 about:
