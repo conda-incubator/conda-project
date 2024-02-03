@@ -3,4 +3,7 @@ dependencies:
   - conda
   - conda-build
   - conda-verify
+  - hatch
+  - hatchling
+  - hatch-vcs
   - setuptools-scm
