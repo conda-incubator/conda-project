@@ -1,4 +1,7 @@
 name: build-conda-project
+channels:
+  - defaults
+  - conda-forge
 dependencies:
   - conda
   - conda-build
