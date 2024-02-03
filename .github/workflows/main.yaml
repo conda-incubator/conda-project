@@ -38,7 +38,7 @@ jobs:
       - name: conda Build
         shell: bash -l {0}
         run: |
-          VERSION=`python -m setuptools_scm` conda build conda.recipe
+          VERSION=`python -m setuptools_scm` conda build -c conda-forge conda.recipe
           mv $CONDA_PREFIX/conda-bld .
       - name: Upload the build artifact
         uses: actions/upload-artifact@v3
