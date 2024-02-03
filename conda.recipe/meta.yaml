@@ -41,7 +41,6 @@ requirements:
 test:
   imports:
     - conda_project
-    - from conda_project import CondaProject
   commands:
     - conda-project --help
     - conda-project --version
