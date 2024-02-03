@@ -38,7 +38,7 @@ jobs:
       - name: conda Build
         shell: bash -l {0}
         run: |
-          VERSION=`hatch version` conda build -c conda-forge --output-directory conda-build conda.recipe
+          VERSION=`hatch version` conda build -c conda-forge --output-folder conda-build conda.recipe
       - name: Upload the build artifact
         uses: actions/upload-artifact@v3
         with:
