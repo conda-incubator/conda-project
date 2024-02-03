@@ -23,10 +23,12 @@ requirements:
   host:
     - python {{ project['requires-python'] }}
     - pip
-    - setuptools
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
   run:
     - python {{ project['requires-python'] }}
-    - conda-lock >=1.2
+    - conda-lock >=2.2
     - lockfile
     - pexpect
     - ruamel.yaml
@@ -39,6 +41,7 @@ requirements:
 test:
   imports:
     - conda_project
+    - from conda_project import CondaProject
   commands:
     - conda-project --help
     - conda-project --version
