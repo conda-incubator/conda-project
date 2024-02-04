@@ -28,16 +28,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          activate-environment: build-conda-token
-          environment-file: etc/build-environment.yml
-          python-version: 3.8
-          auto-activate-base: false
-      - name: conda Build
-        shell: bash -l {0}
+      - name: Create build environment
         run: |
+          source $CONDA/bin/activate
+          conda env create -f etc/build-environment.yml
+      - name: conda Build
+        run: |
+          source $CONDA/bin/activate && conda activate build-conda-project
           VERSION=`hatch version` conda build -c conda-forge --output-folder conda-build conda.recipe
       - name: Upload the build artifact
         uses: actions/upload-artifact@v3
