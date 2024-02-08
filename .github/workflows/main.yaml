@@ -21,30 +21,51 @@ on:
 
 
 jobs:
-  package:
-    name: Build package
+  conda-package:
+    name: Build Conda package
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          activate-environment: build-conda-token
-          environment-file: etc/build-environment.yml
-          python-version: 3.8
-          auto-activate-base: false
-      - name: conda Build
-        shell: bash -l {0}
+      - name: Create build environment
         run: |
-          VERSION=`python -m setuptools_scm` conda build conda.recipe
-          mv $CONDA_PREFIX/conda-bld .
+          source $CONDA/bin/activate
+          conda env create -f etc/build-environment.yml
+      - name: conda Build
+        run: |
+          source $CONDA/bin/activate && conda activate build-conda-project
+          VERSION=`hatch version` conda build -c conda-forge --output-folder conda-build conda.recipe
       - name: Upload the build artifact
         uses: actions/upload-artifact@v3
         with:
           name: package-${{ github.sha }}
-          path: conda-bld
+          path: conda-build
+
+  build-wheel:
+    name: Build the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
+        with:
+          python-version: "3.10"
+      - name: Install build dependencies
+        run: pip install build
+      - name: Build the package
+        run: python -m build
+      - name: Upload the build artifact
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3
+        with:
+          name: wheel-${{ github.sha }}
+          path: dist/*.whl
+          if-no-files-found: error
+          retention-days: 7
+
   test:
     name: Test (conda ${{ matrix.conda-version }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -81,14 +102,6 @@ jobs:
         shell: bash
         run: |
           ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
-      - name: Update with test dependencies
-        shell: bash
-        run: |
-          if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
-          else
-            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
-          fi
       - name: Install Libmamba
         shell: bash
         run: |
@@ -100,6 +113,14 @@ jobs:
               source $HOME/miniconda/bin/activate root && \
               conda install conda-libmamba-solver -p $HOME/miniconda
             fi
+          fi
+      - name: Update with test dependencies
+        shell: bash
+        run: |
+          if [ $RUNNER_OS == 'Windows' ]; then
+            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
+          else
+            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
       - name: py.test
         shell: bash
@@ -154,6 +175,30 @@ jobs:
       uses: glassechidna/artifact-cleaner@master
       with:
         minimumAge: 86400
+
+  publish-to-pypi:
+    name: Build & publish to PyPI
+    if: github.event_name == 'push' && github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    needs: [check]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+    - name: Setup Python
+      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
+    - name: Download the build artifacts
+      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+      with:
+        name: wheel-${{ github.sha }}
+        path: ~/dist
+    - name: Install build dependencies
+      run: pip install twine
+    - name: Upload to PyPI with twine
+      run: python -m twine upload ~/dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN}}
+
   # This check job runs to ensure all tests have passed, such that we can use it as a "wildcard" for branch
   # protection to ensure all tests pass before a PR can be merged.
   check:

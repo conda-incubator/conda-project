@@ -7,7 +7,12 @@ from textwrap import dedent
 from typing import Dict, List, Optional, Union
 
 import pytest
-from pydantic import ValidationError
+
+try:
+    # Version 2 provides a v1 API
+    from pydantic.v1 import ValidationError
+except ImportError:
+    from pydantic import ValidationError  # type: ignore
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.project_file import (

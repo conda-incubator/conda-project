@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools-scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs>=0.3", "setuptools-scm>=7.1"]
 
 [project]
 name = "conda-project"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "conda-lock >=1.2",
+    "conda-lock >=2.2",
     "lockfile",
     "pexpect",
     "ruamel.yaml",
@@ -42,9 +42,20 @@ dependencies = [
     "libarchive-c"
 ]
 
-[tool.setuptools_scm]
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/conda_project/_version.py"
+
+[tool.hatch.version.raw-options]
 version_scheme = "post-release"
-write_to = "src/conda_project/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/conda_project",
+  "/pyproject.toml"
+]
 
 [project.optional-dependencies]
 docs = [

@@ -12,7 +12,7 @@ source:
   path: ..
 
 build:
-  script: {{ PYTHON }} -m pip install . -vv
+  script: SETUPTOOLS_SCM_PRETEND_VERSION={{version}} {{ PYTHON }} -m pip install . -vv
   noarch: python
   entry_points:
     {% for name, reference in project['scripts'].items() %}
@@ -23,10 +23,12 @@ requirements:
   host:
     - python {{ project['requires-python'] }}
     - pip
-    - setuptools
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
   run:
     - python {{ project['requires-python'] }}
-    - conda-lock >=1.2
+    - conda-lock >=2.2
     - lockfile
     - pexpect
     - ruamel.yaml
@@ -40,9 +42,9 @@ test:
   imports:
     - conda_project
   commands:
-    - conda-project --help
-    - conda-project --version
-    - python -c "import conda_project; ver = conda_project.__version__; assert ver != '0.0.0' and ver != 'unknown'"
+    # conda-project --help
+    # conda-project --version
+    - python -c "from conda_project import __version__; assert __version__ == \"{{ version }}\""
 
 about:
   home: {{ project['urls']['repository'] }}

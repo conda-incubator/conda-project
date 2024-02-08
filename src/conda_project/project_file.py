@@ -9,8 +9,15 @@ from typing import Any, Dict, List, Optional, OrderedDict, TextIO, Union
 
 from conda_lock._vendor.conda.models.match_spec import MatchSpec
 from pkg_resources import Requirement
-from pydantic import BaseModel, ValidationError, validator
 from ruamel.yaml import YAML
+
+try:
+    # Version 2 provides a v1 API
+    from pydantic.v1 import BaseModel, ValidationError, validator
+except ImportError:
+    from pydantic import BaseModel  # type: ignore
+    from pydantic import ValidationError  # type: ignore
+    from pydantic import validator  # type: ignore
 
 from .exceptions import CondaProjectError
 

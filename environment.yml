@@ -1,5 +1,4 @@
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - python=3.8
@@ -10,9 +9,16 @@ dependencies:
   - pytest-cov
   - pytest-mock
   - pre-commit
-  - conda-lock>=1.2
+  - conda-lock>=2.2
   - pydantic
   - ruamel.yaml
-  - setuptools-scm
+  - setuptools-scm>=6.2
+  - shellingham
+  - python-dotenv
+  - lockfile
+  - pexpect
   - fsspec
   - python-libarchive-c
+  - pip
+  - pip:
+    - -e .
