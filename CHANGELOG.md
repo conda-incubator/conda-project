@@ -1,6 +1,12 @@
 # Changelog
 
-## [0.3.1] - 2024-02-28
+## [0.3.2] - 2024-02-09
+
+### Fixes
+
+- Depend on setuptools [#152](https://github.com/conda-incubator/conda-project/pull/152)
+
+## [0.3.1] - 2024-02-08
 
 ### Fixes
 

@@ -179,7 +179,6 @@ class EnvironmentYaml(BaseYaml):
                 _, dep = dep.split("::", maxsplit=1)
                 name = Requirement(dep).name
                 if name in current_pip_names:
-                    # self._pip_requirements[current_pip_names.index(name)] = dep
                     self._replace_pip_requirement(current_pip_names.index(name), dep)
                 else:
                     pip_to_add.append(dep)
