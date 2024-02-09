@@ -39,7 +39,8 @@ dependencies = [
     "shellingham",
     "python-dotenv",
     "fsspec",
-    "libarchive-c"
+    "libarchive-c",
+    "setuptools"
 ]
 
 [tool.hatch.version]
