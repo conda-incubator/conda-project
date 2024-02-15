@@ -1,8 +1,25 @@
 # conda-project
 
-[![codecov](https://codecov.io/gh/conda-incubator/conda-project/branch/main/graph/badge.svg?token=XNRS8JKT75)](https://codecov.io/gh/conda-incubator/conda-project)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/conda-incubator/conda-project/main.svg)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
-[![Static Badge](https://img.shields.io/badge/docs-success-blue?logo=github)](https://conda-incubator.github.io/conda-project)
+![GitHub Release Date](https://img.shields.io/github/release-date/conda-incubator/conda-project?style=for-the-badge&logo=github)
+![GitHub Release](https://img.shields.io/github/v/release/conda-incubator/conda-project?style=for-the-badge&logo=github)
+
+
+[![PyPI](https://img.shields.io/pypi/v/conda-project?style=for-the-badge&logo=pypi&color=blue)](https://pypi.org/project/conda-project/)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/conda-project?style=for-the-badge&logo=pypi)
+
+[![Conda-Forge](https://img.shields.io/conda/v/conda-forge/conda-project?style=for-the-badge&logo=conda-forge&color=blue)](https://github.com/conda-forge/conda-project-feedstock)
+![Conda Downloads](https://img.shields.io/conda/d/conda-forge/conda-project?style=for-the-badge&logo=conda-forge&label=downloads)
+
+
+[![Docs](https://img.shields.io/github/deployments/conda-incubator/conda-project/github-pages?style=for-the-badge&label=docs&logo=github)](https://conda-incubator.github.io/conda-project)
+
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/conda-incubator/conda-project/main.yaml?style=for-the-badge&label=tests&logo=github)
+![Codecov](https://img.shields.io/codecov/c/github/conda-incubator/conda-project?style=for-the-badge&logo=codecov)
+[![pre-commit.ci status](https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=for-the-badge&logo=pre-commit)](https://results.pre-commit.ci/latest/github/conda-incubator/conda-project/main)
+
+
+<!-- ![defaults](https://img.shields.io/conda/v/anaconda/conda-project?style=for-the-badge&logo=anaconda) -->
 
 Tool for encapsulating, running, and reproducing projects with conda environments.
 
