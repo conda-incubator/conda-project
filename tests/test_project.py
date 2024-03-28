@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
+from pathlib import Path
 from textwrap import dedent
 
 import pytest
@@ -449,6 +450,10 @@ def test_project_named_environment(project_directory_factory):
         )
     )
     assert project.default_environment == project.environments["standard"]
+    assert (
+        project.environments["standard"].prefix
+        == project.directory / "envs" / "standard"
+    )
 
 
 def test_project_hyphen_named_environment(project_directory_factory):
@@ -478,6 +483,37 @@ def test_project_hyphen_named_environment(project_directory_factory):
         )
     )
     assert project.default_environment == project.environments["my-env"]
+    assert (
+        project.environments["standard"].prefix == project.directory / "envs" / "my-env"
+    )
+
+
+def test_project_environment_env_path_specified(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path = tmp_path / "apples"
+    test_envs_path.mkdir()
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", str(test_envs_path))
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    assert project.environments["my-env"].prefix == test_envs_path / "my-env"
+
+
+def test_project_environment_env_path_not_writeable(project_directory_factory):
+    # TODO
+    pass
 
 
 def test_project_environments_immutable(project_directory_factory):
