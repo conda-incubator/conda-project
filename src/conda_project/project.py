@@ -307,13 +307,13 @@ class CondaProject:
 
     @property
     def environments(self) -> BaseEnvironments:
-        default_env_path = self.directory / "envs"
-        env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", default_env_path).split(
-            os.pathsep
-        )
+        env_path = self.directory / "envs"
+        env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", "").split(os.pathsep)
 
-        # TODO: determine that path is writeable
-        env_path = Path(env_paths[0])
+        for path in env_paths:
+            if os.access(path, os.W_OK):
+                env_path = Path(path)
+                break
 
         envs = OrderedDict()
         for env_name, sources in self._project_file.environments.items():
