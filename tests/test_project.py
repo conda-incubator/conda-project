@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
-from pathlib import Path
 from textwrap import dedent
 
 import pytest
