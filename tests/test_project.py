@@ -535,7 +535,7 @@ def test_project_environment_env_path_uses_first_writable(
     )
     project = CondaProject(project_path)
 
-    # Since the specified path was not writeable, should fall back to default
+    # Since the first path was not writable, should use the second path
     assert project.environments["my-env"].prefix == project.directory / "bananas/my-env"
 
 
