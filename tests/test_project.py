@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
+import platform
 from textwrap import dedent
 
 import pytest
@@ -510,6 +511,10 @@ def test_project_environment_env_path_specified(
     assert project.environments["my-env"].prefix == test_envs_path / "my-env"
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Windows has a hard time with read-only directories",
+)
 def test_project_environment_env_path_uses_first_writable(
     tmp_path, project_directory_factory, monkeypatch
 ):
@@ -542,6 +547,10 @@ def test_project_environment_env_path_uses_first_writable(
     )
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Windows has a hard time with read-only directories",
+)
 def test_project_environment_env_path_none_writable_uses_default(
     tmp_path, project_directory_factory, monkeypatch
 ):
