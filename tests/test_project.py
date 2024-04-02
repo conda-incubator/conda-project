@@ -519,7 +519,7 @@ def test_project_environment_env_path_uses_first_writable(
     test_envs_path2.mkdir(mode=0o777)
     monkeypatch.setenv(
         "CONDA_PROJECT_ENVS_PATH",
-        f"{str(test_envs_path1)}:{str(test_envs_path2)}",
+        f"{str(test_envs_path1)}{os.pathsep}{str(test_envs_path2)}",
     )
 
     env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
