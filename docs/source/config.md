@@ -6,14 +6,12 @@ You can modify Conda Project configuration settings using these environment vari
 
 ### CONDA_PROJECT_ENVS_PATH
 
-This variable provides a list of directories to search for environments
-to use in projects, and where to build them when needed. The format
-is identical to a standard `PATH` variable on the host
-operating system---a list of directories separated by `:` on Unix systems
-and `;` on Windows---except that empty entries are permitted. The paths
-are interpreted as follows:
+This variable provides a list of directories to the path where conda environments
+will be created for this project. The format is identical to a standard `PATH` variable on the host
+operating system---a list of directories separated by `:` on Unix systems and `;` on Windows---except
+that empty entries are permitted. The paths are interpreted as follows:
 
-- If a path is empty, it is interpreted as the default value `envs`.
+- If the path is aboslute, it used as-is
 - If a path is relative, it is interpreted relative to the root directory
   of the project itself (`PROJECT_DIR`). For example, a path entry
   `envs` is interpreted as
@@ -21,22 +19,21 @@ are interpreted as follows:
   - `$PROJECT_DIR/envs` (Unix)
   - `%PROJECT_DIR%\envs` (Windows)
 
-- When searching for an environment, the directories are searched in
+- When searching for a path to created an environment for the project, the directories are searched in
   left-to-right order.
-- If an environment with the requested name is found nowhere in the path,
-  one will be created as a subdirectory of the first entry in the path.
+- The first writeable directory will be used to create the environment
+
+The default behavior of Cond Project is 
+
+`CONDA_PROJECT_ENVS_PATH=envs`
 
 For example, given a Unix machine with
 
-`CONDA_PROJECT_ENVS_PATH=/opt/envs::envs2:/home/user/conda/envs`
+`CONDA_PROJECT_ENVS_PATH=/opt/envs:envs2:/home/user/conda/envs`
 
-Then Anaconda Project will look for an environment named `default`
-in the following locations:
+Then Conda Project will create an environment named `default`
+in the first writeable of the following locations:
 
 - `/opt/envs/default`
-- `$PROJECT_DIR/envs/default`
 - `$PROJECT_DIR/envs2/default`
 - `/home/user/conda/envs/default`
-
-If no such environment exists, one will be created as `/opt/envs/default`,
-instead of the default location of `$PROJECT_DIR/envs/default`.
