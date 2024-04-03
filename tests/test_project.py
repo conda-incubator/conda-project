@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 import json
 import os
+import platform
 from textwrap import dedent
 
 import pytest
@@ -449,6 +450,10 @@ def test_project_named_environment(project_directory_factory):
         )
     )
     assert project.default_environment == project.environments["standard"]
+    assert (
+        project.environments["standard"].prefix
+        == project.directory / "envs" / "standard"
+    )
 
 
 def test_project_hyphen_named_environment(project_directory_factory):
@@ -478,6 +483,101 @@ def test_project_hyphen_named_environment(project_directory_factory):
         )
     )
     assert project.default_environment == project.environments["my-env"]
+    assert (
+        project.environments["my-env"].prefix == project.directory / "envs" / "my-env"
+    )
+
+
+def test_project_environment_env_path_specified(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path = tmp_path / "apples"
+    test_envs_path.mkdir()
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", str(test_envs_path))
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    assert project.environments["my-env"].prefix == test_envs_path / "my-env"
+
+
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Windows has a hard time with read-only directories",
+)
+def test_project_environment_env_path_uses_first_writable(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path1 = tmp_path / "apples"
+    test_envs_path1.mkdir(mode=0o555)
+    test_envs_path2 = tmp_path / "bananas"
+    test_envs_path2.mkdir(mode=0o777)
+    monkeypatch.setenv(
+        "CONDA_PROJECT_ENVS_PATH",
+        f"{str(test_envs_path1)}{os.pathsep}{str(test_envs_path2)}",
+    )
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    # Since the first path was not writable, should use the second path
+    assert (
+        project.environments["my-env"].prefix
+        == project.directory / "bananas" / "my-env"
+    )
+
+
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Windows has a hard time with read-only directories",
+)
+def test_project_environment_env_path_none_writable_uses_default(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path1 = tmp_path / "apples"
+    test_envs_path1.mkdir(mode=0o555)
+    monkeypatch.setenv(
+        "CONDA_PROJECT_ENVS_PATH",
+        f"{str(test_envs_path1)}",
+    )
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    # Since the specified path was not writeable, should fall back to default
+    assert (
+        project.environments["my-env"].prefix == project.directory / "envs" / "my-env"
+    )
 
 
 def test_project_environments_immutable(project_directory_factory):

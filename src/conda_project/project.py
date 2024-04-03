@@ -307,12 +307,20 @@ class CondaProject:
 
     @property
     def environments(self) -> BaseEnvironments:
+        env_path = self.directory / "envs"
+        env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", "").split(os.pathsep)
+
+        for path in env_paths:
+            if os.access(path, os.W_OK):
+                env_path = Path(path)
+                break
+
         envs = OrderedDict()
         for env_name, sources in self._project_file.environments.items():
             envs[env_name] = Environment(
                 name=env_name,
                 sources=tuple([self.directory / str(s) for s in sources]),
-                prefix=self.directory / "envs" / env_name,
+                prefix=env_path / env_name,
                 lockfile=self.directory / f"conda-lock.{env_name}.yml",
                 project=weakref.proxy(self),
             )
