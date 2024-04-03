@@ -8,10 +8,10 @@ You can modify Conda Project configuration settings using these environment vari
 
 This variable provides a list of directories to the path where conda environments
 will be created for this project. The format is identical to a standard `PATH` variable on the host
-operating system---a list of directories separated by `:` on Unix systems and `;` on Windows---except
-that empty entries are permitted. The paths are interpreted as follows:
+operating system, a list of directories separated by `:` on Unix systems and `;` on Windows,
+The paths are interpreted as follows:
 
-- If the path is aboslute, it used as-is
+- If the path is aboslute it used as-is
 - If a path is relative, it is interpreted relative to the root directory
   of the project itself (`PROJECT_DIR`). For example, a path entry
   `envs` is interpreted as
@@ -19,11 +19,11 @@ that empty entries are permitted. The paths are interpreted as follows:
   - `$PROJECT_DIR/envs` (Unix)
   - `%PROJECT_DIR%\envs` (Windows)
 
-- When searching for a path to created an environment for the project, the directories are searched in
+- When searching for a path to create an environment for the project, the directories are searched in
   left-to-right order.
 - The first writeable directory will be used to create the environment
 
-The default behavior of Cond Project is
+The default behavior of Conda Project is
 
 `CONDA_PROJECT_ENVS_PATH=envs`
 
