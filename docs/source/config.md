@@ -23,7 +23,7 @@ that empty entries are permitted. The paths are interpreted as follows:
   left-to-right order.
 - The first writeable directory will be used to create the environment
 
-The default behavior of Cond Project is 
+The default behavior of Cond Project is
 
 `CONDA_PROJECT_ENVS_PATH=envs`
 
