@@ -488,7 +488,7 @@ def test_project_hyphen_named_environment(project_directory_factory):
     )
 
 
-def test_project_environment_env_path_specified(
+def test_project_environment_envs_path_specified(
     tmp_path, project_directory_factory, monkeypatch
 ):
     test_envs_path = tmp_path / "apples"
@@ -515,7 +515,7 @@ def test_project_environment_env_path_specified(
     platform.system() == "Windows",
     reason="Windows has a hard time with read-only directories",
 )
-def test_project_environment_env_path_uses_first_writable(
+def test_project_environment_envs_path_uses_first_writable(
     tmp_path, project_directory_factory, monkeypatch
 ):
     test_envs_path1 = tmp_path / "apples"
@@ -551,7 +551,7 @@ def test_project_environment_env_path_uses_first_writable(
     platform.system() == "Windows",
     reason="Windows has a hard time with read-only directories",
 )
-def test_project_environment_env_path_none_writable_uses_default(
+def test_project_environment_envs_path_none_writable_uses_default(
     tmp_path, project_directory_factory, monkeypatch
 ):
     test_envs_path1 = tmp_path / "apples"
@@ -578,6 +578,51 @@ def test_project_environment_env_path_none_writable_uses_default(
     assert (
         project.environments["my-env"].prefix == project.directory / "envs" / "my-env"
     )
+
+
+def test_project_environment_envs_path_creates_directory(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path = tmp_path / "apples"
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", str(test_envs_path))
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    project = CondaProject(project_path)
+
+    assert project.environments["my-env"].prefix == test_envs_path / "my-env"
+
+
+@pytest.mark.parametrize("envs_path", ["apples", "./apples"])
+def test_project_environment_envs_path_relative_path(
+    tmp_path, project_directory_factory, monkeypatch, envs_path
+):
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          my-env: [environment{project_directory_factory._suffix}]
+        """
+    )
+    project_path = project_directory_factory(
+        env_yaml=env_yaml, project_yaml=project_yaml
+    )
+    test_envs_path = project_path / "apples"
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", envs_path)
+
+    project = CondaProject(project_path)
+
+    assert project.environments["my-env"].prefix == test_envs_path / "my-env"
 
 
 def test_project_environments_immutable(project_directory_factory):

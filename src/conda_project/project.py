@@ -311,8 +311,8 @@ class CondaProject:
         env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", "").split(os.pathsep)
 
         for path in env_paths:
-            if os.access(path, os.W_OK):
-                env_path = Path(path)
+            if os.access(path, os.W_OK) or not os.path.exists(path):
+                env_path = Path(os.path.join(self.directory, path))
                 break
 
         envs = OrderedDict()
