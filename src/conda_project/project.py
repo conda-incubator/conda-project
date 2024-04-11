@@ -308,10 +308,11 @@ class CondaProject:
     @property
     def environments(self) -> BaseEnvironments:
         env_path = self.directory / "envs"
-        env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", "").split(os.pathsep)
+        specified_path = os.environ.get("CONDA_PROJECT_ENVS_PATH", "")
+        env_paths = specified_path.split(os.pathsep) if specified_path else []
 
         for path in env_paths:
-            if os.access(path, os.W_OK) or not os.path.exists(path):
+            if path and (os.access(path, os.W_OK) or not os.path.exists(path)):
                 env_path = Path(os.path.join(self.directory, path))
                 break
 
@@ -805,6 +806,7 @@ class Environment(BaseModel):
     ) -> None:
         """Remove the conda environment."""
 
+        breakpoint()
         _ = call_conda(
             ["env", "remove", "-p", str(self.prefix)],
             condarc_path=self.project.condarc,
