@@ -805,10 +805,8 @@ class Environment(BaseModel):
         verbose: bool = False,
     ) -> None:
         """Remove the conda environment."""
-
-        breakpoint()
         _ = call_conda(
-            ["env", "remove", "-p", str(self.prefix)],
+            ["env", "remove", "-y", "-p", str(self.prefix)],
             condarc_path=self.project.condarc,
             verbose=verbose,
             logger=logger,
