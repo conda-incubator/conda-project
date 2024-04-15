@@ -312,8 +312,16 @@ class CondaProject:
         env_paths = specified_path.split(os.pathsep) if specified_path else []
 
         for path in env_paths:
-            if path and (os.access(path, os.W_OK) or not os.path.exists(path)):
-                env_path = Path(os.path.join(self.directory, path))
+            if not path:
+                continue
+
+            # Construct absolute path
+            path = self.directory / path
+
+            path_writable = path.exists() and os.access(path, os.W_OK)
+            parent_writable = (not path.exists()) and os.access(path.parent, os.W_OK)
+            if path_writable or parent_writable:
+                env_path = path
                 break
 
         envs = OrderedDict()
