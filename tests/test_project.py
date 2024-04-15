@@ -488,12 +488,10 @@ def test_project_hyphen_named_environment(project_directory_factory):
     )
 
 
-def test_project_environment_envs_path_specified(
-    tmp_path, project_directory_factory, monkeypatch
+def create_project_with_envs_path(
+    project_directory_factory, monkeypatch, envs_path_var
 ):
-    test_envs_path = tmp_path / "apples"
-    test_envs_path.mkdir()
-    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", str(test_envs_path))
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", envs_path_var)
 
     env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
     project_yaml = dedent(
@@ -507,7 +505,19 @@ def test_project_environment_envs_path_specified(
         env_yaml=env_yaml, project_yaml=project_yaml
     )
     project = CondaProject(project_path)
+    return project
 
+
+def test_project_environment_envs_path_specified(
+    tmp_path, project_directory_factory, monkeypatch
+):
+    test_envs_path = tmp_path / "apples"
+    test_envs_path.mkdir()
+    project = create_project_with_envs_path(
+        project_directory_factory,
+        monkeypatch,
+        str(test_envs_path),
+    )
     assert project.environments["my-env"].prefix == test_envs_path / "my-env"
 
 
@@ -522,23 +532,11 @@ def test_project_environment_envs_path_uses_first_writable(
     test_envs_path1.mkdir(mode=0o555)
     test_envs_path2 = tmp_path / "bananas"
     test_envs_path2.mkdir(mode=0o777)
-    monkeypatch.setenv(
-        "CONDA_PROJECT_ENVS_PATH",
+    project = create_project_with_envs_path(
+        project_directory_factory,
+        monkeypatch,
         f"{str(test_envs_path1)}{os.pathsep}{str(test_envs_path2)}",
     )
-
-    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
-    project_yaml = dedent(
-        f"""\
-        name: test
-        environments:
-          my-env: [environment{project_directory_factory._suffix}]
-        """
-    )
-    project_path = project_directory_factory(
-        env_yaml=env_yaml, project_yaml=project_yaml
-    )
-    project = CondaProject(project_path)
 
     # Since the first path was not writable, should use the second path
     assert (
@@ -556,25 +554,10 @@ def test_project_environment_envs_path_none_writable_uses_default(
 ):
     test_envs_path1 = tmp_path / "apples"
     test_envs_path1.mkdir(mode=0o555)
-    monkeypatch.setenv(
-        "CONDA_PROJECT_ENVS_PATH",
-        f"{str(test_envs_path1)}",
+    project = create_project_with_envs_path(
+        project_directory_factory, monkeypatch, str(test_envs_path1)
     )
-
-    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
-    project_yaml = dedent(
-        f"""\
-        name: test
-        environments:
-          my-env: [environment{project_directory_factory._suffix}]
-        """
-    )
-    project_path = project_directory_factory(
-        env_yaml=env_yaml, project_yaml=project_yaml
-    )
-    project = CondaProject(project_path)
-
-    # Since the specified path was not writeable, should fall back to default
+    # Since the specified path was not writable, should fall back to default
     assert (
         project.environments["my-env"].prefix == project.directory / "envs" / "my-env"
     )
@@ -584,21 +567,9 @@ def test_project_environment_envs_path_creates_directory(
     tmp_path, project_directory_factory, monkeypatch
 ):
     test_envs_path = tmp_path / "apples"
-    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", str(test_envs_path))
-
-    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
-    project_yaml = dedent(
-        f"""\
-        name: test
-        environments:
-          my-env: [environment{project_directory_factory._suffix}]
-        """
+    project = create_project_with_envs_path(
+        project_directory_factory, monkeypatch, str(test_envs_path)
     )
-    project_path = project_directory_factory(
-        env_yaml=env_yaml, project_yaml=project_yaml
-    )
-    project = CondaProject(project_path)
-
     assert project.environments["my-env"].prefix == test_envs_path / "my-env"
 
 
@@ -606,23 +577,12 @@ def test_project_environment_envs_path_creates_directory(
 def test_project_environment_envs_path_relative_path(
     tmp_path, project_directory_factory, monkeypatch, envs_path
 ):
-    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
-    project_yaml = dedent(
-        f"""\
-        name: test
-        environments:
-          my-env: [environment{project_directory_factory._suffix}]
-        """
+    project = create_project_with_envs_path(
+        project_directory_factory, monkeypatch, envs_path
     )
-    project_path = project_directory_factory(
-        env_yaml=env_yaml, project_yaml=project_yaml
+    assert (
+        project.environments["my-env"].prefix == project.directory / "apples" / "my-env"
     )
-    test_envs_path = project_path / "apples"
-    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", envs_path)
-
-    project = CondaProject(project_path)
-
-    assert project.environments["my-env"].prefix == test_envs_path / "my-env"
 
 
 def test_project_environments_immutable(project_directory_factory):
