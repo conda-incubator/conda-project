@@ -605,6 +605,10 @@ def test_project_environment_envs_path_creates_first_possible_dir(
     )
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="Windows has a hard time with read-only directories",
+)
 def test_project_environment_envs_path_project_dir_not_writable(
     tmp_path, project_directory_factory, monkeypatch
 ):
