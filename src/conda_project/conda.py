@@ -17,6 +17,7 @@ import pexpect
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
 
 from .exceptions import CondaProjectError
+from .project_file import EnvironmentYaml
 from .utils import detect_shell, execvped, is_windows
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
@@ -68,7 +69,7 @@ def is_conda_env(path: Path) -> bool:
     return (path / "conda-meta" / "history").exists()
 
 
-def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
+def conda_prefix(env: Optional[Union[str, Path]] = None) -> Union[Path, None]:
     """Return the path to a conda environment"""
 
     if env is None:
@@ -88,6 +89,46 @@ def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
                 p = Path(d) / env
                 if is_conda_env(p):
                     return p.resolve()
+            else:
+                return None
+
+
+def requested_packages(prefix: Path, with_version: bool = True) -> EnvironmentYaml:
+    proc = call_conda(["env", "export", "--from-history", "-p", str(prefix), "--json"])
+    requested = json.loads(proc.stdout)
+
+    proc = call_conda(["env", "export", "-p", str(prefix), "--json"])
+    full = json.loads(proc.stdout)
+
+    if with_version:
+        versioned_dependencies = []
+
+        dependencies = {}
+        for d in requested["dependencies"]:
+            split = d.split("::", maxsplit=1)
+            if len(split) == 1:
+                name = split[0].split("=")[0]
+                dependencies[name] = ""
+            else:
+                channel, name = split
+                dependencies[name.split("=")[0]] = f"{channel}::"
+
+        for d in full["dependencies"]:
+            if isinstance(d, str):
+                name, version, _ = d.split("=")
+                if name in dependencies:
+                    prefix = dependencies[name]
+                    versioned_dependencies.append(f"{prefix}{name}={version}")
+
+        requested["dependencies"] = versioned_dependencies
+
+    pip_pkgs = [p for p in full["dependencies"] if isinstance(p, dict) and "pip" in p]
+    if pip_pkgs:
+        pip_pkgs = [p for p in pip_pkgs[0]["pip"] if not p.startswith("anaconda")]
+        requested["dependencies"].append({"pip": pip_pkgs})
+
+    environment = EnvironmentYaml(**requested)
+    return environment
 
 
 def conda_info():

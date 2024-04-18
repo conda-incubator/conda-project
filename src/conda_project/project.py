@@ -45,6 +45,8 @@ from .conda import (
     conda_prefix,
     conda_run,
     current_platform,
+    is_conda_env,
+    requested_packages,
 )
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
@@ -224,6 +226,7 @@ class CondaProject:
         channels: Optional[List[str]] = None,
         platforms: Optional[List[str]] = None,
         conda_configs: Optional[List[str]] = None,
+        from_environment: Optional[str] = None,
         lock_dependencies: bool = False,
         verbose: bool = False,
     ) -> CondaProject:
@@ -247,6 +250,8 @@ class CondaProject:
                                included.
             conda_configs:     List of conda configuration parameters to include in the .condarc file
                                written to the project directory.
+            from_environment:  Name (string) or prefix (path) to an environment to initialize the project
+                               default environment.
             lock_dependencies: Create the conda-lock.<env>.yml file(s) for the requested dependencies.
                                Default is False.
             verbose:           Print information to stdout. The default value is False.
@@ -269,21 +274,39 @@ class CondaProject:
         if name is None:
             name = directory.name
 
-        environment_yaml = EnvironmentYaml(
-            platforms=platforms or list(DEFAULT_PLATFORMS),
-        )
+        if from_environment is None:
+            environment_yaml = EnvironmentYaml(
+                name="default",
+                platforms=platforms or list(DEFAULT_PLATFORMS),
+            )
 
-        environment_yaml.add_dependencies(
-            dependencies=dependencies or [], channels=channels or ["defaults"]
-        )
+            environment_yaml.add_dependencies(
+                dependencies=dependencies or [], channels=channels or ["defaults"]
+            )
+
+        else:
+            prefix = conda_prefix(from_environment)
+            if prefix is None:
+                prefix = Path(from_environment)
+                if not is_conda_env(prefix):
+                    raise ValueError(
+                        f"{from_environment} is not a valid conda environment"
+                    )
+
+            environment_yaml = requested_packages(prefix)
 
         environment_yaml_path = directory / "environment.yml"
-        environment_yaml.yaml(directory / "environment.yml")
+        environment_yaml.yaml(environment_yaml_path)
 
         project_yaml = CondaProjectYaml(
             name=name,
             environments=OrderedDict(
-                [("default", [environment_yaml_path.relative_to(directory)])]
+                [
+                    (
+                        environment_yaml.name,
+                        [environment_yaml_path.relative_to(directory)],
+                    )
+                ]
             ),
         )
 

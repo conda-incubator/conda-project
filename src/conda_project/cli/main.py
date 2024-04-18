@@ -134,6 +134,15 @@ def _create_init_parser(
             action="store_true",
         )
         p.add_argument(
+            "--from-environment",
+            help=(
+                "Initialize the default environment spec and lock from an existing"
+                "conda environment by name or prefix."
+            ),
+            action="store",
+            default=None,
+        )
+        p.add_argument(
             "dependencies",
             help=(
                 "Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]' "
