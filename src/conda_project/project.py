@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2024 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
@@ -311,9 +314,11 @@ class CondaProject:
         specified_path = os.environ.get("CONDA_PROJECT_ENVS_PATH", "")
         env_paths = specified_path.split(os.pathsep) if specified_path else []
 
-        for path in env_paths:
-            # Construct absolute path
-            path = self.directory / path
+        for _path in env_paths:
+            path = Path(_path)
+
+            if not path.is_absolute():
+                path = self.directory / path
 
             path_writable = path.exists() and os.access(path, os.W_OK)
             parent_writable = (not path.exists()) and os.access(path.parent, os.W_OK)
