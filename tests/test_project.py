@@ -8,6 +8,7 @@ import json
 import os
 import platform
 from pathlib import Path
+from subprocess import CalledProcessError
 from textwrap import dedent
 
 import pytest
@@ -153,6 +154,34 @@ def test_lock_failed_from_conda(project_directory_factory):
     project = CondaProject(project_path)
     with pytest.raises(CondaProjectLockFailed):
         project.default_environment.lock()
+
+
+def test_lock_conda_serialization_error(
+    mocker: MockerFixture, project_directory_factory
+):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies: []
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    mocker.patch(
+        "conda_project.project.make_lock_files",
+        autospec=True,
+        side_effect=CalledProcessError(
+            returncode=1,
+            cmd="conda",
+            output='{"serializable": True}',
+            stderr="output is not json formatted",
+        ),
+    )
+
+    project = CondaProject(project_path)
+    with pytest.raises(CondaProjectLockFailed) as excinfo:
+        project.default_environment.lock()
+        assert "output is not json formatted" == str(excinfo.value)
 
 
 def test_lock_no_channels(project_directory_factory):

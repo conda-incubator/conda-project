@@ -34,12 +34,12 @@ from conda_lock.conda_lock import (
 )
 from fsspec.core import split_protocol
 
-try:
+try:  # pragma: no-cover
     # Version 2 provides a v1 API
-    from pydantic.v1 import BaseModel, create_model
-except ImportError:
-    from pydantic import BaseModel  # type: ignore
-    from pydantic import create_model  # type: ignore
+    from pydantic.v1 import BaseModel, create_model  # pragma: no cover
+except ImportError:  # pragma: no cover
+    from pydantic import BaseModel  # type: ignore; #pragma: no cover
+    from pydantic import create_model  # type: ignore; #pragma no cover
 
 from .conda import (
     CONDA_EXE,

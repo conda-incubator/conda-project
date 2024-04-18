@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Anaconda, Inc
+# Copyright (C) 2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from conda_lock._vendor.conda.models.match_spec import MatchSpec
 from pkg_resources import Requirement
 from ruamel.yaml import YAML
 
-try:
+try:  # pragma: no cover
     # Version 2 provides a v1 API
-    from pydantic.v1 import BaseModel, ValidationError, validator
-except ImportError:
-    from pydantic import BaseModel  # type: ignore
-    from pydantic import ValidationError  # type: ignore
-    from pydantic import validator  # type: ignore
+    from pydantic.v1 import BaseModel, ValidationError, validator  # pragma: no cover
+except ImportError:  # pragma: no cover
+    from pydantic import BaseModel  # type: ignore; #pragma: no cover
+    from pydantic import ValidationError  # type: ignore; #pragma: no cover
+    from pydantic import validator  # type: ignore; #pragma: no cover
 
 from .exceptions import CondaProjectError
 
