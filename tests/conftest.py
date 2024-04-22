@@ -1,15 +1,34 @@
+# Copyright (C) 2022-2024 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Copyright (C) 2024 Anaconda, Inc
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from tempfile import TemporaryDirectory
+from typing import Generator, Optional
 
 import pytest
 
 from conda_project.conda import call_conda
 from conda_project.project import CondaProject, current_platform
+
+
+@pytest.fixture
+def tmp_dir() -> Generator[Path, None, None]:
+    """create a temporary directory
+
+    This is useful if you want to two independent directories created for a test
+    since re-using `tmp_path` is not possible.
+    """
+
+    with TemporaryDirectory() as d:
+        yield Path(d)
 
 
 @pytest.fixture()

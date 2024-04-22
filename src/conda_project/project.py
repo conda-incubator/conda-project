@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2022 Anaconda, Inc
+# Copyright (C) 2022-2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 from __future__ import annotations
 
@@ -31,12 +31,12 @@ from conda_lock.conda_lock import (
 )
 from fsspec.core import split_protocol
 
-try:
+try:  # pragma: no-cover
     # Version 2 provides a v1 API
-    from pydantic.v1 import BaseModel, create_model
-except ImportError:
-    from pydantic import BaseModel  # type: ignore
-    from pydantic import create_model  # type: ignore
+    from pydantic.v1 import BaseModel, create_model  # pragma: no cover
+except ImportError:  # pragma: no cover
+    from pydantic import BaseModel  # type: ignore; #pragma: no cover
+    from pydantic import create_model  # type: ignore; #pragma no cover
 
 from .conda import (
     CONDA_EXE,
@@ -308,11 +308,19 @@ class CondaProject:
     @property
     def environments(self) -> BaseEnvironments:
         env_path = self.directory / "envs"
-        env_paths = os.environ.get("CONDA_PROJECT_ENVS_PATH", "").split(os.pathsep)
+        specified_path = os.environ.get("CONDA_PROJECT_ENVS_PATH", "")
+        env_paths = specified_path.split(os.pathsep) if specified_path else []
 
-        for path in env_paths:
-            if os.access(path, os.W_OK):
-                env_path = Path(path)
+        for _path in env_paths:
+            path = Path(_path)
+
+            if not path.is_absolute():
+                path = self.directory / path
+
+            path_writable = path.exists() and os.access(path, os.W_OK)
+            parent_writable = (not path.exists()) and os.access(path.parent, os.W_OK)
+            if path_writable or parent_writable:
+                env_path = path
                 break
 
         envs = OrderedDict()
@@ -804,9 +812,8 @@ class Environment(BaseModel):
         verbose: bool = False,
     ) -> None:
         """Remove the conda environment."""
-
         _ = call_conda(
-            ["env", "remove", "-p", str(self.prefix)],
+            ["env", "remove", "-y", "-p", str(self.prefix)],
             condarc_path=self.project.condarc,
             verbose=verbose,
             logger=logger,
