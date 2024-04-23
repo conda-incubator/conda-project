@@ -187,6 +187,17 @@ def test_init_with_install(mocker):
     assert default_environment.install.call_count == 1
 
 
+def test_init_from_environment(mocker):
+    init = mocker.spy(CondaProject, "init")
+
+    ret = parse_and_run(
+        ["init", "--directory", "project-dir", "--from-environment", "base"]
+    )
+    assert ret == 0
+
+    assert init.call_args.kwargs.get("from_environment") == "base"
+
+
 @pytest.mark.parametrize("action", ENVIRONMENT_ACTIONS)
 def test_action_with_environment_name(action, multi_env, mocker):
     environments = mocker.spy(CondaProject, "environments")
