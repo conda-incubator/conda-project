@@ -28,6 +28,7 @@ from conda_lock.conda_lock import (
     make_lock_spec,
     parse_conda_lock_file,
     render_lockfile_for_platform,
+    write_conda_lock_file,
 )
 from fsspec.core import split_protocol
 
@@ -45,8 +46,8 @@ from .conda import (
     conda_prefix,
     conda_run,
     current_platform,
+    env_export,
     is_conda_env,
-    requested_packages,
 )
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
@@ -293,7 +294,12 @@ class CondaProject:
                         f"{from_environment} is not a valid conda environment"
                     )
 
-            environment_yaml = requested_packages(prefix)
+            environment_yaml, lockfile = env_export(prefix)
+            write_conda_lock_file(
+                lockfile,
+                directory / f"conda-lock.{environment_yaml.name}.yml",
+                metadata_choices={},
+            )
 
         environment_yaml_path = directory / "environment.yml"
         environment_yaml.yaml(environment_yaml_path)

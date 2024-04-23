@@ -8,17 +8,28 @@ import os
 import shlex
 import signal
 import subprocess
+from contextlib import nullcontext
 from functools import lru_cache
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, NoReturn, Optional, Union
+from tempfile import TemporaryDirectory
+from typing import Dict, List, NoReturn, Optional, Tuple, Union
 
+import conda_lock._vendor.conda.gateways.logging  # noqa: F401
 import pexpect
+from conda_lock._vendor.conda.core.prefix_data import PrefixData
+from conda_lock._vendor.conda.models.channel import Channel as CondaChannel
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
+from conda_lock.conda_lock import (
+    default_virtual_package_repodata,
+    make_lock_spec,
+    parse_conda_lock_file,
+)
+from conda_lock.lockfile.v2prelim.models import LockedDependency, Lockfile
 
 from .exceptions import CondaProjectError
-from .project_file import EnvironmentYaml
-from .utils import detect_shell, execvped, is_windows
+from .project_file import EnvironmentYaml, UniqueOrderedList
+from .utils import Spinner, detect_shell, execvped, is_windows
 
 CONDA_EXE = os.environ.get("CONDA_EXE", "conda")
 CONDA_ROOT = os.environ.get("CONDA_ROOT")
@@ -131,6 +142,154 @@ def requested_packages(prefix: Path, with_version: bool = True) -> EnvironmentYa
     return environment
 
 
+def env_export(
+    prefix: Path,
+    from_history: bool = True,
+    pin_versions: bool = True,
+    verbose: bool = True,
+) -> Tuple[EnvironmentYaml, Lockfile]:
+    with (
+        Spinner(prefix=f"Reading environment at {prefix}") if verbose else nullcontext()
+    ):
+        pd = PrefixData(prefix, pip_interop_enabled=True)
+        pkgs = sorted(pd.iter_records(), key=lambda x: x.name)
+
+    channels: List[CondaChannel] = []
+    dependencies: List[Union[str, Dict[str, List[str]]]] = []
+    pip: List[str] = []
+    locked: List[LockedDependency] = []
+
+    for p in pkgs:
+        # local_dependencies = {}
+        # for dep in p.depends:
+        #     matchspec = MatchSpec(dep)
+        #     name = matchspec.name
+        #     version = (
+        #         matchspec.version.spec_str if matchspec.version is not None else ""
+        #     )
+        #     local_dependencies[name] = version
+
+        # if p.schannel == "pypi":
+        #     if "WHEEL" in str(p.package_type):
+        #         for fn in p.files:
+        #             fn = prefix / Path(fn)
+        #             if fn.name == "WHEEL":
+        #                 with fn.open() as f:
+        #                     data = f.readlines()
+        #                 lines = [line for line in data if line.startswith("Tag")]
+        #                 if lines:
+        #                     tag = lines[0].split(":", maxsplit=1)[1].strip()
+        #                     wheel = f"{p.name}-{p.version}-{tag}.whl"
+        #                     parsed = parse_wheel_filename(wheel)
+        #                     url = f"https://files.pythonhosted.org/packages/{parsed.python_tags[0]}/"
+        #                           f"{parsed.project[0]}/{parsed.project}/{p.name}-{p.version}-{tag}.whl"
+        #                 break
+        #     else:
+        #         url = f"https://pypi.io/packages/source/{p.name[0]}/{p.name}/{p.name}-{p.version}.tar.gz"
+        # else:
+        #     url = str(p.url)
+
+        # locked.append(LockedDependency(
+        #     name=p.name,
+        #     version=p.version,
+        #     manager="pip" if p.schannel == "pypi" else "conda",
+        #     platform="unknown",
+        #     dependencies=local_dependencies,
+        #     url=url,
+        #     hash=HashModel(
+        #         md5=p.get("md5"),
+        #         sha256=p.get("sha256")
+        #     ),
+        # ))
+        if p.schannel == "pypi":
+            if from_history:
+                for fn in p.files:
+                    fn = prefix / Path(fn)
+                    if fn.name == "REQUESTED":
+                        pip.append(f"{p.name}=={p.version}")
+                        break
+            else:
+                pip.append(f"{p.name}=={p.version}")
+            continue
+
+        elif from_history and p.requested_spec == "None":
+            continue
+
+        if from_history and pin_versions:
+            spec = f"{p.schannel}::{p.name}={p.version}"
+        elif from_history and (not pin_versions):
+            spec = f"{p.schannel}::{p.requested_spec}"
+        else:
+            spec = f"{p.schannel}::{p.name}={p.version}={p.build}"
+        dependencies.append(spec)
+
+        channels.append(p.channel)
+
+    if pip:
+        dependencies.append({"pip": pip})
+
+    subdirs = set(c.subdir for c in channels)
+    subdirs.discard("pypi")
+    subdirs.discard("noarch")
+    assert len(subdirs) == 1
+    subdir = subdirs.pop()
+
+    for p in locked:
+        p.platform = subdir
+
+    channel_names = UniqueOrderedList(
+        [CondaChannel.from_url(url).canonical_name for url in conda_info()["channels"]]
+    )
+
+    environment = EnvironmentYaml(
+        name=prefix.name,
+        channels=channel_names,
+        dependencies=dependencies,
+        platforms=DEFAULT_PLATFORMS,
+    )
+    with Spinner("Constructing lockfile") if verbose else nullcontext():
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+
+            requested = tmp / "requested.yml"
+            environment.yaml(requested)
+            spec = make_lock_spec(
+                src_files=[requested],
+                virtual_package_repo=default_virtual_package_repodata(),
+            )
+
+            exported = tmp / "exported.yml"
+            call_conda(["env", "export", "-p", str(prefix), "--file", str(exported)])
+
+            lock = tmp / "conda-lock.yml"
+            call_conda(
+                [
+                    "lock",
+                    "-f",
+                    str(exported),
+                    "--lockfile",
+                    str(lock),
+                    "-p",
+                    current_platform(),
+                ]
+            )
+            lock_content = parse_conda_lock_file(lock)
+            lock_content.metadata.content_hash = spec.content_hash()
+            lock_content.metadata.sources = ["environment.yml"]
+
+    # lock_content = Lockfile(
+    #     package=locked,
+    #     metadata=LockMeta(
+    #         content_hash=spec.content_hash(),
+    #         channels=list(),
+    #         platforms=[current_platform()],
+    #         sources=["environment.yml"],
+    #     ),
+    # )
+
+    return environment, lock_content
+
+
 def conda_info():
     proc = call_conda(["info", "--json"])
     parsed = json.loads(proc.stdout)
@@ -142,6 +301,9 @@ def current_platform() -> str:
     """Load the current platform by calling conda info."""
     info = conda_info()
     return info.get("platform")
+
+
+DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
 
 
 def conda_run(
