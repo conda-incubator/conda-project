@@ -121,6 +121,8 @@ class EnvironmentYaml(BaseYaml):
     def convert_channels_list(cls, v):
         if not isinstance(v, UniqueOrderedList):
             return UniqueOrderedList(v)
+        else:
+            return v
 
     @property
     def conda_matchspecs(self):
