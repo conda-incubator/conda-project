@@ -518,6 +518,9 @@ class Environment(BaseModel):
                 )
                 return all_up_to_date
             else:
+                platform_hash = lock.metadata.content_hash.get(platform)
+                if platform_hash is None:
+                    return False
                 return (
                     spec.content_hash_for_platform(platform)
                     == lock.metadata.content_hash[platform]
