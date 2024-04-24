@@ -8,6 +8,7 @@ from argparse import Namespace
 from textwrap import dedent
 
 import pytest
+from pytest_mock import MockFixture
 
 from conda_project.cli.commands import _load_project
 from conda_project.cli.main import cli, main, parse_and_run
@@ -190,8 +191,8 @@ def test_init_with_install(tmp_path, mocker):
     assert default_environment.install.call_count == 1
 
 
-def test_init_from_environment(tmp_path, mocker):
-    init = mocker.spy(CondaProject, "init")
+def test_init_from_environment(tmp_path, mocker: MockFixture):
+    init = mocker.patch("conda_project.cli.commands.CondaProject.init")
 
     ret = parse_and_run(
         ["init", "--directory", str(tmp_path), "--from-environment", "base"]
