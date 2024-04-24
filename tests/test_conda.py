@@ -11,12 +11,15 @@ from pathlib import Path
 import pytest
 
 from conda_project.conda import (
+    DEFAULT_PLATFORMS,
     call_conda,
     conda_activate,
     conda_info,
     conda_prefix,
     conda_run,
     current_platform,
+    env_export,
+    is_conda_env,
     is_windows,
 )
 from conda_project.exceptions import CondaProjectError
@@ -217,3 +220,79 @@ def test_conda_prefix_prefers_path(tmp_path, monkeypatch):
     assert prefix == tmp_path / "my-env"
 
     _ = call_conda(["env", "remove", "-n", "my-env"])
+
+
+def test_is_conda_env_path(empty_conda_environment: Path):
+    assert is_conda_env(empty_conda_environment)
+
+
+def test_is_conda_env_false(tmp_path):
+    assert not is_conda_env(tmp_path)
+
+
+@pytest.mark.slow
+def test_env_export_from_history_with_versions(empty_conda_environment):
+    _ = call_conda(["install", "openssl", "-p", empty_conda_environment, "-y"])
+
+    env, lock = env_export(empty_conda_environment)
+    assert env.platforms == list(DEFAULT_PLATFORMS)
+    assert len(env.dependencies) == 1
+    assert len(env.dependencies[0].split("::")) == 2
+    assert len(env.dependencies[0].split("=")) == 2
+    assert len(lock.package) > 1
+    assert lock.metadata.content_hash.keys() == DEFAULT_PLATFORMS
+
+
+@pytest.mark.slow
+def test_env_export_from_history_without_versions(empty_conda_environment):
+    _ = call_conda(["install", "openssl", "-p", empty_conda_environment, "-y"])
+
+    env, lock = env_export(empty_conda_environment, pin_versions=False)
+    assert env.platforms == list(DEFAULT_PLATFORMS)
+    assert len(env.dependencies) == 1
+    assert len(env.dependencies[0].split("::")) == 2
+    assert len(env.dependencies[0].split("=")) == 1
+    assert len(lock.package) > 1
+    assert lock.metadata.content_hash.keys() == DEFAULT_PLATFORMS
+
+
+@pytest.mark.slow
+def test_env_export_from_history_without_versions_as_requested(empty_conda_environment):
+    _ = call_conda(["install", "openssl=3", "-p", empty_conda_environment, "-y"])
+
+    env, lock = env_export(empty_conda_environment, pin_versions=False)
+    assert env.platforms == list(DEFAULT_PLATFORMS)
+    assert len(env.dependencies) == 1
+    assert len(env.dependencies[0].split("::")) == 2
+    assert env.dependencies[0].split("=") == ["defaults::openssl", "3"]
+    assert len(lock.package) > 1
+    assert lock.metadata.content_hash.keys() == DEFAULT_PLATFORMS
+
+
+@pytest.mark.slow
+def test_env_export_full(empty_conda_environment):
+    _ = call_conda(["install", "openssl=3", "-p", empty_conda_environment, "-y"])
+
+    env, lock = env_export(empty_conda_environment, from_history=False)
+    assert env.platforms == [current_platform()]
+    assert len(env.dependencies) == len(lock.package)
+    assert lock.metadata.content_hash.keys() == {current_platform()}
+
+
+@pytest.mark.slow
+def test_env_export_all_requested(empty_conda_environment):
+    _ = call_conda(["install", "ca-certificates", "-p", empty_conda_environment, "-y"])
+
+    env, lock = env_export(empty_conda_environment, from_history=True)
+    assert env.platforms == [current_platform()]
+    assert len(env.dependencies) == len(lock.package)
+    assert lock.metadata.content_hash.keys() == {current_platform()}
+
+
+def test_env_export_empty_env(empty_conda_environment):
+    env, lock = env_export(empty_conda_environment)
+
+    assert env.platforms == list(DEFAULT_PLATFORMS)
+    assert not env.dependencies
+    assert not lock.package
+    assert lock.metadata.content_hash.keys() == DEFAULT_PLATFORMS
