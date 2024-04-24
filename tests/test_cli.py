@@ -115,14 +115,14 @@ def test_unknown_action(capsys):
 
 
 @pytest.mark.parametrize("action", ALL_ACTIONS)
-def test_cli_directory_argument(action, mocker, capsys):
+def test_cli_directory_argument(tmp_path, action, mocker, capsys):
     mocked_action = mocker.patch(
         f"conda_project.cli.commands.{action}",
         return_value=42,
         side_effect=print(f"I am {action}"),
     )
 
-    ret = parse_and_run([action, "--directory", "project-dir"])
+    ret = parse_and_run([action, "--directory", str(tmp_path)])
     assert ret == 42
 
     assert mocked_action.call_count == 1
@@ -181,20 +181,20 @@ def test_project_actions_verbose_true(action, mocker, project_directory_factory)
     assert mocked_action.call_args.kwargs["verbose"]
 
 
-def test_init_with_install(mocker):
+def test_init_with_install(tmp_path, mocker):
     default_environment = mocker.spy(CondaProject, "default_environment")
 
-    ret = parse_and_run(["init", "--directory", "project-dir", "--install"])
+    ret = parse_and_run(["init", "--directory", str(tmp_path), "--install"])
     assert ret == 0
 
     assert default_environment.install.call_count == 1
 
 
-def test_init_from_environment(mocker):
+def test_init_from_environment(tmp_path, mocker):
     init = mocker.spy(CondaProject, "init")
 
     ret = parse_and_run(
-        ["init", "--directory", "project-dir", "--from-environment", "base"]
+        ["init", "--directory", str(tmp_path), "--from-environment", "base"]
     )
     assert ret == 0
 
@@ -384,7 +384,7 @@ def test_run_unnamed_command_with_extra_args(mocker, multi_env_multi_command):
 
 
 @pytest.mark.parametrize("action", ("lock", "check", "install", "activate", "run"))
-def test_cli_archive_arguments(action, mocker, capsys):
+def test_cli_archive_arguments(tmp_path, action, mocker, capsys):
     mocked_action = mocker.patch(
         f"conda_project.cli.commands.{action}",
         return_value=42,
@@ -392,7 +392,7 @@ def test_cli_archive_arguments(action, mocker, capsys):
     )
 
     ret = parse_and_run(
-        [action, "--project-archive", "project.tar.gz", "--directory", "project-dir"]
+        [action, "--project-archive", "project.tar.gz", "--directory", str(tmp_path)]
     )
     assert ret == 42
 

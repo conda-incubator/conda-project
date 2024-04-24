@@ -225,3 +225,20 @@ def test_project_init_path(project_directory_factory):
 
     project = CondaProject(project_path)
     assert project.directory.samefile(project_path)
+
+
+@pytest.mark.slow
+def test_project_init_from_named_env(tmp_path, capsys):
+    project = CondaProject.init(tmp_path, from_environment="base", verbose=True)
+
+    stdout = capsys.readouterr().out
+    assert "Reading environment" in stdout
+    assert "Constructing lockfile" in stdout
+    assert project.default_environment.lockfile.exists()
+    assert project.default_environment.sources[0].exists()
+
+
+@pytest.mark.slow
+def test_project_init_from_env_failed(tmp_path, tmp_dir):
+    with pytest.raises(ValueError):
+        _ = CondaProject.init(tmp_path, from_environment=tmp_dir)
