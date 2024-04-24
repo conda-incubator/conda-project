@@ -10,6 +10,7 @@ from textwrap import dedent
 import pytest
 from ruamel.yaml import YAML
 
+from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError
 from conda_project.project import DEFAULT_PLATFORMS, CondaProject
 from conda_project.utils import is_windows
@@ -228,8 +229,14 @@ def test_project_init_path(project_directory_factory):
 
 
 @pytest.mark.slow
-def test_project_init_from_named_env(tmp_path, capsys):
-    project = CondaProject.init(tmp_path, from_environment="base", verbose=True)
+def test_project_init_from_named_env(tmp_path, capsys, empty_conda_environment):
+    _ = call_conda(
+        ["install", "ca-certificates", "-y", "-p", str(empty_conda_environment)]
+    )
+
+    project = CondaProject.init(
+        tmp_path, from_environment=empty_conda_environment, verbose=True
+    )
 
     stdout = capsys.readouterr().out
     assert "Reading environment" in stdout
