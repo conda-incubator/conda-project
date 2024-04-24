@@ -47,7 +47,6 @@ from .conda import (
     conda_run,
     current_platform,
     env_export,
-    is_conda_env,
 )
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
@@ -287,12 +286,6 @@ class CondaProject:
 
         else:
             prefix = conda_prefix(from_environment)
-            if prefix is None:
-                prefix = Path(from_environment)
-                if not is_conda_env(prefix):
-                    raise ValueError(
-                        f"{from_environment} is not a valid conda environment"
-                    )
 
             if verbose:
                 print(f"Reading environment at {prefix}")

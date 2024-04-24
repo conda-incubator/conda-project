@@ -83,7 +83,7 @@ def is_conda_env(prefix: Path) -> bool:
     return (prefix / "conda-meta" / "history").exists()
 
 
-def conda_prefix(env: Optional[Union[str, Path]] = None) -> Union[Path, None]:
+def conda_prefix(env: Optional[Union[str, Path]] = None) -> Path:
     """Return the path to a conda environment"""
 
     if env is None:
@@ -104,7 +104,7 @@ def conda_prefix(env: Optional[Union[str, Path]] = None) -> Union[Path, None]:
                 if is_conda_env(p):
                     return p.resolve()
             else:
-                return None
+                raise ValueError(f"{env} is not a valid conda environment")
 
 
 def env_export(

@@ -222,6 +222,19 @@ def test_conda_prefix_prefers_path(tmp_path, monkeypatch):
     _ = call_conda(["env", "remove", "-n", "my-env"])
 
 
+def test_conda_prefix_name_not_found(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CONDA_ENVS_DIRS", str(tmp_path / "global-envs"))
+
+    with pytest.raises(ValueError):
+        _ = conda_prefix("not-an-env")
+
+
+def test_conda_prefix_path_not_found(tmp_path):
+    with pytest.raises(ValueError):
+        _ = conda_prefix(tmp_path)
+
+
 def test_is_conda_env_path(empty_conda_environment: Path):
     assert is_conda_env(empty_conda_environment)
 
