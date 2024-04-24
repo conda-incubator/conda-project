@@ -16,19 +16,19 @@ from functools import lru_cache
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, List, NoReturn, Optional, Tuple, Union
+from typing import Dict, List, NoReturn, Optional, Tuple, Union, cast
 
 import conda_lock._vendor.conda.gateways.logging  # noqa: F401
 import pexpect
-from conda_lock._vendor.conda.core.prefix_data import PrefixData
-from conda_lock._vendor.conda.models.channel import Channel as CondaChannel
+from conda_lock._vendor.conda.core.prefix_data import PrefixData, PrefixRecord
+from conda_lock._vendor.conda.models.channel import Channel
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
 from conda_lock.conda_lock import (
     default_virtual_package_repodata,
     make_lock_spec,
     parse_conda_lock_file,
 )
-from conda_lock.lockfile.v2prelim.models import LockedDependency, Lockfile
+from conda_lock.lockfile.v2prelim.models import Lockfile
 
 from .exceptions import CondaProjectError
 from .project_file import EnvironmentYaml, UniqueOrderedList
@@ -79,8 +79,8 @@ def call_conda(
     return proc
 
 
-def is_conda_env(path: Path) -> bool:
-    return (path / "conda-meta" / "history").exists()
+def is_conda_env(prefix: Path) -> bool:
+    return (prefix / "conda-meta" / "history").exists()
 
 
 def conda_prefix(env: Optional[Union[str, Path]] = None) -> Union[Path, None]:
@@ -107,104 +107,26 @@ def conda_prefix(env: Optional[Union[str, Path]] = None) -> Union[Path, None]:
                 return None
 
 
-def requested_packages(prefix: Path, with_version: bool = True) -> EnvironmentYaml:
-    proc = call_conda(["env", "export", "--from-history", "-p", str(prefix), "--json"])
-    requested = json.loads(proc.stdout)
-
-    proc = call_conda(["env", "export", "-p", str(prefix), "--json"])
-    full = json.loads(proc.stdout)
-
-    if with_version:
-        versioned_dependencies = []
-
-        dependencies = {}
-        for d in requested["dependencies"]:
-            split = d.split("::", maxsplit=1)
-            if len(split) == 1:
-                name = split[0].split("=")[0]
-                dependencies[name] = ""
-            else:
-                channel, name = split
-                dependencies[name.split("=")[0]] = f"{channel}::"
-
-        for d in full["dependencies"]:
-            if isinstance(d, str):
-                name, version, _ = d.split("=")
-                if name in dependencies:
-                    prefix = dependencies[name]
-                    versioned_dependencies.append(f"{prefix}{name}={version}")
-
-        requested["dependencies"] = versioned_dependencies
-
-    pip_pkgs = [p for p in full["dependencies"] if isinstance(p, dict) and "pip" in p]
-    if pip_pkgs:
-        pip_pkgs = [p for p in pip_pkgs[0]["pip"] if not p.startswith("anaconda")]
-        requested["dependencies"].append({"pip": pip_pkgs})
-
-    environment = EnvironmentYaml(**requested)
-    return environment
-
-
 def env_export(
     prefix: Path,
     from_history: bool = True,
     pin_versions: bool = True,
-    verbose: bool = True,
+    verbose: bool = False,
 ) -> Tuple[EnvironmentYaml, Lockfile]:
-    with (
-        Spinner(prefix=f"Reading environment at {prefix}") if verbose else nullcontext()
-    ):
-        pd = PrefixData(prefix, pip_interop_enabled=True)
-        pkgs = sorted(pd.iter_records(), key=lambda x: x.name)
+    """Create an environment.yml spec and lockfile from an existing environment"""
 
-    channels: List[CondaChannel] = []
+    pd = PrefixData(prefix, pip_interop_enabled=True)
+    pkgs = cast(List[PrefixRecord], pd.iter_records())
+
+    channels: List[Channel] = []
     dependencies: List[Union[str, Dict[str, List[str]]]] = []
     pip: List[str] = []
-    locked: List[LockedDependency] = []
 
+    n_conda = 0
+    n_pip = 0
     for p in pkgs:
-        # local_dependencies = {}
-        # for dep in p.depends:
-        #     matchspec = MatchSpec(dep)
-        #     name = matchspec.name
-        #     version = (
-        #         matchspec.version.spec_str if matchspec.version is not None else ""
-        #     )
-        #     local_dependencies[name] = version
-
-        # if p.schannel == "pypi":
-        #     if "WHEEL" in str(p.package_type):
-        #         for fn in p.files:
-        #             fn = prefix / Path(fn)
-        #             if fn.name == "WHEEL":
-        #                 with fn.open() as f:
-        #                     data = f.readlines()
-        #                 lines = [line for line in data if line.startswith("Tag")]
-        #                 if lines:
-        #                     tag = lines[0].split(":", maxsplit=1)[1].strip()
-        #                     wheel = f"{p.name}-{p.version}-{tag}.whl"
-        #                     parsed = parse_wheel_filename(wheel)
-        #                     url = f"https://files.pythonhosted.org/packages/{parsed.python_tags[0]}/"
-        #                           f"{parsed.project[0]}/{parsed.project}/{p.name}-{p.version}-{tag}.whl"
-        #                 break
-        #     else:
-        #         url = f"https://pypi.io/packages/source/{p.name[0]}/{p.name}/{p.name}-{p.version}.tar.gz"
-        # else:
-        #     url = str(p.url)
-
-        # locked.append(LockedDependency(
-        #     name=p.name,
-        #     version=p.version,
-        #     manager="pip" if p.schannel == "pypi" else "conda",
-        #     platform="unknown",
-        #     dependencies=local_dependencies,
-        #     url=url,
-        #     hash=HashModel(
-        #         md5=p.get("md5"),
-        #         sha256=p.get("sha256")
-        #     ),
-        # ))
         if p.schannel == "pypi":
+            n_pip += 1
             if from_history:
                 for fn in p.files:
                     fn = prefix / Path(fn)
@@ -215,7 +137,9 @@ def env_export(
                 pip.append(f"{p.name}=={p.version}")
             continue
 
-        elif from_history and p.requested_spec == "None":
+        n_conda += 1
+
+        if from_history and p.requested_spec == "None":
             continue
 
         if from_history and pin_versions:
@@ -228,27 +152,35 @@ def env_export(
 
         channels.append(p.channel)
 
+    full_export = (not from_history) or (
+        len(pip) + len(dependencies) == n_conda + n_pip
+    )
+    empty = n_conda + n_pip == 0
+
     if pip:
         dependencies.append({"pip": pip})
 
-    subdirs = set(c.subdir for c in channels)
-    subdirs.discard("pypi")
-    subdirs.discard("noarch")
-    assert len(subdirs) == 1
-    subdir = subdirs.pop()
-
-    for p in locked:
-        p.platform = subdir
+    if full_export:
+        subdirs = set(c.subdir for c in channels)
+        subdirs.discard("pypi")
+        subdirs.discard("noarch")
+        if not subdirs:
+            platforms = [current_platform()]
+        else:
+            platforms = list(subdirs)
+    else:
+        platforms = DEFAULT_PLATFORMS
 
     channel_names = UniqueOrderedList(
-        [CondaChannel.from_url(url).canonical_name for url in conda_info()["channels"]]
+        [Channel.from_url(url).canonical_name for url in conda_info()["channels"]]
     )
 
     environment = EnvironmentYaml(
         name=prefix.name,
         channels=channel_names,
         dependencies=dependencies,
-        platforms=DEFAULT_PLATFORMS,
+        platforms=DEFAULT_PLATFORMS if empty else platforms,
+        prefix=prefix,
     )
     with Spinner("Constructing lockfile") if verbose else nullcontext():
         with TemporaryDirectory() as tmp:
@@ -261,8 +193,13 @@ def env_export(
                 virtual_package_repo=default_virtual_package_repodata(),
             )
 
-            exported = tmp / "exported.yml"
-            call_conda(["env", "export", "-p", str(prefix), "--file", str(exported)])
+            if full_export or empty:
+                exported = requested
+            else:
+                exported = tmp / "exported.yml"
+                call_conda(
+                    ["env", "export", "-p", str(prefix), "--file", str(exported)]
+                )
 
             lock = tmp / "conda-lock.yml"
             call_conda(
@@ -279,16 +216,6 @@ def env_export(
             lock_content = parse_conda_lock_file(lock)
             lock_content.metadata.content_hash = spec.content_hash()
             lock_content.metadata.sources = ["environment.yml"]
-
-    # lock_content = Lockfile(
-    #     package=locked,
-    #     metadata=LockMeta(
-    #         content_hash=spec.content_hash(),
-    #         channels=list(),
-    #         platforms=[current_platform()],
-    #         sources=["environment.yml"],
-    #     ),
-    # )
 
     return environment, lock_content
 
@@ -389,3 +316,92 @@ def conda_activate(prefix: Path, working_dir: Path, env: Optional[Dict] = None):
         )
 
         _send_activation(child_shell, prefix)
+
+        # local_dependencies = {}
+        # for dep in p.depends:
+        #     matchspec = MatchSpec(dep)
+        #     name = matchspec.name
+        #     version = (
+        #         matchspec.version.spec_str if matchspec.version is not None else ""
+        #     )
+        #     local_dependencies[name] = version
+
+        # if p.schannel == "pypi":
+        #     if "WHEEL" in str(p.package_type):
+        #         for fn in p.files:
+        #             fn = prefix / Path(fn)
+        #             if fn.name == "WHEEL":
+        #                 with fn.open() as f:
+        #                     data = f.readlines()
+        #                 lines = [line for line in data if line.startswith("Tag")]
+        #                 if lines:
+        #                     tag = lines[0].split(":", maxsplit=1)[1].strip()
+        #                     wheel = f"{p.name}-{p.version}-{tag}.whl"
+        #                     parsed = parse_wheel_filename(wheel)
+        #                     url = f"https://files.pythonhosted.org/packages/{parsed.python_tags[0]}/"
+        #                           f"{parsed.project[0]}/{parsed.project}/{p.name}-{p.version}-{tag}.whl"
+        #                 break
+        #     else:
+        #         url = f"https://pypi.io/packages/source/{p.name[0]}/{p.name}/{p.name}-{p.version}.tar.gz"
+        # else:
+        #     url = str(p.url)
+
+        # locked.append(LockedDependency(
+        #     name=p.name,
+        #     version=p.version,
+        #     manager="pip" if p.schannel == "pypi" else "conda",
+        #     platform="unknown",
+        #     dependencies=local_dependencies,
+        #     url=url,
+        #     hash=HashModel(
+        #         md5=p.get("md5"),
+        #         sha256=p.get("sha256")
+        #     ),
+        # ))
+    # lock_content = Lockfile(
+    #     package=locked,
+    #     metadata=LockMeta(
+    #         content_hash=spec.content_hash(),
+    #         channels=list(),
+    #         platforms=[current_platform()],
+    #         sources=["environment.yml"],
+    #     ),
+    # )
+
+
+# def requested_packages(prefix: Path, with_version: bool = True) -> EnvironmentYaml:
+#     proc = call_conda(["env", "export", "--from-history", "-p", str(prefix), "--json"])
+#     requested = json.loads(proc.stdout)
+
+#     proc = call_conda(["env", "export", "-p", str(prefix), "--json"])
+#     full = json.loads(proc.stdout)
+
+#     if with_version:
+#         versioned_dependencies = []
+
+#         dependencies = {}
+#         for d in requested["dependencies"]:
+#             split = d.split("::", maxsplit=1)
+#             if len(split) == 1:
+#                 name = split[0].split("=")[0]
+#                 dependencies[name] = ""
+#             else:
+#                 channel, name = split
+#                 dependencies[name.split("=")[0]] = f"{channel}::"
+
+#         for d in full["dependencies"]:
+#             if isinstance(d, str):
+#                 name, version, _ = d.split("=")
+#                 if name in dependencies:
+#                     prefix = dependencies[name]
+#                     versioned_dependencies.append(f"{prefix}{name}={version}")
+
+#         requested["dependencies"] = versioned_dependencies
+
+#     pip_pkgs = [p for p in full["dependencies"] if isinstance(p, dict) and "pip" in p]
+#     if pip_pkgs:
+#         pip_pkgs = [p for p in pip_pkgs[0]["pip"] if not p.startswith("anaconda")]
+#         requested["dependencies"].append({"pip": pip_pkgs})
+
+#     environment = EnvironmentYaml(**requested)
+#     return environment

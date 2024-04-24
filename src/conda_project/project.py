@@ -294,7 +294,10 @@ class CondaProject:
                         f"{from_environment} is not a valid conda environment"
                     )
 
-            environment_yaml, lockfile = env_export(prefix)
+            if verbose:
+                print(f"Reading environment at {prefix}")
+
+            environment_yaml, lockfile = env_export(prefix, verbose=verbose)
             write_conda_lock_file(
                 lockfile,
                 directory / f"conda-lock.{environment_yaml.name}.yml",
