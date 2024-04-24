@@ -496,8 +496,7 @@ class Environment(BaseModel):
 
         return channel_overrides, platform_overrides
 
-    @property
-    def is_locked(self) -> bool:
+    def _is_locked(self, platform: Optional[str] = None) -> bool:
         """
         bool: Returns True if the lockfile is consistent with the source files, False otherwise.
         """
@@ -510,14 +509,29 @@ class Environment(BaseModel):
                 platform_overrides=platform_overrides,
                 virtual_package_repo=default_virtual_package_repodata(),
             )
-            all_up_to_date = all(
-                p in lock.metadata.platforms
-                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
-                for p in spec.platforms
-            )
-            return all_up_to_date
+            if platform is None:
+                all_up_to_date = all(
+                    p in lock.metadata.platforms
+                    and spec.content_hash_for_platform(p)
+                    == lock.metadata.content_hash[p]
+                    for p in spec.platforms
+                )
+                return all_up_to_date
+            else:
+                return (
+                    spec.content_hash_for_platform(platform)
+                    == lock.metadata.content_hash[platform]
+                )
         else:
             return False
+
+    @property
+    def is_locked(self) -> bool:
+        return self._is_locked()
+
+    @property
+    def is_locked_current_platform(self) -> bool:
+        return self._is_locked(current_platform())
 
     @property
     def is_consistent(self) -> bool:
@@ -718,10 +732,18 @@ class Environment(BaseModel):
             The path to the created environment.
 
         """
-        if not self.is_locked:
+        if not self.is_locked_current_platform:
             if verbose and self.lockfile.exists():
                 print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
+        else:
+            if not self.is_locked:
+                warnings.warn(
+                    UserWarning(
+                        f"Platforms other than your current platform ({current_platform()}) are not"
+                        f"locked or out-of-date.\nConsider running conda project lock."
+                    )
+                )
 
         if self.is_consistent:
             if not force:
