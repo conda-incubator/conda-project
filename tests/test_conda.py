@@ -287,7 +287,18 @@ def test_env_export_from_history_with_pip(empty_conda_environment):
     _ = call_conda(
         ["install", "python=3.11", "pip", "-p", empty_conda_environment, "-y"]
     )
-    _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
+    _ = call_conda(
+        [
+            "run",
+            "-p",
+            empty_conda_environment,
+            "python",
+            "-m",
+            "pip",
+            "install",
+            "requests",
+        ]
+    )
 
     env, lock = env_export(empty_conda_environment)
     assert len(env.dependencies[-1]["pip"]) == 1
@@ -309,7 +320,18 @@ def test_env_export_full_with_pip(empty_conda_environment):
     _ = call_conda(
         ["install", "python=3.11", "pip", "-p", empty_conda_environment, "-y"]
     )
-    _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
+    _ = call_conda(
+        [
+            "run",
+            "-p",
+            empty_conda_environment,
+            "python",
+            "-m",
+            "pip",
+            "install",
+            "requests",
+        ]
+    )
 
     env, lock = env_export(empty_conda_environment, from_history=False)
     assert len(env.dependencies[-1]["pip"]) == len(
