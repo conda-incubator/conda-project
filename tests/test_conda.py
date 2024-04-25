@@ -291,7 +291,7 @@ def test_env_export_from_history_with_pip(empty_conda_environment):
         [
             "run",
             "-p",
-            str(empty_conda_environment),
+            empty_conda_environment.as_posix(),
             "python",
             "-m",
             "pip",
@@ -324,7 +324,7 @@ def test_env_export_full_with_pip(empty_conda_environment):
         [
             "run",
             "-p",
-            str(empty_conda_environment),
+            empty_conda_environment.as_posix(),
             "python",
             "-m",
             "pip",
