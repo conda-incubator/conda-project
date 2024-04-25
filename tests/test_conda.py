@@ -284,7 +284,9 @@ def test_env_export_from_history_without_versions_as_requested(empty_conda_envir
 
 @pytest.mark.slow
 def test_env_export_from_history_with_pip(empty_conda_environment):
-    _ = call_conda(["install", "python=3.11", "-p", empty_conda_environment, "-y"])
+    _ = call_conda(
+        ["install", "python=3.11", "pip", "-p", empty_conda_environment, "-y"]
+    )
     _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
 
     env, lock = env_export(empty_conda_environment)
@@ -304,7 +306,9 @@ def test_env_export_full(empty_conda_environment):
 
 @pytest.mark.slow
 def test_env_export_full_with_pip(empty_conda_environment):
-    _ = call_conda(["install", "python=3.11", "-p", empty_conda_environment, "-y"])
+    _ = call_conda(
+        ["install", "python=3.11", "pip", "-p", empty_conda_environment, "-y"]
+    )
     _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
 
     env, lock = env_export(empty_conda_environment, from_history=False)
