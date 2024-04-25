@@ -283,6 +283,16 @@ def test_env_export_from_history_without_versions_as_requested(empty_conda_envir
 
 
 @pytest.mark.slow
+def test_env_export_from_history_with_pip(empty_conda_environment):
+    _ = call_conda(["install", "python=3.11", "-p", empty_conda_environment, "-y"])
+    _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
+
+    env, lock = env_export(empty_conda_environment)
+    assert len(env.dependencies[-1]["pip"]) == 1
+    assert len([p for p in lock.package if p.manager == "pip"]) > 1
+
+
+@pytest.mark.slow
 def test_env_export_full(empty_conda_environment):
     _ = call_conda(["install", "openssl=3", "-p", empty_conda_environment, "-y"])
 
@@ -290,6 +300,17 @@ def test_env_export_full(empty_conda_environment):
     assert env.platforms == [current_platform()]
     assert len(env.dependencies) == len(lock.package)
     assert lock.metadata.content_hash.keys() == {current_platform()}
+
+
+@pytest.mark.slow
+def test_env_export_full_with_pip(empty_conda_environment):
+    _ = call_conda(["install", "python=3.11", "-p", empty_conda_environment, "-y"])
+    _ = call_conda(["run", "-p", empty_conda_environment, "pip", "install", "requests"])
+
+    env, lock = env_export(empty_conda_environment, from_history=False)
+    assert len(env.dependencies[-1]["pip"]) == len(
+        [p for p in lock.package if p.manager == "pip"]
+    )
 
 
 @pytest.mark.slow
