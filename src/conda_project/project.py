@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import re
-import shutil
 import sys
 import tempfile
 import warnings
@@ -30,6 +29,7 @@ from conda_lock.conda_lock import (
     render_lockfile_for_platform,
     write_conda_lock_file,
 )
+from conda_lock.lockfile.v2prelim.models import MetadataOption
 from fsspec.core import split_protocol
 
 try:  # pragma: no-cover
@@ -613,21 +613,6 @@ class Environment(BaseModel):
                 )
             return
 
-        # Setup temporary file for conda-lock to write to.
-        # If a package is removed from the environment source
-        # after the lockfile has been created conda-lock updates
-        # the hash in the lockfile but does not remove the unspecified
-        # package (and necessary orphaned dependencies) from the lockfile.
-        # To avoid this scenario lockfiles are written to a temporary name
-        # and copied to the self.lockfile path if successful. It is
-        # important to create the lock file in the same directory so that
-        # conda-lock's relative path handling works as expected.
-        lockname = self.lockfile.name
-        templock = Path(
-            tempfile.mktemp(prefix=lockname + ".", dir=self.lockfile.parent)
-        )
-        tempname = templock.name
-
         channel_overrides, platform_overrides = self._overrides
 
         specified_channels = []
@@ -660,19 +645,13 @@ class Environment(BaseModel):
                         make_lock_files(
                             conda=CONDA_EXE,
                             src_files=list(self.sources),
-                            lockfile_path=templock,
+                            lockfile_path=self.lockfile,
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
+                            check_input_hash=not force,
+                            metadata_choices={MetadataOption.TimeStamp},
                         )
-                        with open(templock, "r") as fp:
-                            data = fp.read()
-                        # Replace the occurences of the temporary filename
-                        # (in the header comment) with the proper filename
-                        data = data.replace(tempname, lockname)
-                        with open(templock, "w") as fp:
-                            fp.write(data)
-                        shutil.copy(templock, self.lockfile)
                     except SubprocessError as e:
                         try:
                             output = json.loads(e.output)
@@ -695,9 +674,6 @@ class Environment(BaseModel):
 
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
-                    finally:
-                        if os.path.exists(templock):
-                            os.unlink(templock)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"

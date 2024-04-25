@@ -211,6 +211,8 @@ def env_export(
                     str(lock),
                     "-p",
                     current_platform(),
+                    "--metadata",
+                    "timestamp",
                 ]
             )
             lock_content = parse_conda_lock_file(lock)
