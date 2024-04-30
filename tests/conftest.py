@@ -97,10 +97,10 @@ def project(tmp_path) -> CondaProject:
 
 
 @pytest.fixture
-def empty_conda_environment(tmp_path):
-    args = ["create", "-p", str(tmp_path), "--yes"]
+def empty_conda_environment(tmp_dir: Path):
+    args = ["create", "-p", str(tmp_dir), "--yes"]
     call_conda(args)
-    yield tmp_path
+    yield tmp_dir.resolve()
 
 
 @pytest.fixture

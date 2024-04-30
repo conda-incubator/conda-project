@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import re
-import shutil
 import sys
 import tempfile
 import warnings
@@ -30,6 +29,7 @@ from conda_lock.conda_lock import (
     render_lockfile_for_platform,
     write_conda_lock_file,
 )
+from conda_lock.lockfile.v2prelim.models import MetadataOption
 from fsspec.core import split_protocol
 
 try:  # pragma: no-cover
@@ -47,7 +47,6 @@ from .conda import (
     conda_run,
     current_platform,
     env_export,
-    is_conda_env,
 )
 from .exceptions import CommandNotFoundError, CondaProjectError, CondaProjectLockFailed
 from .project_file import (
@@ -287,14 +286,11 @@ class CondaProject:
 
         else:
             prefix = conda_prefix(from_environment)
-            if prefix is None:
-                prefix = Path(from_environment)
-                if not is_conda_env(prefix):
-                    raise ValueError(
-                        f"{from_environment} is not a valid conda environment"
-                    )
 
-            environment_yaml, lockfile = env_export(prefix)
+            if verbose:
+                print(f"Reading environment at {prefix}")
+
+            environment_yaml, lockfile = env_export(prefix, verbose=verbose)
             write_conda_lock_file(
                 lockfile,
                 directory / f"conda-lock.{environment_yaml.name}.yml",
@@ -493,8 +489,7 @@ class Environment(BaseModel):
 
         return channel_overrides, platform_overrides
 
-    @property
-    def is_locked(self) -> bool:
+    def _is_locked(self, platform: Optional[str] = None) -> bool:
         """
         bool: Returns True if the lockfile is consistent with the source files, False otherwise.
         """
@@ -507,14 +502,32 @@ class Environment(BaseModel):
                 platform_overrides=platform_overrides,
                 virtual_package_repo=default_virtual_package_repodata(),
             )
-            all_up_to_date = all(
-                p in lock.metadata.platforms
-                and spec.content_hash_for_platform(p) == lock.metadata.content_hash[p]
-                for p in spec.platforms
-            )
-            return all_up_to_date
+            if platform is None:
+                all_up_to_date = all(
+                    p in lock.metadata.platforms
+                    and spec.content_hash_for_platform(p)
+                    == lock.metadata.content_hash[p]
+                    for p in spec.platforms
+                )
+                return all_up_to_date
+            else:
+                platform_hash = lock.metadata.content_hash.get(platform)
+                if platform_hash is None:
+                    return False
+                return (
+                    spec.content_hash_for_platform(platform)
+                    == lock.metadata.content_hash[platform]
+                )
         else:
             return False
+
+    @property
+    def is_locked(self) -> bool:
+        return self._is_locked()
+
+    @property
+    def is_locked_current_platform(self) -> bool:
+        return self._is_locked(current_platform())
 
     @property
     def is_consistent(self) -> bool:
@@ -600,21 +613,6 @@ class Environment(BaseModel):
                 )
             return
 
-        # Setup temporary file for conda-lock to write to.
-        # If a package is removed from the environment source
-        # after the lockfile has been created conda-lock updates
-        # the hash in the lockfile but does not remove the unspecified
-        # package (and necessary orphaned dependencies) from the lockfile.
-        # To avoid this scenario lockfiles are written to a temporary name
-        # and copied to the self.lockfile path if successful. It is
-        # important to create the lock file in the same directory so that
-        # conda-lock's relative path handling works as expected.
-        lockname = self.lockfile.name
-        templock = Path(
-            tempfile.mktemp(prefix=lockname + ".", dir=self.lockfile.parent)
-        )
-        tempname = templock.name
-
         channel_overrides, platform_overrides = self._overrides
 
         specified_channels = []
@@ -647,19 +645,13 @@ class Environment(BaseModel):
                         make_lock_files(
                             conda=CONDA_EXE,
                             src_files=list(self.sources),
-                            lockfile_path=templock,
+                            lockfile_path=self.lockfile,
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
+                            check_input_hash=not force,
+                            metadata_choices={MetadataOption.TimeStamp},
                         )
-                        with open(templock, "r") as fp:
-                            data = fp.read()
-                        # Replace the occurences of the temporary filename
-                        # (in the header comment) with the proper filename
-                        data = data.replace(tempname, lockname)
-                        with open(templock, "w") as fp:
-                            fp.write(data)
-                        shutil.copy(templock, self.lockfile)
                     except SubprocessError as e:
                         try:
                             output = json.loads(e.output)
@@ -682,9 +674,6 @@ class Environment(BaseModel):
 
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
-                    finally:
-                        if os.path.exists(templock):
-                            os.unlink(templock)
 
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
@@ -715,10 +704,18 @@ class Environment(BaseModel):
             The path to the created environment.
 
         """
-        if not self.is_locked:
+        if not self.is_locked_current_platform:
             if verbose and self.lockfile.exists():
                 print(f"The lockfile {self.lockfile} is out-of-date, re-locking...")
             self.lock(verbose=verbose)
+        else:
+            if not self.is_locked:
+                warnings.warn(
+                    UserWarning(
+                        f"Platforms other than your current platform ({current_platform()}) are not"
+                        f"locked or out-of-date.\nConsider running conda project lock."
+                    )
+                )
 
         if self.is_consistent:
             if not force:

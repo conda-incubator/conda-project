@@ -11,7 +11,7 @@ from ruamel.yaml import YAML
 
 from conda_project.conda import call_conda
 from conda_project.exceptions import CondaProjectError
-from conda_project.project import CondaProject, current_platform
+from conda_project.project import CondaProject, Environment, current_platform
 
 
 def test_install_with_gitignore(project_directory_factory):
@@ -348,3 +348,22 @@ def test_install_named_environment(project_directory_factory):
 
     conda_history = env_dir / "conda-meta" / "history"
     assert conda_history.exists()
+
+
+@pytest.mark.slow
+def test_install_current_platform_locked(empty_conda_environment, tmp_dir, mocker):
+    lock = mocker.spy(Environment, "lock")
+
+    _ = call_conda(["install", "openssl", "-p", empty_conda_environment, "-y"])
+
+    project = CondaProject.init(
+        directory=tmp_dir, from_environment=empty_conda_environment
+    )
+
+    assert project.default_environment.is_locked_current_platform
+    assert not project.default_environment.is_locked
+
+    with pytest.warns(UserWarning):
+        project.default_environment.install()
+
+    lock.assert_not_called()
