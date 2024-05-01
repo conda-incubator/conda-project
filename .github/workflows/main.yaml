@@ -108,11 +108,11 @@ jobs:
       #     ./conda.exe clean -ay
       #     ./conda.exe info
       - name: Setup miniconda
-        shell: bash
+        shell: bash -l {0}
         run: |
           conda create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
       - name: Install Libmamba
-        shell: bash
+        shell: bash -l {0}
         run: |
           if [[ ! "${{ matrix.conda-version }}" =~ ^("4.9"|"4.10"|"4.11")$ ]]; then
             if [ $RUNNER_OS == 'Windows' ]; then
@@ -124,7 +124,7 @@ jobs:
             fi
           fi
       - name: Update with test dependencies
-        shell: bash
+        shell: bash -l {0}
         run: |
           if [ $RUNNER_OS == 'Windows' ]; then
             source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
@@ -132,7 +132,7 @@ jobs:
             source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
       - name: py.test
-        shell: bash
+        shell: bash -l {0}
         env:
           CONDA_DEFAULT_CHANNELS: conda-forge
         run: |
