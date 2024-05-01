@@ -86,7 +86,7 @@ jobs:
             python-version: "3.12"
           - conda-version: "22.11"
             python-version: "3.12"
-          - conda-version: "23.11"
+          - conda-version: "23.5"
             python-version: "3.12"
     env:
       OS: ${{ matrix.os }}
