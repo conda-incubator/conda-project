@@ -93,24 +93,24 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
-      # - name: Download conda standalone
-      #   shell: bash
-      #   run: |
-      #     if [ $RUNNER_OS == 'Linux' ]; then
-      #       curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-latest-linux-64.exe -o conda.exe
-      #     elif [ $RUNNER_OS == 'Windows' ]; then
-      #       curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-4.10.3-win-64.exe -o conda.exe
-      #     elif [ $RUNNER_OS == 'macOS' ]; then
-      #       curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-latest-osx-64.exe -o conda.exe
-      #     fi
-      #     chmod +x conda.exe
-      #     ./conda.exe config --set auto_update_conda false
-      #     ./conda.exe clean -ay
-      #     ./conda.exe info
+      - name: Download conda standalone
+        shell: bash
+        run: |
+          if [ $RUNNER_OS == 'Linux' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-4.10.3-linux-64.exe -o conda.exe
+          elif [ $RUNNER_OS == 'Windows' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-4.10.3-win-64.exe -o conda.exe
+          elif [ $RUNNER_OS == 'macOS' ]; then
+            curl https://repo.anaconda.com/pkgs/misc/conda-execs/conda-4.10.3-osx-64.exe -o conda.exe
+          fi
+          chmod +x conda.exe
+          ./conda.exe config --set auto_update_conda false
+          ./conda.exe clean -ay
+          ./conda.exe info
       - name: Setup miniconda
         shell: bash -l {0}
         run: |
-          conda create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
+          ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
       - name: Install Libmamba
         shell: bash -l {0}
         run: |
