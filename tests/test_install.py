@@ -354,9 +354,9 @@ def test_install_named_environment(project_directory_factory):
 def test_install_current_platform_locked(tmp_path, tmp_dir, mocker):
     lock = mocker.spy(Environment, "lock")
 
-    _ = call_conda(["create", "openssl", "-p", tmp_path, "-y"])
+    _ = call_conda(["create", "openssl", "-p", tmp_dir, "-y"])
 
-    project = CondaProject.init(directory=tmp_dir, from_environment=tmp_path)
+    project = CondaProject.init(directory=tmp_path, from_environment=tmp_dir)
 
     assert project.default_environment.is_locked_current_platform
     assert not project.default_environment.is_locked
