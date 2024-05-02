@@ -304,10 +304,10 @@ def test_env_export_from_history_with_pip(tmp_path):
 
 
 @pytest.mark.slow
-def test_env_export_full(empty_conda_environment):
-    _ = call_conda(["install", "openssl=3", "-p", empty_conda_environment, "-y"])
+def test_env_export_full(tmp_path):
+    _ = call_conda(["create", "openssl=3", "-p", tmp_path, "-y"])
 
-    env, lock = env_export(empty_conda_environment, from_history=False)
+    env, lock = env_export(tmp_path, from_history=False)
     assert env.platforms == [current_platform()]
     assert len(env.dependencies) == len(lock.package)
     assert lock.metadata.content_hash.keys() == {current_platform()}
@@ -336,10 +336,10 @@ def test_env_export_full_with_pip(tmp_path):
 
 
 @pytest.mark.slow
-def test_env_export_all_requested(empty_conda_environment):
-    _ = call_conda(["install", "ca-certificates", "-p", empty_conda_environment, "-y"])
+def test_env_export_all_requested(tmp_path):
+    _ = call_conda(["create", "ca-certificates", "-p", tmp_path, "-y"])
 
-    env, lock = env_export(empty_conda_environment, from_history=True)
+    env, lock = env_export(tmp_path, from_history=True)
     assert env.platforms == [current_platform()]
     assert len(env.dependencies) == len(lock.package)
     assert lock.metadata.content_hash.keys() == {current_platform()}
