@@ -337,7 +337,8 @@ class CondaProject:
         env_paths = specified_path.split(os.pathsep) if specified_path else []
 
         for _path in env_paths:
-            path = Path(_path)
+            expanded = os.path.expandvars(_path)
+            path = Path(expanded)
 
             if not path.is_absolute():
                 path = self.directory / path
