@@ -351,14 +351,12 @@ def test_install_named_environment(project_directory_factory):
 
 
 @pytest.mark.slow
-def test_install_current_platform_locked(empty_conda_environment, tmp_dir, mocker):
+def test_install_current_platform_locked(tmp_path, tmp_dir, mocker):
     lock = mocker.spy(Environment, "lock")
 
-    _ = call_conda(["install", "openssl", "-p", empty_conda_environment, "-y"])
+    _ = call_conda(["create", "openssl", "-p", tmp_dir, "-y"])
 
-    project = CondaProject.init(
-        directory=tmp_dir, from_environment=empty_conda_environment
-    )
+    project = CondaProject.init(directory=tmp_path, from_environment=tmp_dir)
 
     assert project.default_environment.is_locked_current_platform
     assert not project.default_environment.is_locked

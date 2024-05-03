@@ -229,14 +229,10 @@ def test_project_init_path(project_directory_factory):
 
 
 @pytest.mark.slow
-def test_project_init_from_named_env(tmp_path, capsys, empty_conda_environment):
-    _ = call_conda(
-        ["install", "ca-certificates", "-y", "-p", str(empty_conda_environment)]
-    )
+def test_project_init_from_named_env(tmp_path, capsys, tmp_dir):
+    _ = call_conda(["create", "ca-certificates", "-y", "-p", tmp_dir])
 
-    project = CondaProject.init(
-        tmp_path, from_environment=empty_conda_environment, verbose=True
-    )
+    project = CondaProject.init(tmp_path, from_environment=tmp_dir, verbose=True)
 
     stdout = capsys.readouterr().out
     assert "Reading environment" in stdout

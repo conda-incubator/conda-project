@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 from typing import Generator, Optional
 
 import pytest
@@ -27,8 +27,7 @@ def tmp_dir() -> Generator[Path, None, None]:
     since re-using `tmp_path` is not possible.
     """
 
-    with TemporaryDirectory() as d:
-        yield Path(d)
+    yield Path(mkdtemp())
 
 
 @pytest.fixture()

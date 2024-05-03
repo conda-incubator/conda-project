@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Archiving :: Packaging",
@@ -75,8 +76,8 @@ repository = "https://github.com/conda-incubator/conda-project"
 homepage = "https://github.com/conda-incubator/conda-project"
 documentation = "https://conda-incubator.github.io/conda-project/user_guide.html"
 "Issue Tracker" = "https://github.com/conda-incubator/conda-project/issues"
-#"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
-#"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
+"Conda-Forge Feedstock" = "https://github.com/conda-forge/conda-project-feedstock"
+"AnacondaRecipes Feedstock" = "https://github.com/AnacondaRecipes/conda-project-feedstock"
 
 [tool.coverage.report]
 omit = [
