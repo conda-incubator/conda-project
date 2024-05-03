@@ -197,3 +197,10 @@ def dedupe_list_of_dicts(data: list, key: Callable, keep: Callable) -> list:
         else:
             deduped.extend(values)
     return deduped
+
+
+def get_envs_paths() -> List[Path]:
+    specified_path = os.environ.get("CONDA_PROJECT_ENVS_PATH", "")
+    env_paths = specified_path.split(os.pathsep) if specified_path else []
+    expanded_paths = [Path(os.path.expandvars(path)) for path in env_paths]
+    return expanded_paths

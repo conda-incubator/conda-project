@@ -61,6 +61,7 @@ from .utils import (
     dedupe_list_of_dicts,
     env_variable,
     find_file,
+    get_envs_paths,
     prepare_variables,
 )
 
@@ -333,12 +334,9 @@ class CondaProject:
     @property
     def environments(self) -> BaseEnvironments:
         env_path = self.directory / "envs"
-        specified_path = os.environ.get("CONDA_PROJECT_ENVS_PATH", "")
-        env_paths = specified_path.split(os.pathsep) if specified_path else []
+        env_paths = get_envs_paths()
 
-        for _path in env_paths:
-            path = Path(_path)
-
+        for path in env_paths:
             if not path.is_absolute():
                 path = self.directory / path
 
