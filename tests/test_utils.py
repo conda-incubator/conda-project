@@ -17,6 +17,7 @@ from conda_project.utils import (
     env_variable,
     execvped,
     find_file,
+    get_envs_paths,
     is_windows,
     prepare_variables,
 )
@@ -299,3 +300,11 @@ def test_dedupe_list_of_dicts():
         {"name": "ccc", "k1": "cat1"},
         {"name": "ddd", "k1": "cat2"},
     ]
+
+
+def test_get_envs_path_expanded(monkeypatch):
+    monkeypatch.setenv("FAKE_HOME", "/path/to/home")
+    var = r"%FAKE_HOME%" if is_windows() else "$FAKE_HOME"
+    monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", f"{var}/.conda/envs{os.pathsep}envs")
+
+    assert get_envs_paths() == [Path("/path/to/home/.conda/envs"), Path("envs")]
