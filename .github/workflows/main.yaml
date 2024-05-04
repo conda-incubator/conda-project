@@ -9,6 +9,8 @@ on:
       - ".github/workflows/docs.yml"
     branches:
       - main
+    tags:
+      - "*"
   pull_request:
     paths-ignore:
       - "README.md"
