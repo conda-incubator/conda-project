@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.1] - 2024-05-04
+
+- Fixing pypi trigger by @AlbertDeFusco in [#165](https://github.com/conda-incubator/conda-project/pull/165)
+- On push tags by @AlbertDeFusco in [#166](https://github.com/conda-incubator/conda-project/pull/166)
+
+## [0.4.0] - 2024-05-03
+
+### Added
+
+- Make it possible to override project environments location by @jkong-anaconda in [#159](https://github.com/conda-incubator/conda-project/pull/159)
+- Handle relative paths and writing nonexistent directories for CONDA_PROJECT_ENVS_PATH by @jkong-anaconda in [#161](https://github.com/conda-incubator/conda-project/pull/161)
+- [feat] initialize from an existing environment by @AlbertDeFusco in in [#162](https://github.com/conda-incubator/conda-project/pull/162)
+- Expand vars in envs_path by @AlbertDeFusco in [#164](https://github.com/conda-incubator/conda-project/pull/164)
+
+### Maintenance
+
+- [chore] test py3.12 and newer conda by @AlbertDeFusco in [#163](https://github.com/conda-incubator/conda-project/pull/163)
+- revise the badges by @AlbertDeFusco in [#155](https://github.com/conda-incubator/conda-project/pull/155)
+- [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in [#154](https://github.com/conda-incubator/conda-project/pull/154)
+
+### New Contributors
+
+- @jkong-anaconda made their first contribution in [#159](https://github.com/conda-incubator/conda-project/pull/159)
+
 ## [0.3.2] - 2024-02-09
 
 ### Fixes
