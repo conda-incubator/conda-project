@@ -139,7 +139,7 @@ def _create_init_parser(
         p.add_argument(
             "--from-environment",
             help=(
-                "Initialize the default environment spec and lock from an existing"
+                "Initialize the default environment spec and lock from an existing "
                 "conda environment by name or prefix."
             ),
             action="store",

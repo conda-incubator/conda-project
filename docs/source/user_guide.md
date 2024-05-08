@@ -34,30 +34,37 @@ This will initialize your project with a new `conda-project.yml`, `environment.y
 The following is the output of `conda project init --help`:
 
 ```text
-usage: conda-project init [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS] [--conda-configs CONDA_CONFIGS]
-                            [--lock] [--install]
-                            [dependencies [dependencies ...]]
+usage: conda-project init [-h] [--directory PROJECT_DIR] [-n NAME] [-c CHANNEL] [--platforms PLATFORMS]
+                          [--conda-configs CONDA_CONFIGS] [--lock] [--install] [--from-environment FROM_ENVIRONMENT]
+                          [PACKAGE_SPECIFICATION ...]
 
 Initialize a new project
 
 positional arguments:
-  dependencies          Packages to add to the environment.yml in MatchSpec format.
+  PACKAGE_SPECIFICATION
+                        Packages to add to the environment.yml. The format for each package is '<name>[<op><version>]'
+                        where <op> can be =, <, >, <=, or >=.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --directory PROJECT_DIR
                         Project directory (defaults to current directory)
   -n NAME, --name NAME  Name for the project.
   -c CHANNEL, --channel CHANNEL
-                        Additional channel to search for packages. The default channel is 'defaults'. Multiple channels are added with repeated
-                        use of this argument.
+                        Additional channel to search for packages. The default channel is 'defaults'. Multiple channels are
+                        added with repeated use of this argument.
   --platforms PLATFORMS
-                        Comma separated list of platforms for which to lock dependencies. The default is win-64,linux-64,osx-64,osx-arm64
+                        Comma separated list of platforms for which to lock dependencies. The default is osx-64,osx-
+                        arm64,linux-64,win-64
   --conda-configs CONDA_CONFIGS
-                        Comma separated list of conda configuration parameters to write into the .condarc file in the project directory. The
-                        format for each config is key=value. For example --conda-configs experimental_solver=libmamba,channel_priority=strict
+                        Comma separated list of conda configuration parameters to write into the .condarc file in the
+                        project directory. The format for each config is key=value. For example --conda-configs
+                        experimental_solver=libmamba,channel_priority=strict
   --lock                Create the conda-lock.<env>.yml file(s)
   --install             Create the local conda environment for the current platform.
+  --from-environment FROM_ENVIRONMENT
+                        Initialize the default environment spec and lock from an existing conda environment by name or
+                        prefix.
 ```
 
 ### If I already have an `environment.yml`
@@ -68,6 +75,19 @@ assumptions:
 1. all packages come from the `defaults` channel, and
 1. the dependencies will be locked for `win-64, linux-64, mac-64` and your current platform if
    it is not one of those three.
+
+### If I already have an installed environment
+
+The `--from-environment <name-or-prefix>` argument can be used to bootstrap a Conda Project from an existing
+conda environment. This procedure will perform the following steps
+
+1. Read the existing environment and construct the `environment.yml` file pinning versions for only the requested
+   packages.
+1. Construct the `conda-lock.<env-name>.yml` file for the current platform listing *all* of the packages in the
+   environment as they are now.
+    * Only packages for the current platform are listed in the lock file to save time. You may also use the `--lock`
+      flag to additionally lock the remaining platforms according to the `environment.yml` file generated in the
+      previous step.
 
 ## The conda-project.yml file
 
