@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.2] - 2024-06-03
+
+- Fix default_platforms by @AlbertDeFusco in [#168](https://github.com/conda-incubator/conda-project/pull/168)
+
 ## [0.4.1] - 2024-05-04
 
 - Fixing pypi trigger by @AlbertDeFusco in [#165](https://github.com/conda-incubator/conda-project/pull/165)
