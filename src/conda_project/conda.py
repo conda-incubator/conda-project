@@ -235,7 +235,9 @@ def current_platform() -> str:
     return info.get("platform")
 
 
-DEFAULT_PLATFORMS = set(["osx-64", "win-64", "linux-64", current_platform()])
+DEFAULT_PLATFORMS = set(
+    ["osx-64", "win-64", "linux-64", "osx-arm64", current_platform()]
+)
 
 
 def conda_run(
