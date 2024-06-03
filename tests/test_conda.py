@@ -25,6 +25,10 @@ from conda_project.conda import (
 from conda_project.exceptions import CondaProjectError
 
 
+def test_default_platforms():
+    assert DEFAULT_PLATFORMS >= set(["linux-64", "win-64", "osx-64", "osx-arm64"])
+
+
 def test_local_condarc(tmp_path):
     condarc = "channels: [__conda-project-test]\n"
     condarc_file = tmp_path / ".condarc"
