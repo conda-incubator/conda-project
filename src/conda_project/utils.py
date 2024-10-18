@@ -52,8 +52,6 @@ class Spinner:
 
     def __init__(self, prefix: str):
         self.prefix = prefix
-        self._event = threading.Event()
-        self._thread = threading.Thread(target=self._spin)
 
     def _spin(self) -> None:
         spinner = itertools.cycle(["◜", "◠", "◝", "◞", "◡", "◟"])
@@ -66,9 +64,19 @@ class Spinner:
             time.sleep(0.10)
 
     def start(self) -> None:
+        if not sys.stdout.isatty():
+            print(self.prefix)
+            return
+
+        self._event = threading.Event()
+        self._thread = threading.Thread(target=self._spin)
         self._thread.start()
 
     def stop(self) -> None:
+        if not sys.stdout.isatty():
+            print("Done")
+            return
+
         self._event.set()
         self._thread.join()
         sys.stdout.write("\r")
