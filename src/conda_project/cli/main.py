@@ -50,7 +50,9 @@ def cli() -> ArgumentParser:
         action="store",
         default=None,
     )
-    extras.add_argument("--quiet", help="Suppress output", action="store_true")
+
+    quiet = ArgumentParser(add_help=False)
+    quiet.add_argument("--quiet", help="Suppress output", action="store_true")
 
     p = ArgumentParser(
         description="Tool for encapsulating, running, and reproducing projects with conda environments",
@@ -66,15 +68,15 @@ def cli() -> ArgumentParser:
 
     subparsers = p.add_subparsers(metavar="command", required=True)
 
-    _create_init_parser(subparsers, common)
-    _create_lock_parser(subparsers, common, extras)
-    _create_check_parser(subparsers, common, extras)
-    _create_install_parser(subparsers, common, extras)
-    _create_add_parser(subparsers, common, extras)
-    _create_remove_parser(subparsers, common, extras)
-    _create_activate_parser(subparsers, common, extras)
-    _create_clean_parser(subparsers, common)
-    _create_run_parser(subparsers, common, extras)
+    _create_init_parser(subparsers, common, quiet)
+    _create_lock_parser(subparsers, common, extras, quiet)
+    _create_check_parser(subparsers, common, extras, quiet)
+    _create_install_parser(subparsers, common, extras, quiet)
+    _create_add_parser(subparsers, common, extras, quiet)
+    _create_remove_parser(subparsers, common, extras, quiet)
+    _create_activate_parser(subparsers, common, extras, quiet)
+    _create_clean_parser(subparsers, common, quiet)
+    _create_run_parser(subparsers, common, extras, quiet)
 
     return p
 
