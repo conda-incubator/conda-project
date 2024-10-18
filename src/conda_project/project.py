@@ -791,6 +791,8 @@ class Environment(BaseModel):
             ]
             if force:
                 args.append("--force")
+            if not sys.stdout.isatty():
+                args.append("--quiet")
 
             _ = call_conda(
                 args,
