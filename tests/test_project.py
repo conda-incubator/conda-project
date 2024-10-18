@@ -275,7 +275,7 @@ def test_lock_no_platforms(project_directory_factory):
     with project.default_environment.lockfile.open() as f:
         lock = YAML().load(f)
 
-    assert lock["metadata"]["platforms"] == list(DEFAULT_PLATFORMS)
+    assert set(lock["metadata"]["platforms"]) == DEFAULT_PLATFORMS
 
 
 def test_lock_with_platforms(project_directory_factory):
