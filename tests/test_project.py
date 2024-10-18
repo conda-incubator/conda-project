@@ -187,6 +187,34 @@ def test_lock_conda_serialization_error(
         assert "output is not json formatted" == str(excinfo.value)
 
 
+@pytest.mark.slow
+def test_lock_sorted_keys(project_directory_factory):
+    env_yaml = dedent(
+        """\
+        name: test
+        dependencies:
+          - python=3.10
+        platforms: [win-64, linux-64]
+        """
+    )
+    project_path = project_directory_factory(env_yaml=env_yaml)
+
+    project = CondaProject(project_path)
+    project.default_environment.lock()
+
+    with project.default_environment.lockfile.open() as f:
+        lock = YAML().load(f)
+
+    content_hashes = [ch for ch in lock["metadata"]["content_hash"]]
+    assert content_hashes == sorted(content_hashes)
+
+    assert lock["metadata"]["platforms"] == sorted(lock["metadata"]["platforms"])
+
+    for pkg in lock["package"]:
+        deps = [dep for dep in pkg["dependencies"]]
+        assert deps == sorted(deps)
+
+
 def test_lock_no_channels(project_directory_factory):
     env_yaml = dedent(
         f"""\

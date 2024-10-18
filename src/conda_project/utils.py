@@ -10,7 +10,7 @@ import platform
 import sys
 import threading
 import time
-from collections import ChainMap
+from collections import ChainMap, OrderedDict
 from collections.abc import Generator
 from contextlib import contextmanager
 from inspect import Traceback
@@ -212,3 +212,10 @@ def get_envs_paths() -> List[Path]:
     env_paths = specified_path.split(os.pathsep) if specified_path else []
     expanded_paths = [Path(os.path.expandvars(path)) for path in env_paths]
     return expanded_paths
+
+
+def order_dict_keys(unordered: dict) -> OrderedDict:
+    ordered = OrderedDict(
+        sorted([(k, v) for k, v in unordered.items()], key=lambda d: d[0])
+    )
+    return ordered
