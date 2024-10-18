@@ -55,11 +55,18 @@ version_scheme = "post-release"
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "/src/conda_project",
-  "/pyproject.toml"
+    "/src/conda_project",
+    "/pyproject.toml"
 ]
 
 [project.optional-dependencies]
+dev = [
+    "black",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+]
 docs = [
     "sphinx>=5.1.1",
     "sphinx-autobuild>=2021.3.14",

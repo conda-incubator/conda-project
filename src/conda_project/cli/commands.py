@@ -60,6 +60,7 @@ def handle_errors(func: Callable[[Namespace], Any]) -> Callable[[Namespace], int
 
 @handle_errors
 def init(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = CondaProject.init(
         directory=args.directory,
         name=args.name,
@@ -71,11 +72,11 @@ def init(args: Namespace) -> bool:
         ),
         lock_dependencies=args.lock,
         from_environment=args.from_environment,
-        verbose=True,
+        verbose=verbose,
     )
 
     if args.install:
-        project.default_environment.install(verbose=True)
+        project.default_environment.install(verbose=verbose)
 
     return True
 
@@ -89,6 +90,7 @@ def create(args: Namespace) -> int:
 
 @handle_errors
 def lock(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
 
     if args.environment:
@@ -97,31 +99,33 @@ def lock(args: Namespace) -> bool:
         to_lock = project.environments.values()
 
     for env in to_lock:
-        env.lock(force=args.force, verbose=True)
+        env.lock(force=args.force, verbose=verbose)
 
     return True
 
 
 @handle_errors
 def check(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
-    return project.check(verbose=True)
+    return project.check(verbose=verbose)
 
 
 @handle_errors
 def install(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
 
     if args.all:
         for _, env in project.environments:
-            env.install(force=args.force, verbose=True)
+            env.install(force=args.force, verbose=verbose)
     else:
         env = (
             project.environments[args.environment]
             if args.environment
             else project.default_environment
         )
-        env.install(force=args.force, as_platform=args.as_platform, verbose=True)
+        env.install(force=args.force, as_platform=args.as_platform, verbose=verbose)
 
     return True
 
@@ -135,6 +139,7 @@ def prepare(args: Namespace) -> int:
 
 @handle_errors
 def add(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
 
     env = (
@@ -143,12 +148,13 @@ def add(args: Namespace) -> bool:
         else project.default_environment
     )
 
-    env.add(args.dependencies, args.channel, verbose=True)
+    env.add(args.dependencies, args.channel, verbose=verbose)
     return True
 
 
 @handle_errors
 def remove(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
 
     env = (
@@ -157,30 +163,32 @@ def remove(args: Namespace) -> bool:
         else project.default_environment
     )
 
-    env.remove(args.dependencies, verbose=True)
+    env.remove(args.dependencies, verbose=verbose)
     return True
 
 
 @handle_errors
 def clean(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = CondaProject(args.directory)
 
     if args.all:
         for env in project.environments.values():
-            env.clean(verbose=True)
+            env.clean(verbose=verbose)
     else:
         env = (
             project.environments[args.environment]
             if args.environment
             else project.default_environment
         )
-        env.clean(verbose=True)
+        env.clean(verbose=verbose)
 
     return True
 
 
 @handle_errors
 def run(args: Namespace) -> NoReturn:
+    verbose = not args.quiet
     project = _load_project(args)
 
     if args.command:
@@ -200,12 +208,13 @@ def run(args: Namespace) -> NoReturn:
         environment=args.environment,
         external_environment=args.external_environment,
         extra_args=args.extra_args,
-        verbose=True,
+        verbose=verbose,
     )
 
 
 @handle_errors
 def activate(args: Namespace) -> bool:
+    verbose = not args.quiet
     project = _load_project(args)
 
     if args.environment:
@@ -213,6 +222,6 @@ def activate(args: Namespace) -> bool:
     else:
         env = project.default_environment
 
-    env.activate(verbose=True)
+    env.activate(verbose=verbose)
 
     return True
