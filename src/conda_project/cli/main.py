@@ -50,6 +50,7 @@ def cli() -> ArgumentParser:
         action="store",
         default=None,
     )
+    extras.add_argument("--quiet", help="Suppress output", action="store_true")
 
     p = ArgumentParser(
         description="Tool for encapsulating, running, and reproducing projects with conda environments",
