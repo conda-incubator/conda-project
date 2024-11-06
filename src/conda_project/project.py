@@ -62,6 +62,7 @@ from .utils import (
     env_variable,
     find_file,
     get_envs_paths,
+    order_dict_keys,
     prepare_variables,
 )
 
@@ -106,6 +107,20 @@ def _load_pip_sha256_hashes(prefix: str) -> dict[str, str]:
         if m is not None:
             pip_sha256[m.group("name").lower().replace("_", "-")] = m.group("sha256")
     return pip_sha256
+
+
+def _sort_lockfile_keys(lockfile: Path, metadata_choices: Optional[set] = None) -> None:
+    """Some nested keys in the lockfile have unspecified ordering"""
+    lock = parse_conda_lock_file(lockfile)
+
+    lock.metadata.content_hash = order_dict_keys(lock.metadata.content_hash)
+    lock.metadata.platforms = sorted(lock.metadata.platforms)
+
+    for pkg in lock.package:
+        pkg.hash
+        pkg.dependencies = order_dict_keys(pkg.dependencies)
+
+    write_conda_lock_file(lock, lockfile, metadata_choices=metadata_choices or {})
 
 
 class CondaProject:
@@ -673,6 +688,7 @@ class Environment(BaseModel):
                         msg = "Project failed to lock\n" + msg
                         raise CondaProjectLockFailed(msg)
 
+        _sort_lockfile_keys(self.lockfile, metadata_choices={MetadataOption.TimeStamp})
         lock = parse_conda_lock_file(self.lockfile)
         msg = f"Locked dependencies for {', '.join(lock.metadata.platforms)} platforms"
         logger.info(msg)
@@ -791,6 +807,8 @@ class Environment(BaseModel):
             ]
             if force:
                 args.append("--force")
+            if not sys.stdout.isatty():
+                args.append("--quiet")
 
             _ = call_conda(
                 args,
