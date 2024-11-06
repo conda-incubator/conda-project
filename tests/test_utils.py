@@ -1,6 +1,8 @@
 # Copyright (C) 2022-2024 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Copyright (C) 2022 Anaconda, Inc
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -12,6 +14,7 @@ from shellingham import ShellDetectionFailure
 
 from conda_project.exceptions import CondaProjectError
 from conda_project.utils import (
+    Spinner,
     dedupe_list_of_dicts,
     detect_shell,
     env_variable,
@@ -308,3 +311,23 @@ def test_get_envs_path_expanded(monkeypatch):
     monkeypatch.setenv("CONDA_PROJECT_ENVS_PATH", f"{var}/.conda/envs{os.pathsep}envs")
 
     assert get_envs_paths() == [Path("/path/to/home/.conda/envs"), Path("envs")]
+
+
+@pytest.mark.usefixtures("is_not_a_tty")
+def test_spinner_not_tty(capsys: pytest.CaptureFixture):
+    spin = Spinner("Starting work:")
+    spin.start()
+    spin.stop()
+
+    captured = capsys.readouterr()
+    assert captured.out == "Starting work:\nDone\n"
+
+
+@pytest.mark.usefixtures("is_a_tty")
+def test_spinner_tty(capsys: pytest.CaptureFixture):
+    spin = Spinner("Starting work:")
+    spin.start()
+    captured = capsys.readouterr()
+    spin.stop()
+
+    assert captured.out == "Starting work: \nDone\n"

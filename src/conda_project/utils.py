@@ -53,6 +53,9 @@ class Spinner:
     def __init__(self, prefix: str):
         self.prefix = prefix
 
+    def _stdout_is_interactive(self) -> bool:
+        return sys.stdout.isatty()
+
     def _spin(self) -> None:
         spinner = itertools.cycle(["◜", "◠", "◝", "◞", "◡", "◟"])
 
@@ -64,7 +67,7 @@ class Spinner:
             time.sleep(0.10)
 
     def start(self) -> None:
-        if not sys.stdout.isatty():
+        if not self._stdout_is_interactive():
             print(self.prefix)
             return
 
@@ -73,7 +76,7 @@ class Spinner:
         self._thread.start()
 
     def stop(self) -> None:
-        if not sys.stdout.isatty():
+        if not self._stdout_is_interactive():
             print("Done")
             return
 

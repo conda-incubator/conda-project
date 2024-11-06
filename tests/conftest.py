@@ -14,6 +14,7 @@ from tempfile import mkdtemp
 from typing import Generator, Optional
 
 import pytest
+from pytest_mock import MockerFixture
 
 from conda_project.conda import call_conda
 from conda_project.project import CondaProject, current_platform
@@ -105,3 +106,17 @@ def empty_conda_environment(tmp_dir: Path):
 @pytest.fixture
 def mocked_execvped(mocker):
     return mocker.patch("conda_project.conda.execvped")
+
+
+@pytest.fixture
+def is_a_tty(mocker: MockerFixture) -> Generator[None, None, None]:
+    mocked = mocker.patch("conda_project.utils.sys")
+    mocked.stdout.isatty.return_value = True
+    yield
+
+
+@pytest.fixture
+def is_not_a_tty(mocker: MockerFixture) -> Generator[None, None, None]:
+    mocked = mocker.patch("conda_project.utils.sys")
+    mocked.stdout.isatty.return_value = False
+    yield
