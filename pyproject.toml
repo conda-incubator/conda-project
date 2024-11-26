@@ -67,6 +67,11 @@ docs = [
     "myst-parser>=0.18.0",
     "conda-sphinx-theme>=0.1.1",
 ]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock"
+]
 
 [project.scripts]
 conda-project = "conda_project.cli.main:main"
