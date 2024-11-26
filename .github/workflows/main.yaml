@@ -174,6 +174,8 @@ jobs:
         python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup Python
         uses: mamba-org/setup-micromamba@v2.0.1
         with:
@@ -181,6 +183,9 @@ jobs:
           create-args: >-
             python=${{ matrix.python-version }}
             -c conda-forge
+      - name: Install conda-project
+        shell: bash -el {0}
+        run: pip install .
       - name: Test
         shell: bash -el {0}
         run: |
