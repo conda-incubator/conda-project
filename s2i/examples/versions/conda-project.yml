@@ -1,0 +1,7 @@
+name: examples
+environments:
+  default:
+    - environment.yml
+variables: {}
+commands:
+  default: python --version
