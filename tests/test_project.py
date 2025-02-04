@@ -46,6 +46,8 @@ def test_install_and_clean(project_directory_factory):
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
+    project.default_environment.clean()
+
     env_dir = project.default_environment.install()
     assert env_dir.samefile(project_path / "envs" / "default")
 
