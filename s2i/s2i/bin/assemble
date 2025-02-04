@@ -32,7 +32,7 @@ echo "---> Copying project..."
 cp -Rf /tmp/src/. ./
 
 echo "---> Preparing environment ${project_env}..."
-#conda-project clean
+rm -rf ./envs
 conda-project install ${project_env}
 conda clean --all --yes
 find ./envs/* -follow -type f -name '*.a' -delete
