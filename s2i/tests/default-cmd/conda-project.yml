@@ -1,7 +1,7 @@
-name: examples
+name: default-cmd
 environments:
   default:
     - environment.yml
 variables: {}
 commands:
-  default: python --version
+  default: echo "default"
