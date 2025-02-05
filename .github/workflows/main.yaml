@@ -173,7 +173,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Download the build artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: package-${{ github.sha }}
         path: conda-bld
@@ -202,7 +202,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
     - name: Download the build artifacts
-      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3
+      uses: actions/download-artifact@v4
       with:
         name: builds-${{ github.sha }}
         path: ~/dist
