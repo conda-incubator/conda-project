@@ -12,7 +12,7 @@ from pytest_mock import MockFixture
 
 from conda_project.cli.commands import _load_project
 from conda_project.cli.main import cli, main, parse_and_run
-from conda_project.project import CondaProject
+from conda_project.project import CondaProject, current_platform
 
 PROJECT_ACTIONS = ("init", "create", "check")
 ENVIRONMENT_ACTIONS = (
@@ -421,3 +421,38 @@ def test_archive_storage_options_remote(mocker):
         "key1": "valueA",
         "key2": "valueB",
     }
+
+
+@pytest.mark.slow()
+@pytest.mark.parametrize(
+    "install_args,expected_env", [("", "bbb"), ("--for-command=default", "default")]
+)
+def test_install_env_for_command(project_directory_factory, install_args, expected_env):
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          bbb: [env1{project_directory_factory._suffix}]
+          default: [env2{project_directory_factory._suffix}]
+        commands:
+          default:
+            cmd: true
+            environment: default
+        """
+    )
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+
+    ret = parse_and_run(["install", "--directory", str(project_path), install_args])
+    assert ret == 0
+
+    project = CondaProject(project_path)
+    assert project.environments[expected_env].is_consistent

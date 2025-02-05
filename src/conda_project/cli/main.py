@@ -237,6 +237,11 @@ def _create_install_parser(
             nargs="?",
         )
         group.add_argument(
+            "--for-command",
+            help="Prepare the environment configured for the desired command. Not "
+            "compatible with the environment argument.",
+        )
+        group.add_argument(
             "--as-platform",
             help="Prepare the conda environment assuming a different platform/subdir name.",
             action="store",

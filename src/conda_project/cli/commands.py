@@ -116,9 +116,20 @@ def install(args: Namespace) -> bool:
         for _, env in project.environments:
             env.install(force=args.force, verbose=True)
     else:
+        if args.environment and args.for_command:
+            raise CondaProjectError(
+                "You must specify one of environment or --for-command"
+            )
+
+        if args.for_command:
+            env = project.commands[args.for_command].environment
+            environment = env.name if env is not None else None
+        else:
+            environment = args.environment
+
         env = (
-            project.environments[args.environment]
-            if args.environment
+            project.environments[environment]
+            if environment
             else project.default_environment
         )
         env.install(force=args.force, as_platform=args.as_platform, verbose=True)
