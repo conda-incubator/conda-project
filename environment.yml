@@ -1,24 +1,7 @@
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
-  - flake8
-  - mypy
-  - pytest
-  - pylint
-  - pytest-cov
-  - pytest-mock
-  - pre-commit
-  - conda-lock>=2.2
-  - pydantic
-  - ruamel.yaml
-  - setuptools-scm>=6.2
-  - shellingham
-  - python-dotenv
-  - lockfile
-  - pexpect
-  - fsspec
-  - python-libarchive-c
-  - pip
+  - python=3.9
+  - conda-lock>=2.5.6,<3
   - pip:
-    - -e .
+    - -e ".[dev]"

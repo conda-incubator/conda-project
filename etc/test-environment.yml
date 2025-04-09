@@ -2,7 +2,7 @@ name: test-conda-project
 channels:
   - conda-forge
 dependencies:
-  - conda-lock>=2.2
+  - conda-lock>=2.5,8,<3
   - pexpect
   - lockfile
   - ruamel.yaml
