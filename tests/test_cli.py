@@ -10,7 +10,7 @@ from textwrap import dedent
 import pytest
 from pytest_mock import MockFixture
 
-from conda_project.cli.commands import _load_project
+from conda_project.cli.commands import _get_environment_from_args, _load_project
 from conda_project.cli.main import cli, main, parse_and_run
 from conda_project.project import CondaProject, current_platform
 
@@ -425,9 +425,10 @@ def test_archive_storage_options_remote(mocker):
 
 @pytest.mark.slow()
 @pytest.mark.parametrize(
-    "install_args,expected_env", [("", "bbb"), ("--for-command=default", "default")]
+    "for_command,expected_env", [(None, "bbb"), ("default", "default")]
 )
-def test_install_env_for_command(project_directory_factory, install_args, expected_env):
+def test_install_env_for_command(project_directory_factory, for_command, expected_env):
+
     env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
     project_yaml = dedent(
@@ -451,8 +452,14 @@ def test_install_env_for_command(project_directory_factory, install_args, expect
         },
     )
 
-    ret = parse_and_run(["install", "--directory", str(project_path), install_args])
-    assert ret == 0
+    args = Namespace(
+        directory=project_path,
+        environment=expected_env,
+        project_archive=None,
+        archive_storage_options=None,
+        for_command=for_command,
+    )
+    project = _load_project(args)
 
-    project = CondaProject(project_path)
-    assert project.environments[expected_env].is_consistent
+    env = _get_environment_from_args(project, args)
+    assert env.name == expected_env
