@@ -109,6 +109,9 @@ def check(args: Namespace) -> bool:
 
 
 def _get_environment_from_args(project: CondaProject, args: Namespace) -> Environment:
+    if args.environment and args.for_command:
+        raise CondaProjectError("You must specify one of environment or --for-command")
+
     if args.for_command:
         env = project.commands[args.for_command].environment
         environment = env.name if env is not None else None
@@ -131,11 +134,6 @@ def install(args: Namespace) -> bool:
         for _, env in project.environments:
             env.install(force=args.force, verbose=True)
     else:
-        if args.environment and args.for_command:
-            raise CondaProjectError(
-                "You must specify one of environment or --for-command"
-            )
-
         env = _get_environment_from_args(project, args)
         env.install(force=args.force, as_platform=args.as_platform, verbose=True)
 
