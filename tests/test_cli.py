@@ -454,7 +454,7 @@ def test_install_env_for_command(project_directory_factory, for_command, expecte
 
     args = Namespace(
         directory=project_path,
-        environment=expected_env,
+        environment=None,
         project_archive=None,
         archive_storage_options=None,
         for_command=for_command,
