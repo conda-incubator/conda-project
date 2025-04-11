@@ -12,6 +12,7 @@ from pytest_mock import MockFixture
 
 from conda_project.cli.commands import _get_environment_from_args, _load_project
 from conda_project.cli.main import cli, main, parse_and_run
+from conda_project.exceptions import CondaProjectError
 from conda_project.project import CondaProject, current_platform
 
 PROJECT_ACTIONS = ("init", "create", "check")
