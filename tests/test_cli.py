@@ -451,7 +451,7 @@ def test_install_env_for_command(project_directory_factory, for_command, expecte
             f"env2{project_directory_factory._suffix}": env_yaml,
         },
     )
-    
+
     with pytest.raises(CondaProjectError):
         args = Namespace(
             directory=project_path,
@@ -463,7 +463,7 @@ def test_install_env_for_command(project_directory_factory, for_command, expecte
         project = _load_project(args)
 
         _ = _get_environment_from_args(project, args)
-    
+
     args = Namespace(
         directory=project_path,
         environment=None,
