@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "conda-lock >=2.5.6,<3",
+    "conda-lock >=2.5.6",
     "lockfile",
     "pexpect",
     "ruamel.yaml",

@@ -223,7 +223,7 @@ def test_conda_prefix_prefers_path(tmp_path, monkeypatch):
     prefix = conda_prefix("my-env")
     assert prefix == tmp_path / "my-env"
 
-    _ = call_conda(["env", "remove", "-n", "my-env"])
+    _ = call_conda(["env", "remove", "-yn", "my-env"])
 
 
 def test_conda_prefix_name_not_found(tmp_path, monkeypatch):
