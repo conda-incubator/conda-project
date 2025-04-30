@@ -123,6 +123,4 @@ def lock_spec_content_hashes(spec: LockSpecification) -> Dict[str, str]:
             virtual_package_repo=default_virtual_package_repodata()
         )
     else:
-        return spec.content_hash(
-            virtual_package_repo=default_virtual_package_repodata()
-        )
+        return spec.content_hash()
