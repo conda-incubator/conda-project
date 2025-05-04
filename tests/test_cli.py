@@ -10,9 +10,10 @@ from textwrap import dedent
 import pytest
 from pytest_mock import MockFixture
 
-from conda_project.cli.commands import _load_project
+from conda_project.cli.commands import _get_environment_from_args, _load_project
 from conda_project.cli.main import cli, main, parse_and_run
-from conda_project.project import CondaProject
+from conda_project.exceptions import CondaProjectError
+from conda_project.project import CondaProject, current_platform
 
 PROJECT_ACTIONS = ("init", "create", "check")
 ENVIRONMENT_ACTIONS = (
@@ -421,3 +422,57 @@ def test_archive_storage_options_remote(mocker):
         "key1": "valueA",
         "key2": "valueB",
     }
+
+
+@pytest.mark.slow()
+@pytest.mark.parametrize(
+    "for_command,expected_env", [(None, "bbb"), ("default", "default")]
+)
+def test_install_env_for_command(project_directory_factory, for_command, expected_env):
+
+    env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
+
+    project_yaml = dedent(
+        f"""\
+        name: test
+        environments:
+          bbb: [env1{project_directory_factory._suffix}]
+          default: [env2{project_directory_factory._suffix}]
+        commands:
+          default:
+            cmd: true
+            environment: default
+        """
+    )
+
+    project_path = project_directory_factory(
+        project_yaml=project_yaml,
+        files={
+            f"env1{project_directory_factory._suffix}": env_yaml,
+            f"env2{project_directory_factory._suffix}": env_yaml,
+        },
+    )
+
+    with pytest.raises(CondaProjectError):
+        args = Namespace(
+            directory=project_path,
+            environment="env",
+            project_archive=None,
+            archive_storage_options=None,
+            for_command="cmd",
+        )
+        project = _load_project(args)
+
+        _ = _get_environment_from_args(project, args)
+
+    args = Namespace(
+        directory=project_path,
+        environment=None,
+        project_archive=None,
+        archive_storage_options=None,
+        for_command=for_command,
+    )
+    project = _load_project(args)
+
+    env = _get_environment_from_args(project, args)
+    assert env.name == expected_env

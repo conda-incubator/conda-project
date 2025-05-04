@@ -28,7 +28,7 @@ requirements:
     {% endfor %}
   run:
     - python {{ project['requires-python'] }}
-    - conda-lock >=2.2
+    - conda-lock >=2.5.6,<3
     - lockfile
     - pexpect
     - ruamel.yaml

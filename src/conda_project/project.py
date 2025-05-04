@@ -836,6 +836,9 @@ class Environment(BaseModel):
         verbose: bool = False,
     ) -> None:
         """Remove the conda environment."""
+        if not self.prefix.exists():
+            return
+
         _ = call_conda(
             ["env", "remove", "-y", "-p", str(self.prefix)],
             condarc_path=self.project.condarc,

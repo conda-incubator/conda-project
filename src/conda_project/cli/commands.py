@@ -11,7 +11,7 @@ from functools import wraps
 from typing import Any, Callable, NoReturn
 
 from ..exceptions import CommandNotFoundError, CondaProjectError
-from ..project import Command, CondaProject
+from ..project import Command, CondaProject, Environment
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,24 @@ def check(args: Namespace) -> bool:
     return project.check(verbose=True)
 
 
+def _get_environment_from_args(project: CondaProject, args: Namespace) -> Environment:
+    if args.environment and args.for_command:
+        raise CondaProjectError("You must specify one of environment or --for-command")
+
+    if args.for_command:
+        env = project.commands[args.for_command].environment
+        environment = env.name if env is not None else None
+    else:
+        environment = args.environment
+
+    env = (
+        project.environments[environment]
+        if environment
+        else project.default_environment
+    )
+    return env
+
+
 @handle_errors
 def install(args: Namespace) -> bool:
     project = _load_project(args)
@@ -116,11 +134,7 @@ def install(args: Namespace) -> bool:
         for _, env in project.environments:
             env.install(force=args.force, verbose=True)
     else:
-        env = (
-            project.environments[args.environment]
-            if args.environment
-            else project.default_environment
-        )
+        env = _get_environment_from_args(project, args)
         env.install(force=args.force, as_platform=args.as_platform, verbose=True)
 
     return True
