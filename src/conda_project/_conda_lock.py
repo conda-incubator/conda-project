@@ -21,8 +21,8 @@ def is_conda_lock_3() -> bool:
     return parse(conda_lock.__version__) >= parse("3.0.0")
 
 
-if is_conda_lock_3():
-    from conda_lock.lookup import DEFAULT_MAPPING_URL
+if is_conda_lock_3():  # pragma: no cover
+    from conda_lock.lookup import DEFAULT_MAPPING_URL  # pragma: no cover
 
 
 def make_lock_spec(
@@ -32,8 +32,8 @@ def make_lock_spec(
     platform_overrides: Optional[Sequence[str]] = None,
     required_categories: Optional[AbstractSet[str]] = None,
 ) -> LockSpecification:
-    if is_conda_lock_3():
-        spec = _make_lock_spec(
+    if is_conda_lock_3():  # pragma: no cover
+        spec = _make_lock_spec(  # type: ignore
             src_files=src_files,
             channel_overrides=channel_overrides,
             pip_repository_overrides=pip_repository_overrides,
@@ -42,7 +42,7 @@ def make_lock_spec(
             mapping_url=DEFAULT_MAPPING_URL,
         )
         return spec
-    else:
+    else:  # pragma: no cover
         spec = _make_lock_spec(  # type: ignore
             src_files=src_files,
             channel_overrides=channel_overrides,
@@ -74,8 +74,8 @@ def make_lock_files(
     with_cuda: Optional[str] = None,
     strip_auth: bool = False,
 ):
-    if is_conda_lock_3():
-        _make_lock_files(
+    if is_conda_lock_3():  # pragma: no cover
+        _make_lock_files(  # pragma: no cover
             conda=conda,
             src_files=src_files,
             lockfile_path=lockfile_path,
@@ -95,8 +95,8 @@ def make_lock_files(
             strip_auth=strip_auth,
             mapping_url=DEFAULT_MAPPING_URL,
         )
-    else:
-        _make_lock_files(  # type: ignore
+    else:  # pragma: no cover
+        _make_lock_files(  # type: ignore; pragma: no cover
             conda=conda,
             src_files=src_files,
             lockfile_path=lockfile_path,
@@ -118,9 +118,9 @@ def make_lock_files(
 
 
 def lock_spec_content_hashes(spec: LockSpecification) -> Dict[str, str]:
-    if is_conda_lock_3():
-        return spec.content_hash(
+    if is_conda_lock_3():  # pragma: no cover
+        return spec.content_hash(  # pragma: no cover
             virtual_package_repo=default_virtual_package_repodata()
         )
-    else:
-        return spec.content_hash()
+    else:  # pragma: no cover
+        return spec.content_hash()  # pragma: no cover
