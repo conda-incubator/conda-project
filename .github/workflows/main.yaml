@@ -120,6 +120,7 @@ jobs:
           fi
           chmod +x conda.exe
           ./conda.exe config --set auto_update_conda false
+          ./conda.exe config --prepend channels conda-forge
           ./conda.exe clean -ay
           ./conda.exe info
       - name: Setup miniconda
@@ -142,9 +143,9 @@ jobs:
         shell: bash -l {0}
         run: |
           if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && conda install conda-lock=${{matrix.conda-lock}} -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
+            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && conda install conda-forgge::conda-lock=${{matrix.conda-lock}} -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
           else
-            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && conda install conda-lock=${{matrix.conda-lock}} -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
+            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && conda install conda-forge::conda-lock=${{matrix.conda-lock}} -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
       - name: py.test
         shell: bash -l {0}
