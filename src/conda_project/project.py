@@ -22,9 +22,6 @@ import fsspec
 from conda_lock._vendor.conda.core.prefix_data import PrefixData
 from conda_lock._vendor.conda.models.records import PackageType
 from conda_lock.conda_lock import (
-    default_virtual_package_repodata,
-    make_lock_files,
-    make_lock_spec,
     parse_conda_lock_file,
     render_lockfile_for_platform,
     write_conda_lock_file,
@@ -39,6 +36,7 @@ except ImportError:  # pragma: no cover
     from pydantic import BaseModel  # type: ignore; #pragma: no cover
     from pydantic import create_model  # type: ignore; #pragma no cover
 
+from ._conda_lock import lock_spec_content_hashes, make_lock_files, make_lock_spec
 from .conda import (
     CONDA_EXE,
     call_conda,
@@ -498,12 +496,11 @@ class Environment(BaseModel):
                 src_files=list(self.sources),
                 channel_overrides=channel_overrides,
                 platform_overrides=platform_overrides,
-                virtual_package_repo=default_virtual_package_repodata(),
             )
             if platform is None:
                 all_up_to_date = all(
                     p in lock.metadata.platforms
-                    and spec.content_hash_for_platform(p)
+                    and lock_spec_content_hashes(spec)[p]
                     == lock.metadata.content_hash[p]
                     for p in spec.platforms
                 )
@@ -513,7 +510,7 @@ class Environment(BaseModel):
                 if platform_hash is None:
                     return False
                 return (
-                    spec.content_hash_for_platform(platform)
+                    lock_spec_content_hashes(spec)[platform]
                     == lock.metadata.content_hash[platform]
                 )
         else:
@@ -566,9 +563,7 @@ class Environment(BaseModel):
         # include optional dependencies (e.g. compile/build)
         lock = parse_conda_lock_file(self.lockfile)
         current_platform_packages = [
-            p
-            for p in lock.package
-            if p.platform == current_platform() and p.category == "main"
+            p for p in lock.package if p.platform == current_platform()
         ]
 
         # When an environment is installed pypi packages take precedence

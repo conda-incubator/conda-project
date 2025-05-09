@@ -23,13 +23,10 @@ import pexpect
 from conda_lock._vendor.conda.core.prefix_data import PrefixData, PrefixRecord
 from conda_lock._vendor.conda.models.channel import Channel
 from conda_lock._vendor.conda.utils import wrap_subprocess_call
-from conda_lock.conda_lock import (
-    default_virtual_package_repodata,
-    make_lock_spec,
-    parse_conda_lock_file,
-)
+from conda_lock.conda_lock import parse_conda_lock_file
 from conda_lock.lockfile.v2prelim.models import Lockfile
 
+from ._conda_lock import lock_spec_content_hashes, make_lock_spec
 from .exceptions import CondaProjectError
 from .project_file import EnvironmentYaml, UniqueOrderedList
 from .utils import Spinner, detect_shell, execvped, is_windows
@@ -190,7 +187,6 @@ def env_export(
             environment.yaml(requested)
             spec = make_lock_spec(
                 src_files=[requested],
-                virtual_package_repo=default_virtual_package_repodata(),
             )
 
             if full_export or empty:
@@ -216,7 +212,7 @@ def env_export(
                 ]
             )
             lock_content = parse_conda_lock_file(lock)
-            lock_content.metadata.content_hash = spec.content_hash()
+            lock_content.metadata.content_hash = lock_spec_content_hashes(spec)
             lock_content.metadata.sources = ["environment.yml"]
 
     return environment, lock_content
