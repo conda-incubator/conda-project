@@ -147,6 +147,14 @@ jobs:
           else
             source $HOME/miniconda/bin/activate root && conda env update -q -f etc/test-environment.cl${{matrix.conda-lock}}.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
           fi
+      - name: List dependencies
+        shell: bash -l {0}
+        run: |
+          if [ $RUNNER_OS == 'Windows' ]; then
+            source $HOME/miniconda/Scripts/activate root && conda list
+          else
+            source $HOME/miniconda/bin/activate root && conda list
+          fi
       - name: py.test
         shell: bash -l {0}
         env:
