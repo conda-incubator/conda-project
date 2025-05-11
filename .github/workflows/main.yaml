@@ -69,31 +69,40 @@ jobs:
           retention-days: 7
 
   test:
-    name: Test (conda ${{ matrix.conda-version }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    name: Test (conda ${{ matrix.conda-version }}, conda-lock ${{ matrix.conda-lock }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: [3.9, "3.10", "3.11", "3.12"]
-        conda-version: ["4.14", "22.9", "22.11", "23.5", "23.9", "24.1" , "24.4"]
+        python-version: [3.9, "3.10", "3.11", "3.12", "3.13"]
+        conda-version: ["23.5", "23.9", "24.1" , "24.4", "25.3"]
+        conda-lock: ["2", "3"]
         exclude:
-          # Python 3.11
-          - conda-version: "4.14"
-            python-version: "3.11"
-          - conda-version: "22.9"
-            python-version: "3.11"
           # Python 3.12
-          - conda-version: "4.14"
-            python-version: "3.12"
-          - conda-version: "22.9"
-            python-version: "3.12"
-          - conda-version: "22.11"
-            python-version: "3.12"
+          - conda-version: "23.5"
+            python-version: "3.13"
+          - conda-version: "23.9"
+            python-version: "3.13"
+          - conda-version: "24.1"
+            python-version: "3.13"
+          - conda-version: "24.4"
+            python-version: "3.13"
+
+          # Python 3.12
           - conda-version: "23.5"
             python-version: "3.12"
           - conda-version: "23.9"
             python-version: "3.12"
+          # Conda-Lock
+          - conda-version: "23.5"
+            conda-lock: "3"
+          - conda-version: "23.9"
+            conda-lock: "3"
+          - conda-version: "24.1"
+            conda-lock: "3"
+          - conda-version: "24.4"
+            conda-lock: "3"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -111,12 +120,13 @@ jobs:
           fi
           chmod +x conda.exe
           ./conda.exe config --set auto_update_conda false
+          ./conda.exe config --prepend channels conda-forge
           ./conda.exe clean -ay
           ./conda.exe info
       - name: Setup miniconda
         shell: bash -l {0}
         run: |
-          ./conda.exe create -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
+          ./conda.exe create -q -p $HOME/miniconda conda=${{ matrix.conda-version }} python=${{ matrix.python-version }}
       - name: Install Libmamba
         shell: bash -l {0}
         run: |
@@ -133,9 +143,17 @@ jobs:
         shell: bash -l {0}
         run: |
           if [ $RUNNER_OS == 'Windows' ]; then
-            source $HOME/miniconda/Scripts/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
+            source $HOME/miniconda/Scripts/activate root && conda env update -q -f etc/test-environment.cl${{matrix.conda-lock}}.yml -p $HOME/miniconda && $HOME/miniconda/Scripts/pip install --no-deps .
           else
-            source $HOME/miniconda/bin/activate root && conda env update -f etc/test-environment.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
+            source $HOME/miniconda/bin/activate root && conda env update -q -f etc/test-environment.cl${{matrix.conda-lock}}.yml -p $HOME/miniconda && $HOME/miniconda/bin/pip install --no-deps .
+          fi
+      - name: List dependencies
+        shell: bash -l {0}
+        run: |
+          if [ $RUNNER_OS == 'Windows' ]; then
+            source $HOME/miniconda/Scripts/activate root && conda list
+          else
+            source $HOME/miniconda/bin/activate root && conda list
           fi
       - name: py.test
         shell: bash -l {0}

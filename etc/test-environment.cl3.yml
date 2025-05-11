@@ -1,0 +1,16 @@
+name: test-conda-project
+channels:
+  - conda-forge
+dependencies:
+  - conda-lock=3
+  - pexpect
+  - lockfile
+  - ruamel.yaml
+  - pydantic
+  - pytest
+  - pytest-cov
+  - pytest-mock
+  - shellingham
+  - python-dotenv
+  - fsspec
+  - python-libarchive-c
