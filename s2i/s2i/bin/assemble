@@ -1,0 +1,45 @@
+#!/bin/bash -e
+#
+# S2I assemble script for the 'conda-project' builder image.
+# The 'assemble' script builds your application source so that it is ready to run.
+#
+# For more information refer to the documentation:
+#	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
+#
+
+function find_js {
+  find ./envs/*/lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' 2>/dev/null 1>/dev/null
+  return $?
+}
+
+project_env=${CMD:-default}
+
+# If the assemble script is executed with the '-h' flag, print the usage.
+if [[ "$1" == "-h" ]]; then
+  exec /usr/libexec/s2i/usage
+fi
+
+# Restore artifacts from the previous build (if they exist).
+#
+if [ "$(ls /tmp/artifacts/ 2>/dev/null)" ]; then
+  echo "---> Restoring build artifacts..."
+  shopt -s dotglob
+  mv /tmp/artifacts/* ./
+  shopt -u dotglob
+fi
+
+echo "---> Copying project..."
+cp -Rf /tmp/src/. ./
+
+echo "---> Preparing environment ${project_env}..."
+rm -rf ./envs
+conda-project install ${project_env}
+conda clean --all --yes
+find ./envs/* -follow -type f -name '*.a' -delete
+find ./envs/* -follow -type f -name '*.pyc' -delete
+find ./envs/* -follow -type f -name '*.js.map' -delete
+if find_js; then
+  find ./envs/*/lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+fi
+
+touch .assembled
