@@ -32,6 +32,21 @@ if is_conda_lock_304():  # pragma: no cover
     from conda_lock.content_hash import compute_content_hashes  # pragma: no cover
 
 
+def get_virtual_package_spec(verbose: bool = False) -> Optional[Path]:
+    # Taken from https://github.com/conda/conda-lock/tree/main?tab=readme-ov-file#--virtual-package-spec
+    candidates = [
+        Path("virtual-packages.yml"),
+        Path("virtual-packages.yaml"),
+    ]
+    for c in candidates:
+        if c.exists():
+            if verbose:
+                print(f"Using virtual packages from {c}")
+            return c
+
+    return None
+
+
 def make_lock_spec(
     src_files: List[Path],
     channel_overrides: Optional[Sequence[str]] = None,
@@ -80,7 +95,11 @@ def make_lock_files(
     metadata_yamls: Sequence[Path] = (),
     with_cuda: Optional[str] = None,
     strip_auth: bool = False,
+    verbose: bool = False,
 ):
+    if not virtual_package_spec:
+        virtual_package_spec = get_virtual_package_spec(verbose=verbose)
+
     if is_conda_lock_3():  # pragma: no cover
         _make_lock_files(  # pragma: no cover
             conda=conda,

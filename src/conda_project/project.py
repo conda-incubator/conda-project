@@ -644,6 +644,7 @@ class Environment(BaseModel):
                             channel_overrides=channel_overrides,
                             check_input_hash=not force,
                             metadata_choices={MetadataOption.TimeStamp},
+                            verbose=verbose,
                         )
                     except SubprocessError as e:
                         try:
