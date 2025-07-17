@@ -126,7 +126,9 @@ def make_lock_files(
 
 def lock_spec_content_hashes(spec: LockSpecification) -> Dict[str, str]:
     if is_conda_lock_304():  # pragma: no cover
-        return compute_content_hashes(spec, virtual_package_repo=default_virtual_package_repodata())
+        return compute_content_hashes(
+            spec, virtual_package_repo=default_virtual_package_repodata()
+        )
     elif is_conda_lock_3():  # pragma: no cover
         return spec.content_hash(  # pragma: no cover
             virtual_package_repo=default_virtual_package_repodata()
