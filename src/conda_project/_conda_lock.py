@@ -21,8 +21,15 @@ def is_conda_lock_3() -> bool:
     return parse(conda_lock.__version__) >= parse("3.0.0")
 
 
+def is_conda_lock_304() -> bool:
+    return parse(conda_lock.__version__) >= parse("3.0.4")
+
+
 if is_conda_lock_3():  # pragma: no cover
     from conda_lock.lookup import DEFAULT_MAPPING_URL  # pragma: no cover
+
+if is_conda_lock_304():  # pragma: no cover
+    from conda_lock.content_hash import compute_content_hashes  # pragma: no cover
 
 
 def make_lock_spec(
@@ -38,7 +45,7 @@ def make_lock_spec(
             channel_overrides=channel_overrides,
             pip_repository_overrides=pip_repository_overrides,
             platform_overrides=platform_overrides,
-            required_categories=required_categories,
+            filtered_categories=required_categories,
             mapping_url=DEFAULT_MAPPING_URL,
         )
         return spec
@@ -118,7 +125,9 @@ def make_lock_files(
 
 
 def lock_spec_content_hashes(spec: LockSpecification) -> Dict[str, str]:
-    if is_conda_lock_3():  # pragma: no cover
+    if is_conda_lock_304():  # pragma: no cover
+        return compute_content_hashes(spec, virtual_package_repo=default_virtual_package_repodata())
+    elif is_conda_lock_3():  # pragma: no cover
         return spec.content_hash(  # pragma: no cover
             virtual_package_repo=default_virtual_package_repodata()
         )
