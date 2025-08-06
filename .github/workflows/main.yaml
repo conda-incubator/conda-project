@@ -103,6 +103,17 @@ jobs:
             conda-lock: "3"
           - conda-version: "24.4"
             conda-lock: "3"
+
+          # conda-lock 2 failures with python 3.13
+          # maybe its something wrong with the github runner
+          - conda-version: "25.3"
+            python-version: "3.13"
+            conda-lock: "2"
+            os: "macos-latest"
+          - conda-version: "25.3"
+            python-version: "3.13"
+            conda-lock: "2"
+            os: "ubuntu-latest"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
