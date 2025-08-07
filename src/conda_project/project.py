@@ -665,7 +665,9 @@ class Environment(BaseModel):
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
-                            virtual_package_spec=self.project.get_virtual_package_spec(verbose=verbose),
+                            virtual_package_spec=self.project.get_virtual_package_spec(
+                                verbose=verbose
+                            ),
                             check_input_hash=not force,
                             metadata_choices={MetadataOption.TimeStamp},
                             verbose=verbose,
