@@ -442,6 +442,29 @@ class CondaProject:
 
         return all(return_status)
 
+    def get_virtual_package_spec(self, verbose: bool = False) -> Optional[Path]:
+        """
+        Get the path to the virtual package spec file.
+
+        Args:
+            verbose: Whether to print verbose output.
+
+        Returns:
+            The path to the virtual package spec file, or None if no file is found.
+        """
+        # Taken from https://github.com/conda/conda-lock/tree/main?tab=readme-ov-file#--virtual-package-spec
+        candidates = [
+            self.directory / "virtual-packages.yml",
+            self.directory / "virtual-packages.yaml",
+        ]
+        for c in candidates:
+            if c.exists():
+                if verbose:
+                    print(f"Using virtual packages from {c}")
+                return c
+
+        return None
+
 
 class Variable(BaseModel):
     key: str
@@ -642,6 +665,7 @@ class Environment(BaseModel):
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
+                            virtual_package_spec=self.project.get_virtual_package_spec(verbose=verbose),
                             check_input_hash=not force,
                             metadata_choices={MetadataOption.TimeStamp},
                             verbose=verbose,
