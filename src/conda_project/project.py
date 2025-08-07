@@ -36,7 +36,12 @@ except ImportError:  # pragma: no cover
     from pydantic import BaseModel  # type: ignore; #pragma: no cover
     from pydantic import create_model  # type: ignore; #pragma no cover
 
-from ._conda_lock import lock_spec_content_hashes, make_lock_files, make_lock_spec
+from ._conda_lock import (
+    is_conda_lock_3,
+    lock_spec_content_hashes,
+    make_lock_files,
+    make_lock_spec,
+)
 from .conda import (
     CONDA_EXE,
     call_conda,
@@ -460,7 +465,13 @@ class CondaProject:
         for c in candidates:
             if c.exists():
                 if verbose:
-                    print(f"Using virtual packages from {c}")
+                    if not is_conda_lock_3():
+                        print(
+                            f"WARNING: conda-lock 2 does not support this use of {c.name}. "
+                            f"Consider upgrading to version 3."
+                        )
+                    else:
+                        print(f"Using virtual packages from {c.name}")
                 return c
 
         return None
@@ -641,6 +652,7 @@ class Environment(BaseModel):
             if env.platforms:
                 specified_platforms.update(env.platforms)
 
+        virtual_package_spec = self.project.get_virtual_package_spec(verbose=verbose)
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.project.condarc)):
                 if verbose:
@@ -665,12 +677,9 @@ class Environment(BaseModel):
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
-                            virtual_package_spec=self.project.get_virtual_package_spec(
-                                verbose=verbose
-                            ),
+                            virtual_package_spec=virtual_package_spec,
                             check_input_hash=not force,
                             metadata_choices={MetadataOption.TimeStamp},
-                            verbose=verbose,
                         )
                     except SubprocessError as e:
                         try:
