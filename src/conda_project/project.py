@@ -36,7 +36,12 @@ except ImportError:  # pragma: no cover
     from pydantic import BaseModel  # type: ignore; #pragma: no cover
     from pydantic import create_model  # type: ignore; #pragma no cover
 
-from ._conda_lock import lock_spec_content_hashes, make_lock_files, make_lock_spec
+from ._conda_lock import (
+    is_conda_lock_3,
+    lock_spec_content_hashes,
+    make_lock_files,
+    make_lock_spec,
+)
 from .conda import (
     CONDA_EXE,
     call_conda,
@@ -442,6 +447,35 @@ class CondaProject:
 
         return all(return_status)
 
+    def get_virtual_package_spec(self, verbose: bool = False) -> Optional[Path]:
+        """
+        Get the path to the virtual package spec file.
+
+        Args:
+            verbose: Whether to print verbose output.
+
+        Returns:
+            The path to the virtual package spec file, or None if no file is found.
+        """
+        # Taken from https://github.com/conda/conda-lock/tree/main?tab=readme-ov-file#--virtual-package-spec
+        candidates = [
+            self.directory / "virtual-packages.yml",
+            self.directory / "virtual-packages.yaml",
+        ]
+        for c in candidates:
+            if c.exists():
+                if verbose:
+                    if not is_conda_lock_3():
+                        print(
+                            f"WARNING: conda-lock 2 does not support this use of {c.name}. "
+                            f"Consider upgrading to version 3."
+                        )
+                    else:
+                        print(f"Using virtual packages from {c.name}")
+                return c
+
+        return None
+
 
 class Variable(BaseModel):
     key: str
@@ -618,6 +652,7 @@ class Environment(BaseModel):
             if env.platforms:
                 specified_platforms.update(env.platforms)
 
+        virtual_package_spec = self.project.get_virtual_package_spec(verbose=verbose)
         with redirect_stderr(StringIO()) as _:
             with env_variable("CONDARC", str(self.project.condarc)):
                 if verbose:
@@ -642,6 +677,7 @@ class Environment(BaseModel):
                             kinds=["lock"],
                             platform_overrides=platform_overrides,
                             channel_overrides=channel_overrides,
+                            virtual_package_spec=virtual_package_spec,
                             check_input_hash=not force,
                             metadata_choices={MetadataOption.TimeStamp},
                         )
