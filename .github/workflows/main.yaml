@@ -188,10 +188,10 @@ jobs:
               --cov conda_project \
               tests
           fi
-      - uses: codecov/codecov-action@v2
-        with:
-          files: ./coverage.xml
-          env_vars: OS,PYTHON
+#     - uses: codecov/codecov-action@v2
+#       with:
+#         files: ./coverage.xml
+#         env_vars: OS,PYTHON
   upload:
     needs: test
     runs-on: ubuntu-latest
