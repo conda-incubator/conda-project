@@ -214,7 +214,7 @@ jobs:
         source $CONDA/bin/activate
         conda install -y anaconda-client
         [[ "$GITHUB_REF" =~ ^refs/tags/ ]] || export LABEL="--label dev"
-        anaconda --verbose --token $ANACONDA_TOKEN upload --user defusco $LABEL conda-bld/noarch/conda-project*.tar.bz2 --force
+        anaconda --verbose --token $ANACONDA_TOKEN upload --user defusco $LABEL conda-bld/noarch/conda-project* --force
     - name: Clean up older artifacts
       uses: glassechidna/artifact-cleaner@master
       with:
