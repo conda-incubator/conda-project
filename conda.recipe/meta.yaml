@@ -50,5 +50,5 @@ test:
 about:
   home: {{ project['urls']['repository'] }}
   summary: {{ project['description'] }}
-  license: {{ project['license']['text'] }}
+  license: {{ project['license'] }}
   license_file: LICENSE
