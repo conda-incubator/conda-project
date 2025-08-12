@@ -1,0 +1,7 @@
+name: default-cmd
+environments:
+  default:
+    - environment.yml
+variables: {}
+commands:
+  default: echo "default"

@@ -1,0 +1,13 @@
+name: default
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+variables:
+prefix:
+platforms:
+  - osx-arm64
+  - osx-64
+  - linux-64
+  - win-64
+  - linux-aarch64

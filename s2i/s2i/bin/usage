@@ -1,0 +1,12 @@
+#!/bin/bash -e
+cat <<EOF
+This is the conda-project S2I image:
+To use it, install S2I: https://github.com/openshift/source-to-image
+
+Sample invocation:
+
+s2i build <source code path/URL> conda/s2i-conda-project <application image> [-e CMD=<command name>]
+
+You can then run the resulting image via, exposing any ports opened in the command:
+docker run <options> <application image>
+EOF
