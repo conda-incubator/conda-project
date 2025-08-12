@@ -57,9 +57,11 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install build dependencies
-        run: pip install build
+        run: pip install hatch
+
       - name: Build the package
-        run: python -m build
+        run: hatch build
+
       - name: Upload the build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -70,6 +72,7 @@ jobs:
 
   test:
     name: Test (conda ${{ matrix.conda-version }}, conda-lock ${{ matrix.conda-lock }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    if: ${{ ! startsWith(github.event.ref, 'refs/tags/') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -193,7 +196,7 @@ jobs:
 #         files: ./coverage.xml
 #         env_vars: OS,PYTHON
   upload:
-    needs: test
+    needs: [conda-package]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
@@ -224,24 +227,18 @@ jobs:
     name: Publish to PyPI
     if: startsWith(github.event.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    needs: [check]
+    needs: [build-wheel-and-sdist]
+    permissions:
+      id-token: write
     steps:
-    - name: Checkout
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-    - name: Setup Python
-      uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236 # v4
     - name: Download the build artifacts
       uses: actions/download-artifact@v4
       with:
         name: builds-${{ github.sha }}
-        path: ~/dist
-    - name: Install build dependencies
-      run: pip install twine
-    - name: Upload to PyPI with twine
-      run: python -m twine upload ~/dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN}}
+        path: ./dist
+
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
   # This check job runs to ensure all tests have passed, such that we can use it as a "wildcard" for branch
   # protection to ensure all tests pass before a PR can be merged.
