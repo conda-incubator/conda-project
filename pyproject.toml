@@ -10,7 +10,7 @@ authors = [
     { name = "Albert DeFusco", email = "adefusco@anaconda.com" },
     { name = "Matt Kramer", email = "mkramer@anaconda.com" },
 ]
-license = {text = "BSD-3-Clause"}
+license = "BSD-3-Clause"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = [ "conda-project" ]
