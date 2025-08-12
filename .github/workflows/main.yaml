@@ -196,7 +196,7 @@ jobs:
 #         files: ./coverage.xml
 #         env_vars: OS,PYTHON
   upload:
-    needs: test
+    needs: [conda-package]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
