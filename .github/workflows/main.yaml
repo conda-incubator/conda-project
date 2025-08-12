@@ -72,6 +72,7 @@ jobs:
 
   test:
     name: Test (conda ${{ matrix.conda-version }}, conda-lock ${{ matrix.conda-lock }}, Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    if: ${{ ! startsWith(github.event.ref, 'refs/tags/') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
