@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, OrderedDict, TextIO, Union
 
 from conda_lock._vendor.conda.models.match_spec import MatchSpec
-from pkg_resources import Requirement
+from packaging.requirements import Requirement
 from ruamel.yaml import YAML
 
 try:  # pragma: no cover

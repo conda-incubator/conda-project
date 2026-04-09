@@ -42,7 +42,7 @@ dependencies = [
     "python-dotenv",
     "fsspec",
     "libarchive-c",
-    "setuptools"
+    "packaging"
 ]
 
 [tool.hatch.version]
