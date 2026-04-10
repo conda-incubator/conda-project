@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, OrderedDict, TextIO, Union
 
 from conda_lock._vendor.conda.models.match_spec import MatchSpec
 from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from ruamel.yaml import YAML
 
 try:  # pragma: no cover
@@ -175,14 +176,16 @@ class EnvironmentYaml(BaseYaml):
         channels: Optional[Union[UniqueOrderedList, List[str]]] = None,
     ) -> None:
         current_conda_names = [dep.name for dep in self.conda_matchspecs]
-        current_pip_names = [dep.name for dep in self.pip_requirements]
+        current_pip_names = [
+            canonicalize_name(dep.name) for dep in self.pip_requirements
+        ]
 
         conda_to_add = []
         pip_to_add = []
         for dep in dependencies:
             if dep.startswith("@pip::"):
                 _, dep = dep.split("::", maxsplit=1)
-                name = Requirement(dep).name
+                name = canonicalize_name(Requirement(dep).name)
                 if name in current_pip_names:
                     self._replace_pip_requirement(current_pip_names.index(name), dep)
                 else:
@@ -206,12 +209,14 @@ class EnvironmentYaml(BaseYaml):
 
     def remove_dependencies(self, dependencies: List[str]) -> None:
         current_conda_names = [dep.name for dep in self.conda_matchspecs]
-        current_pip_names = [dep.name for dep in self.pip_requirements]
+        current_pip_names = [
+            canonicalize_name(dep.name) for dep in self.pip_requirements
+        ]
 
         for dep in dependencies:
             if dep.startswith("@pip::"):
                 _, dep = dep.split("::", maxsplit=1)
-                name = Requirement(dep).name
+                name = canonicalize_name(Requirement(dep).name)
                 if name in current_pip_names:
                     self._remove_pip_requirement(current_pip_names.index(name))
             else:

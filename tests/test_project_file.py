@@ -371,3 +371,45 @@ def test_remove_pip_dependency_extras():
 
     env.remove_dependencies(["@pip::pydantic<2"])
     assert env.dependencies == ["python=3.10", "pip", {"pip": []}]
+
+
+@pytest.mark.parametrize(
+    "yaml_name, input_name",
+    [
+        ("python_dateutil>=2.8", "python-dateutil>=2.9"),
+        ("Jinja2>=3.0", "jinja2>=3.1"),
+    ],
+    ids=["underscore-vs-hyphen", "capitalized-vs-lowercase"],
+)
+class TestPipDependencyNameNormalization:
+    """Pip dependency names that differ only in PEP 503 normalization
+    (underscore vs hyphen, casing) should be treated as the same package.
+
+    The YAML value and the user-supplied input are each preserved verbatim;
+    only the comparison used to detect an existing dependency should normalize.
+    """
+
+    def test_replace_recognizes_normalized_name(self, yaml_name, input_name):
+        """add_dependencies should replace an existing pip dep when the
+        user-supplied name differs only by normalization."""
+        env = EnvironmentYaml(dependencies=["python=3.10", "pip", {"pip": [yaml_name]}])
+
+        env.add_dependencies([f"@pip::{input_name}"])
+
+        pip_deps = [d for d in env.dependencies if isinstance(d, dict) and "pip" in d]
+        pip_list = pip_deps[0]["pip"]
+        assert len(pip_list) == 1, f"Expected replacement, got duplicate: {pip_list}"
+        assert pip_list[0] == input_name
+
+    def test_remove_recognizes_normalized_name(self, yaml_name, input_name):
+        """remove_dependencies should remove an existing pip dep when the
+        user-supplied name differs only by normalization."""
+        env = EnvironmentYaml(dependencies=["python=3.10", "pip", {"pip": [yaml_name]}])
+
+        env.remove_dependencies([f"@pip::{input_name}"])
+
+        pip_deps = [d for d in env.dependencies if isinstance(d, dict) and "pip" in d]
+        pip_list = pip_deps[0]["pip"]
+        assert (
+            len(pip_list) == 0
+        ), f"Expected removal, but dep still present: {pip_list}"
