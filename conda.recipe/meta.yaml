@@ -30,6 +30,7 @@ requirements:
     - python {{ project['requires-python'] }}
     - conda-lock >=2.5.6
     - lockfile
+    - packaging
     - pexpect
     - ruamel.yaml
     - pydantic
@@ -37,7 +38,6 @@ requirements:
     - python-dotenv
     - fsspec
     - python-libarchive-c
-    - setuptools
 
 test:
   imports:

@@ -35,6 +35,7 @@ classifiers = [
 dependencies = [
     "conda-lock >=2.5.6",
     "lockfile",
+    "packaging",
     "pexpect",
     "ruamel.yaml",
     "pydantic",
@@ -42,7 +43,6 @@ dependencies = [
     "python-dotenv",
     "fsspec",
     "libarchive-c",
-    "setuptools"
 ]
 
 [tool.hatch.version]

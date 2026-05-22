@@ -270,6 +270,14 @@ def test_env_extend_pip_dependencies():
     ]
 
 
+def test_env_pip_requirement_names():
+    env = EnvironmentYaml(
+        dependencies=["python=3.10", "pip", {"pip": ["pydantic[email,dotenv]<2"]}]
+    )
+
+    assert [dep.name for dep in env.pip_requirements] == ["pydantic"]
+
+
 def test_env_add_dependencies_empty_channels():
     env = EnvironmentYaml(dependencies=["python=3.10", "numpy"])
 
