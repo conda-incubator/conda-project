@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Documentation configuration for `conda-project`."""
+
 from __future__ import annotations
 
 from datetime import datetime

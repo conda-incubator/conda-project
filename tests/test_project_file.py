@@ -49,11 +49,9 @@ def test_yaml_parse_error():
     class Yaml(BaseYaml):
         foo: int
 
-    yml = dedent(
-        """\
+    yml = dedent("""\
         foo: a
-        """
-    )
+        """)
 
     with pytest.raises(CondaProjectError):
         _ = Yaml.parse_yaml(yml)
@@ -87,12 +85,10 @@ def test_yaml_anchors():
         a: str
         b: str
 
-    yml = dedent(
-        """\
+    yml = dedent("""\
         a: &a foo
         b: *a
-        """
-    )
+        """)
 
     yml = YamlFile.parse_yaml(yml)
     assert yml.a == "foo"
@@ -104,13 +100,11 @@ def test_yaml_anchors_extra():
         a: str
         b: str
 
-    yml = dedent(
-        """\
+    yml = dedent("""\
         _hidden: &a foo
         a: *a
         b: *a
-        """
-    )
+        """)
 
     yml = YamlFile.parse_yaml(yml)
     assert yml.a == "foo"
@@ -138,8 +132,7 @@ def test_project_file_with_one_env():
 
 
 def test_project_yaml_round_trip():
-    project_file_input = dedent(
-        """\
+    project_file_input = dedent("""\
         name: my-project
         # comment
         environments:
@@ -148,8 +141,7 @@ def test_project_yaml_round_trip():
             - ../dev.yaml
           another:
             - another-env.yml
-        """
-    )
+        """)
 
     project_file = CondaProjectYaml.parse_yaml(project_file_input)
 
@@ -158,8 +150,7 @@ def test_project_yaml_round_trip():
 
     written_contents = stream.getvalue()
 
-    expected_contents = dedent(
-        """\
+    expected_contents = dedent("""\
         name: my-project
         environments:
           default:
@@ -169,8 +160,7 @@ def test_project_yaml_round_trip():
             - another-env.yml
         variables: {}
         commands: {}
-        """
-    )
+        """)
 
     assert written_contents == expected_contents
 

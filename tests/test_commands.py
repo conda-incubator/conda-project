@@ -17,14 +17,12 @@ from conda_project.project import CondaProject
 
 @pytest.fixture
 def no_env_one_command(project_directory_factory) -> CondaProject:
-    project_yaml = dedent(
-        """\
+    project_yaml = dedent("""\
         name: test
         environments: {}
         commands:
           the-command: run-me
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -37,14 +35,12 @@ def no_env_one_command(project_directory_factory) -> CondaProject:
 def one_env_no_commands(project_directory_factory) -> CondaProject:
     env_yaml = "dependencies: []\n"
 
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           default: [environment{project_directory_factory._suffix}]
         commands: {{}}
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -59,15 +55,13 @@ def one_env_no_commands(project_directory_factory) -> CondaProject:
 @pytest.fixture
 def one_env_one_command(project_directory_factory) -> CondaProject:
     env_yaml = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           default: [environment{project_directory_factory._suffix}]
         commands:
           the-command: run-me
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -82,8 +76,7 @@ def one_env_one_command(project_directory_factory) -> CondaProject:
 @pytest.fixture
 def one_env_one_command_project_variable(project_directory_factory) -> CondaProject:
     env_yaml = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           default: [environment{project_directory_factory._suffix}]
@@ -91,8 +84,7 @@ def one_env_one_command_project_variable(project_directory_factory) -> CondaProj
           the-command: run-me
         variables:
           FOO: set-in-project
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -107,8 +99,7 @@ def one_env_one_command_project_variable(project_directory_factory) -> CondaProj
 @pytest.fixture
 def one_env_one_command_command_variable(project_directory_factory) -> CondaProject:
     env_yaml = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           default: [environment{project_directory_factory._suffix}]
@@ -117,8 +108,7 @@ def one_env_one_command_command_variable(project_directory_factory) -> CondaProj
             cmd: run-me
             variables:
               FOO: set-in-command
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -135,8 +125,7 @@ def one_env_one_command_project_variable_overridden(
     project_directory_factory,
 ) -> CondaProject:
     env_yaml = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           default: [environment{project_directory_factory._suffix}]
@@ -147,8 +136,7 @@ def one_env_one_command_project_variable_overridden(
             cmd: run-me
             variables:
               FOO: set-in-command
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
@@ -163,8 +151,7 @@ def one_env_one_command_project_variable_overridden(
 @pytest.fixture
 def multi_env_multi_command(project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: multi-envs
         environments:
           env1: [env1{project_directory_factory._suffix}]
@@ -176,8 +163,7 @@ def multi_env_multi_command(project_directory_factory):
           cmd2:
             cmd: 'run-me2'
             environment: env2
-        """
-    )
+        """)
     project_path = project_directory_factory(
         project_yaml=project_yaml,
         files={
