@@ -36,14 +36,12 @@ ALL_ACTIONS = (
 @pytest.fixture
 def multi_env(project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: multi-envs
         environments:
           env1: [env1{project_directory_factory._suffix}]
           env2: [env2{project_directory_factory._suffix}]
-        """
-    )
+        """)
     project_path = project_directory_factory(
         project_yaml=project_yaml,
         files={
@@ -58,8 +56,7 @@ def multi_env(project_directory_factory):
 @pytest.fixture
 def multi_env_multi_command(project_directory_factory):
     env1 = env2 = "dependencies: []\n"
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: multi-envs
         environments:
           env1: [env1{project_directory_factory._suffix}]
@@ -71,8 +68,7 @@ def multi_env_multi_command(project_directory_factory):
           cmd2:
             cmd: ''
             environment: env2
-        """
-    )
+        """)
     project_path = project_directory_factory(
         project_yaml=project_yaml,
         files={
@@ -432,8 +428,7 @@ def test_install_env_for_command(project_directory_factory, for_command, expecte
 
     env_yaml = f"dependencies: []\nplatforms: [{current_platform()}]"
 
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           bbb: [env1{project_directory_factory._suffix}]
@@ -442,8 +437,7 @@ def test_install_env_for_command(project_directory_factory, for_command, expecte
           default:
             cmd: true
             environment: default
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         project_yaml=project_yaml,
