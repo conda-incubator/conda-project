@@ -190,12 +190,10 @@ def test_conda_project_init_empty_dir(tmp_path, caplog):
 
 
 def test_conda_project_init_with_env_yaml(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
