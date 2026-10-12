@@ -10,8 +10,7 @@ from conda_project.conda import current_platform
 from conda_project.exceptions import CondaProjectLockFailed
 from conda_project.project import CondaProject
 
-VIRTUAL_PACKAGES = dedent(
-    """\
+VIRTUAL_PACKAGES = dedent("""\
     subdirs:
       linux-64:
         packages:
@@ -25,8 +24,7 @@ VIRTUAL_PACKAGES = dedent(
       win-64:
         packages:
           __archspec: "1 x86_64_v2"
-"""
-)
+""")
 
 
 @pytest.mark.parametrize(
@@ -35,14 +33,12 @@ VIRTUAL_PACKAGES = dedent(
 def test_virtual_package_yaml(
     project_directory_factory, virtual_package_fn, capsys
 ) -> None:
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         name: virtual-packages
         channels: [defaults]
         dependencies: [_x86_64-microarch-level=2]
         platforms: [{current_platform()}]
-    """
-    )
+    """)
 
     if virtual_package_fn is None:
         project_path = project_directory_factory(env_yaml=env_yaml)
