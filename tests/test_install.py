@@ -15,12 +15,10 @@ from conda_project.project import CondaProject, Environment, current_platform
 
 
 def test_install_with_gitignore(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -31,12 +29,10 @@ def test_install_with_gitignore(project_directory_factory):
 
 
 def test_install_no_dependencies(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -50,26 +46,22 @@ def test_install_no_dependencies(project_directory_factory):
 
 @pytest.mark.slow
 def test_is_installed(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: [python=3.8]
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
     _ = project.default_environment.install()
     assert project.default_environment.is_consistent
 
-    updated_yaml = dedent(
-        """\
+    updated_yaml = dedent("""\
         name: test
         dependencies:
           - python=3.8
           - requests
-        """
-    )
+        """)
 
     with (project.default_environment.sources[0]).open("wt") as f:
         f.write(updated_yaml)
@@ -88,8 +80,7 @@ def test_is_installed(project_directory_factory):
 @pytest.mark.slow
 def test_is_installed_with_pip_package(project_directory_factory):
     """Test that we can import the package if it is installed with pip."""
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         name: test
         dependencies:
           - python=3.8
@@ -99,8 +90,7 @@ def test_is_installed_with_pip_package(project_directory_factory):
             - pyRFC3339         # conda-lock stores lower case package names
             - typing_extensions # conda-lock switches _ to -
         platforms: [{current_platform()}]
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -120,13 +110,11 @@ def test_is_installed_with_pip_package(project_directory_factory):
 
 @pytest.mark.slow
 def test_is_installed_live_env_changed(project_directory_factory, capsys):
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         name: test
         dependencies: [python=3.8]
         platforms: [{current_platform()}]
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -150,13 +138,11 @@ def test_is_installed_live_env_changed(project_directory_factory, capsys):
 
 @pytest.mark.slow
 def test_is_installed_source_changed(project_directory_factory, capsys):
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         name: test
         dependencies: [python=3.8]
         platforms: [{current_platform()}]
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -180,8 +166,7 @@ def test_is_installed_source_changed(project_directory_factory, capsys):
 
 @pytest.mark.slow
 def test_is_prepared_duplicate_package(project_directory_factory):
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         dependencies:
           - urllib3>1.25
           - pip
@@ -189,8 +174,7 @@ def test_is_prepared_duplicate_package(project_directory_factory):
             - botocore==1.15.32 # this forces an older version of urllib3 to install
         channels: [defaults]
         platforms: [{current_platform()}]
-        """
-    )
+        """)
 
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
@@ -200,8 +184,7 @@ def test_is_prepared_duplicate_package(project_directory_factory):
 
 @pytest.mark.slow
 def test_is_installed_no_sha256(project_directory_factory):
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         dependencies:
             - defusco::jsonmerge=1.7.0  # sha256 is not available for this package
             - pip:
@@ -209,8 +192,7 @@ def test_is_installed_no_sha256(project_directory_factory):
         channels:
             - defaults
         platforms: [{current_platform()}]
-        """
-    )
+        """)
 
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
@@ -219,12 +201,10 @@ def test_is_installed_no_sha256(project_directory_factory):
 
 
 def test_install_env_exists(project_directory_factory, capsys):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
     project = CondaProject(project_path)
 
@@ -240,13 +220,11 @@ def test_install_env_exists(project_directory_factory, capsys):
 
 
 def test_locked_for_wrong_platform(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
         platforms: [dummy-platform]
-        """
-    )
+        """)
 
     project_path = project_directory_factory(env_yaml=env_yaml)
 
@@ -260,13 +238,11 @@ def test_locked_for_wrong_platform(project_directory_factory):
 
 
 def test_install_as_platform(project_directory_factory):
-    env_yaml = dedent(
-        """\
+    env_yaml = dedent("""\
         name: test
         dependencies: []
         platforms: [dummy-platform]
-        """
-    )
+        """)
 
     project_path = project_directory_factory(env_yaml=env_yaml)
 
@@ -290,27 +266,23 @@ def test_install_as_platform(project_directory_factory):
 
 
 def test_install_relocks(project_directory_factory, capsys):
-    env_yaml = dedent(
-        f"""\
+    env_yaml = dedent(f"""\
         name: test
         dependencies: []
         platforms: [{current_platform()}]
-        """
-    )
+        """)
     project_path = project_directory_factory(env_yaml=env_yaml)
 
     project = CondaProject(project_path)
     project.default_environment.lock(verbose=True)
     assert project.default_environment.is_locked
 
-    updated_env_yaml = dedent(
-        f"""\
+    updated_env_yaml = dedent(f"""\
         name: test
         dependencies:
           - python=3.8
         platforms: [{current_platform()}]
-        """
-    )
+        """)
     with (project.default_environment.sources[0]).open("wt") as f:
         f.write(updated_env_yaml)
 
@@ -322,13 +294,11 @@ def test_install_relocks(project_directory_factory, capsys):
 def test_install_named_environment(project_directory_factory):
     env_yaml = "dependencies: []\n"
 
-    project_yaml = dedent(
-        f"""\
+    project_yaml = dedent(f"""\
         name: test
         environments:
           standard: [environment{project_directory_factory._suffix}]
-        """
-    )
+        """)
 
     project_path = project_directory_factory(
         env_yaml=env_yaml, project_yaml=project_yaml
